@@ -1,0 +1,110 @@
+.md-body p {
+    margin-bottom: 20px;
+    font-size: 15px;
+    color:red;
+}
+.btn-md {
+    background: #2B7797;
+    border: #2B7797 solid 1px;
+    border-radius: 3px;
+    color: #fff;
+    display: inline-block;
+    font-size: 14px;
+    padding: 8px 15px;
+    text-decoration: none;
+    text-align: center;
+    min-width: 60px;
+    position: relative;
+    transition: color .1s ease;
+}
+.btn-md:hover {
+    background: #ff984a;
+    color: #ffffff;
+}
+.btn-md.btn-big {
+    font-size: 18px;
+    padding: 15px 20px;
+    min-width: 100px;
+}
+.bt-close {
+    color: #ffffff;
+    font-size: 30px;
+    text-decoration: none;
+    position: absolute;
+    right: 5px;
+    top: 0;
+}
+.bt-close:hover {
+    color: #919191;
+}
+.md:target:before {
+    display: none;
+}
+.md:before {
+    content:"";
+    display: block;
+    background: rgba(0, 0, 0, 0.6);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+}
+.md .md-dialog {
+    background: #fefefe;
+    border: #333333 solid 1px;
+    border-radius: 5px;
+    margin-left: -200px;
+    position: fixed;
+    left: 50%;
+    z-index: 11;
+    width: 500px;
+    -webkit-transform: translate(0, 0);
+    -ms-transform: translate(0, 0);
+    transform: translate(0, 0);
+    -webkit-transition: -webkit-transform 0.3s ease-out;
+    -moz-transition: -moz-transform 0.3s ease-out;
+    -o-transition: -o-transform 0.3s ease-out;
+    transition: transform 0.3s ease-out;
+    top: 20%;
+}
+.md:target .md-dialog {
+    top: -100%;
+    -webkit-transform: translate(0, -500%);
+    -ms-transform: translate(0, -500%);
+    transform: translate(0, -500%);
+}
+.md-body {
+    padding: 20px;
+}
+.md-header, .md-footer {
+    padding: 10px 20px;
+}
+.md-header {
+    background: rgb(0 0 0 / .7);
+    color:#ffffff;
+    border-bottom: #eeeeee solid 1px;
+}
+.md-header h2 {
+    font-size: 20px;
+}
+.md-footer {
+    border-top: #eeeeee solid 1px;
+    text-align: right;
+}
+
+
+/*swal css*/
+
+.sw-center{
+   overflow-y: auto; 
+}
+
+.display-flex-swal {
+    display: flex;
+}
+
+.d-block .swal2-content {
+    display: block;
+}

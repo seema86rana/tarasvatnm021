@@ -1,0 +1,382 @@
+.sidebar {
+    background-color: #24222a;
+}
+
+.navigation li a {
+    color: #fff;
+}
+
+.navigation li a:hover,
+.navigation li a:focus {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #2fb2e6;
+}
+
+.navigation>li.active>a,
+.navigation>li.active>a:hover,
+.navigation>li.active>a:focus {
+    background-color: #2fb2e6;
+    color: #222222;
+}
+
+.navbar-right ul.dropdown-menu.dropdown-menu-right {
+    background: #24222a;
+}
+
+.navbar-right ul.dropdown-menu.dropdown-menu-right a {
+    color: #2fb2e6;
+}
+
+.navbar-right ul.dropdown-menu.dropdown-menu-right li.divider {
+    background-color: #2fb2e638;
+}
+
+.navbar-right ul.dropdown-menu.dropdown-menu-right>li>a:hover,
+.navbar-right ul.dropdown-menu.dropdown-menu-right>li>a:focus {
+    color: #24222a !important;
+    background-color: #2fb2e6;
+}
+
+.center-custom {
+    position: inherit;
+    width: 2rem;
+    height: 2rem;
+}
+
+.overlay {
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    right: 0;
+    display: flex;
+    background: #0000007d;
+}
+
+.hide {
+    display: none !important;
+}
+
+.resize-none {
+    resize: none;
+}
+
+/* Preview fix height */
+.mxh-310 {
+    max-height: 310px;
+}
+
+/* --- Custom Theme Css Start --- */
+
+/* --- Custom CSS Changes Start --- */
+body {
+    background-color: #24222a0d;
+}
+
+a {
+    color: #2fb2e6;
+}
+
+a:hover,
+a:active,
+a:focus {
+    color: #be8273;
+}
+
+.btn-theme-link {
+    color: #24222a !important;
+}
+
+/* --- Custom CSS Changes End --- */
+
+/* Custom Auth CSS Start */
+
+.login-cover {
+    background: #24222a;
+}
+
+/* Custom Auth CSS End */
+
+/* --- Background Color CSS Start --- */
+
+.theme-shadow {
+    box-shadow: 0 0 7px 4px rgb(173 173 173 / 38%), 0 1px 2px 0 rgb(208 184 184 / 57%);
+}
+
+.border-theme-dark {
+    border-color: #24222a !important;
+}
+
+.border-theme-1 {
+    border: 1px solid;
+}
+
+.text-theme-dark {
+    color: #24222a !important;
+}
+
+.bg-theme-dark {
+    background-color: #24222a;
+    border-color: #24222a;
+    color: #fff;
+}
+
+/* --- Background Color CSS Start --- */
+
+.btn-theme-gray-btn {
+    background-color: #6a6871;
+    border-color: #6a6871;
+    color: #fff;
+}
+
+.btn-theme-gray-btn:hover,
+.btn-theme-gray-btn:active,
+.btn-theme-gray-btn:focus {
+    background-color: #5a5961;
+    border-color: #5a5961;
+    color: #fff !important;
+}
+
+.btn-theme-dark {
+    background-color: #37343e;
+    border-color: #37343e;
+    color: #fff;
+}
+
+.btn-theme-dark:hover,
+.btn-theme-dark:active,
+.btn-theme-dark:focus {
+    background-color: #37343ef0;
+    border-color: #37343ef0;
+    color: #fff !important;
+}
+
+.text-theme-pink {
+    color: #2fb2e6 !important;
+}
+
+.border-theme-pink {
+    border-color: #2fb2e6 !important;
+}
+
+.btn-theme-pink-btn {
+    background-color: #2fb2e6;
+    border-color: #2fb2e6;
+    color: #fff;
+}
+
+.btn-theme-pink-btn:hover,
+.btn-theme-pink-btn:active {
+    background-color: #be8273;
+    border-color: #be8273;
+    color: #fff !important;
+}
+
+/* Nav Top Process Bar CSS Start  */
+.pace .pace-progress {
+    background: #2fb2e6;
+}
+
+/* Nav Top Process Bar CSS End  */
+
+/* ---  Navbar CSS Start --- */
+
+.navbar-inverse {
+    background-color: #24222a;
+    border-color: #2fb2e6;
+    border-top-color: #24222a;
+}
+
+.navbar-inverse .navbar-brand {
+    color: #2fb2e6;
+}
+
+body.sidebar-xs .navbar-header {
+    min-width: auto;
+}
+
+/* ---  Navbar CSS End --- */
+
+/* Page Main Content CSS Start */
+
+.page-header-content {
+    background: #fff;
+}
+
+.page-header-default .breadcrumb-line:not([class*=bg-]) {
+    background-color: #e8e8e8;
+}
+
+.breadcrumb>li>a {
+    color: #24222a;
+}
+
+/* Page Main Content CSS End */
+
+/* Radio Button CSS Start */
+.choice span {
+    border: 2px solid #2fb2e6;
+}
+
+.checker span {
+    border: 2px solid #2fb2e6;
+    color: #2fb2e6;
+}
+
+.swal2-popup {
+    font-size: 1.4rem !important;
+    padding: 1.25em !important;
+    width: 37em !important;
+}
+
+/* Radio Button CSS Start */
+
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+/* --- Custom Theme Css End --- */
+
+/* --- Dropzone Custom CSS Start --- */
+
+.dropzone .dz-image,
+.dropzone .dz-details {
+    text-align: center;
+}
+
+.dropzone .dz-size {
+    width: 100%;
+}
+
+.dropzone .radio-inline {
+    text-align: center;
+    width: 100%;
+}
+
+.dropzone .dz-preview .dz-details {
+    margin-bottom: 35px;
+}
+
+.dropzone .dz-preview a.dz-remove,
+.dropzone-previews .dz-preview a.dz-remove {
+    margin-top: 15px;
+}
+
+/* --- Dropzone Custom CSS End --- */
+
+/* --- Select2 Tags custom CSS Start --- */
+
+.select2-selection--multiple .select2-selection__choice {
+    background-color: #24222a !important;
+}
+
+.select2-results__option[aria-selected=true] {
+    background-color: #24222aeb;
+    color: #fff;
+}
+
+.small-circle {
+    width: 100%;
+    border-radius: 50px;
+    padding: 0.8rem 1.5rem;
+    margin-right: 5px;
+}
+
+.align-middle {
+    vertical-align: middle !important
+}
+
+/* Datatable Custom CSS Start */
+.dataTables_paginate .paginate_button.current,
+.dataTables_paginate .paginate_button.current:hover,
+.dataTables_paginate .paginate_button.current:focus {
+    background-color: #24222a !important;
+}
+
+/* Datatable Custom CSS End */
+
+/* --- Select2 Tags custom CSS End --- */
+
+@media screen and (min-width:769px) {
+    .sidebar-xs .sidebar-main .navigation>li>a>span {
+        background-color: #24222a;
+        border: 1px solid #24222a;
+    }
+}
+
+.feature-preview-panel img {
+    height: 140px;
+    width: 140px;
+    padding: 2rem 1.5rem;
+}
+
+/* Custom CSS @MRA 02-02-2021 */
+.append-wrapper-colors {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.append-wrapper-colors .color-circles {
+    width: 40px;
+    height: 40px;
+    margin-right: 5px;
+    border-radius: 50%;
+}
+
+.append-wrapper-colors .color-circles a {
+    position: relative;
+    top: 45px;
+}
+
+
+.spinner-glow {
+    display: inline-block;
+    width: 2.5em;
+    height: 2.5em;
+    background: #dee2e6;
+    border-radius: 50%;
+    margin: 4px auto;
+    border: 4px solid transparent;
+    animation: glow 1s ease infinite;
+}
+
+.spinner-glow-info {
+    background: rgb(18 17 21);
+    animation: glow-info 1s ease infinite;
+}
+
+
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 0 .4em #a1a2a1, 0 0 0 .1em #a1a2a1;
+        transform: rotate(360deg);
+    }
+
+    50% {
+        border-top-color: #605556;
+    }
+
+    100% {
+        box-shadow: 0 0 0 .4em #a1a2a1, 0 0 0 3.6em transparent;
+    }
+}
+
+@keyframes glow-info {
+    0% {
+        box-shadow: 0 0 0 0.4em rgb(18 17 21 / 53%), 0 0 0 0.1em rgb(18 17 21 / 53%);
+        transform: rotate(360deg);
+    }
+
+    50% {
+        border-top-color: rgb(63 60 72);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0.4em rgb(18 17 21 / 53%), 0 0 0 3.6em transparent;
+    }
+}
+
+/* Custom CSS @MRA 02-02-2021 */
