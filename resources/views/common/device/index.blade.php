@@ -9,8 +9,8 @@
     <div class="page-header-content">
         <div class="page-title">
             <h4>
-                <i class="icon-menu6 position-left"></i>
-                <span class="text-semibold">Roles</span>
+                <i class="icon-stack2 position-left"></i>
+                <span class="text-semibold">Devices</span>
             </h4>
         </div>
     </div>
@@ -24,10 +24,10 @@
 @section('content')
 <div class="panel panel-flat">
     <div class="panel-heading">
-        <h5 class="panel-title">Role's list</h5>
+        <h5 class="panel-title">Device's list</h5>
         <div class="heading-elements">
-            <button class="btn btn-theme-dark btn-labeled add-role">
-                <b><i class="icon-plus-circle2"></i></b> Add Role
+            <button class="btn btn-theme-dark btn-labeled add-device">
+                <b><i class="icon-plus-circle2"></i></b> Add Device
             </button>
             <!-- <button class="btn btn-theme-dark btn-labeled">
                 <b><i class="fa fa-file-excel-o" aria-hidden="true"></i></b> Export XLSX
@@ -40,13 +40,17 @@
         </div>
     </div>
     <div class="panel-body table-responsive">
-        <table class="table table-bordered table-striped datatable-scroller roles-dt" id="roles-dt">
+        <table class="table table-bordered table-striped datatable-scroller devices-dt" id="devices-dt">
             <thead>
                 <tr>
                     <th>Serial No.</th>
-                    <th>Role Name</th>
+                    <th>Device Name</th>
+                    <th>Device ID</th>
+                    <th>User</th>
+                    <th>Shift</th>
                     <th>Status</th>
                     <th>Created At</th>
+                    <th>Created By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -59,7 +63,7 @@
 
 @section('footer_js')
 <script type="text/javascript">
-	let roleUrl = "{{ route('roles.index') }}";
+	let deviceUrl = "{{ route('devices.index') }}";
 </script>
 <script type="text/javascript" src="{{asset('assets/admin/js/plugins/forms/styling/switchery.min.js')}}"></script>
 <script type="text/javascript" src="{{ asset('assets/admin/js/plugins/tables/datatables/datatables.min.js') }}"></script>
@@ -69,6 +73,5 @@
 <script type="text/javascript" src="{{ asset('assets/admin/js/plugins/tables/datatables/extensions/pdfmake/vfs_fonts.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('assets/admin/js/plugins/forms/selects/select2.min.js') }}"></script>
 
-<script type="text/javascript" src="{{ asset('assets/admin/js/custom/roles.js') }}"></script>
-
+<script type="text/javascript" src="{{ asset('assets/admin/js/custom/devices.js') }}"></script>
 @endsection

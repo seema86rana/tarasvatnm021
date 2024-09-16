@@ -15,21 +15,21 @@ class RolesTableSeeder extends Seeder
      */
     public function run()
     {
+        // Truncate the table
+        DB::table('roles')->truncate();
+
+        // Seed the table with data
         DB::table('roles')->insert([
             [
-                'name' => 'SuperAdmin',
-                'status' => 1, // Active status
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),               
-            ],
-            [
                 'name' => 'Admin',
+                'permission' => json_encode(['dashboard', 'devices', 'nodes', 'machines']),
                 'status' => 1, // Active status
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),               
             ],
             [
                 'name' => 'User',
+                'permission' => json_encode(['dashboard', 'nodes', 'machines']),
                 'status' => 1, // Active status
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

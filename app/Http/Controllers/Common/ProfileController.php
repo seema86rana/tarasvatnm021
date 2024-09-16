@@ -88,7 +88,7 @@ class ProfileController extends Controller
                 'name' => ['required', 'string', 'min:3', 'max:50'],
                 'phone_number' => ['required', 'numeric', 'digits_between:10,13', 'unique:users,phone_number,' . $user->id],
                 'company_name' => ['required', 'string', 'min:3', 'max:50'],
-                'gst_number' => ['required', 'string'],
+                'gst_number' => ['required', 'string', 'unique:users,gst_number,' . $user->id],
                 'profile_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'], // Image validation
                 'address' => ['required', 'string'],
             ]);
@@ -98,6 +98,7 @@ class ProfileController extends Controller
             }
 
             $data = $validator->validated();
+            $data['updated_by'] = Auth::user()->id;
 
             if ($request->hasFile('profile_image')) {
 
@@ -151,6 +152,7 @@ class ProfileController extends Controller
     
             // Hash the new password and prepare for updating
             $user->password = Hash::make($request->input('password'));
+            $user->updated_by = Auth::user()->id;
             
             // Save the updated user record
             if ($user->save()) {

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDeviceTable extends Migration
+class CreateMenusTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,13 @@ class CreateDeviceTable extends Migration
      */
     public function up()
     {
-        Schema::create('devices', function (Blueprint $table) {
+        Schema::create('menus', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->text('device_id');
-            $table->text('shift');
+            $table->string('name')->unique();
+            $table->integer('parent_id')->default(0);
+            $table->string('route')->nullable()->unique();
+            $table->text('icon')->nullable();
+            $table->integer('position')->default(0);
             $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
@@ -34,6 +34,6 @@ class CreateDeviceTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('devices');
+        Schema::dropIfExists('menus');
     }
 }

@@ -50,6 +50,7 @@
                     <th>Email</th>
                     <th>Status</th>
                     <th>Created At</th>
+                    <th>Created By</th>
                     <th>Verified At</th>
                     <th>Actions</th>
                 </tr>

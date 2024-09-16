@@ -10,11 +10,15 @@ class UsersTableSeeder extends Seeder
 {
     public function run()
     {
+        // Truncate the table
+        DB::table('users')->truncate();
+
+        // Seed the table with data
         DB::table('users')->insert([
             [
                 'name' => 'SuperAdmin User',
-                'role_id' => 1, // SuperAdmin role
-                'phone_number' => '7474121245',
+                'role_id' => 0, // SuperAdmin role
+                'phone_number' => '9898787852',
                 'email' => 'superadmin@yopmail.com',
                 'email_verified_at' => Carbon::now(),
                 'password' => Hash::make('Gopal@123'), // Default Gopal@123

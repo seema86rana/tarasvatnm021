@@ -25,11 +25,13 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'phone_number',
         'email',
         'password',
-        'status',
         'profile_image',
         'company_name',
         'gst_number',
         'address',
+        'status',
+        'created_by',
+        'updated_by',
     ];
 
     /**
@@ -53,5 +55,9 @@ class User extends Authenticatable implements MustVerifyEmailContract
 
     public function role() {
         return $this->belongsTo(Role::class, 'role_id', 'id'); 
+    }
+
+    public function createdBy() {
+        return $this->hasOne(User::class, 'id', 'created_by'); 
     }
 }

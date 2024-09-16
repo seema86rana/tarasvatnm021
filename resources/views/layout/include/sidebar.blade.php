@@ -25,6 +25,44 @@
             <div class="category-content no-padding">
                 <ul class="navigation navigation-main navigation-accordion">
                     <!-- Main -->
+                    <?php
+                        // echo "<pre>";
+                        // print_r(userMenuList());
+                        // die;
+                    ?>
+                    @if(userMenuList() && count(userMenuList()) > 0)
+                        @foreach(userMenuList() as $key => $menu)
+                            @if(count($menu['sub_menu']) > 0 && !empty($menu['route']))
+                                <li>
+                                    <a href="#">
+                                        {!! $menu['icon'] !!} <span>{{ $menu['name'] }}</span>
+                                    </a>
+                                    <ul>
+                                        @foreach($menu['sub_menu'] as $key => $subMenu)
+                                            @if(!empty($subMenu['route']))
+                                                @php $subRoute = $subMenu['route'].'.index'; @endphp
+                                                <li class="{{ request()->routeIs($subRoute) ? 'active' : '' }}">
+                                                    <a href="{{ route($subRoute) }}">
+                                                        {!! $subMenu['icon'] !!} <span>{{ $subMenu['name'] }}</span>
+                                                    </a>
+                                                </li>
+                                            @endif
+                                        @endforeach
+                                    </ul>
+                                </li>
+                            @else
+                                @if(!empty($menu['route']))
+                                    @php $route = $menu['route'].'.index'; @endphp
+                                    <li class="{{ request()->routeIs($route) ? 'active' : '' }}">
+                                        <a href="{{ route($route) }}">
+                                            {!! $menu['icon'] !!} <span>{{ $menu['name'] }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                            @endif
+                        @endforeach
+                    @endif
+                    <!--
                     @if(menuAccesspermission('dashboard'))
                     <li class="{{ request()->routeIs('dashboard.index') ? 'active' : '' }}">
                         <a href="{{ route('dashboard.index') }}">
@@ -39,6 +77,27 @@
                         </a>
                     </li>
                     @endif
+                    @if(menuAccesspermission('devices'))
+                    <li class="{{ request()->routeIs('devices.index') ? 'active' : '' }}">
+                        <a href="{{ route('devices.index') }}">
+                            <i class="icon-stack2"></i> <span>Device</span>
+                        </a>
+                    </li>
+                    @endif
+                    @if(menuAccesspermission('nodes'))
+                    <li class="{{ request()->routeIs('nodes.index') ? 'active' : '' }}">
+                        <a href="{{ route('nodes.index') }}">
+                            <i class="icon-blog"></i> <span>Node</span>
+                        </a>
+                    </li>
+                    @endif
+                    @if(menuAccesspermission('machines'))
+                    <li class="{{ request()->routeIs('machines.index') ? 'active' : '' }}">
+                        <a href="{{ route('machines.index') }}">
+                            <i class="fa fa-cogs"></i> <span>Machine</span>
+                        </a>
+                    </li>
+                    @endif
                     @if(menuAccesspermission('roles'))
                     <li class="{{ request()->routeIs('roles.index') ? 'active' : '' }}">
                         <a href="{{ route('roles.index') }}">
@@ -46,6 +105,7 @@
                         </a>
                     </li>
                     @endif
+                    -->
                 </ul>
             </div>
         </div>

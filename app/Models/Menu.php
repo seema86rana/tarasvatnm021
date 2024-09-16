@@ -5,22 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Role extends Model
+class Menu extends Model
 {
     use HasFactory;
 
-    protected $table = 'roles';
+    protected $table = 'menus';
 
     protected $fillable = [
         'name',
-        'permission',
+        'parent_id',
+        'route',
+        'icon',
+        'position',
         'status',
         'created_by',
         'updated_by',
     ];
 
-    public function users() {
-        return $this->hasMany(User::class, 'id', 'role_id');
+    public function subMenu() {
+        return $this->hasMany(Menu::class, 'parent_id', 'id');
     }
 
     public function createdBy() {
