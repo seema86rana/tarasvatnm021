@@ -22,12 +22,14 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->integer('status')->default(2)->comment('1->Active, 2->Pending, 3->Inactive');
             $table->rememberToken();
             $table->string('profile_image')->nullable();
             $table->string('company_name')->nullable();
             $table->string('gst_number')->unique()->nullable();
             $table->text('address')->nullable();
+            $table->integer('status')->default(2)->comment('1->Active, 2->Pending, 3->Inactive');
+            $table->integer('created_by')->nullable();
+            $table->integer('updated_by')->nullable();
             $table->timestamps();
         });
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Common;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -36,14 +36,14 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if($request->ajax()) {
-            $data = User::with('role')->whereNotIn('role_id', [0])->orderBy('created_at','DESC')->get();
+            $data = User::with('role', 'createdBy')->whereNotIn('role_id', [0])->orderBy('created_at','DESC')->get();
             $i = 0;
             return Datatables::of($data)
                 ->addColumn('serial_no', function ($row) use (&$i) {
                     return $i += 1;
                 })
                 ->addColumn('role', function ($row) {
-                    return ucwords(!empty($row->role->name) ? $row->role->name : '--------');
+                    return !empty($row->role->name) ? $row->role->name : '--------';
                 })
                 ->addColumn('phone_number', function ($row) {
                     return '<a href="tel:' . $row->phone_number . '" class="text-theme-dark">' . $row->phone_number . '</a>';
@@ -61,6 +61,9 @@ class UserController extends Controller
                 ->addColumn('created_at', function ($row) {
                     return date('dS F Y', strtotime($row->created_at));
                 })
+                ->addColumn('created_by', function ($row) {
+                    return !empty($row->createdBy->name) ? $row->createdBy->name : '--------';
+                })
                 ->addColumn('verified_at', function ($row) {
                     return $row->email_verified_at ? date('dS M Y', strtotime($row->email_verified_at)) : '--------';
                 })
@@ -73,7 +76,7 @@ class UserController extends Controller
                                 <i class="icon-trash"></i>
                             </button>';
                 })
-                ->rawColumns(['serial_no', 'role', 'phone_number', 'email', 'status', 'created_at', 'verified_at', 'action'])
+                ->rawColumns(['serial_no', 'role', 'phone_number', 'email', 'status', 'created_at', 'created_by', 'verified_at', 'action'])
                 ->make(true);
         }
 
@@ -82,7 +85,7 @@ class UserController extends Controller
 			route('users.index') => 'User',
 			'javascript: void(0)' => 'List',
 		];
-        return view('superadmin.user.index', compact('title', 'breadcrumbs'));
+        return view('common.user.index', compact('title', 'breadcrumbs'));
     }
 
     /**
@@ -96,7 +99,7 @@ class UserController extends Controller
         $role = Role::select('id', 'name')->where('status', 1)->orderBy('created_at','DESC')->get();
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("superadmin.user.add_and_edit", compact('modal_title', 'role'))->render(),
+            'html' => View::make("common.user.add_and_edit", compact('modal_title', 'role'))->render(),
         ]);
     }
 
@@ -129,6 +132,7 @@ class UserController extends Controller
             $data = $validator->validated();
             $data['password'] = Hash::make($data['password']);
             $data['status'] = 2;
+            $data['created_by'] = Auth::user()->id;
             $user = User::create($data);
             if(!$user) {
                 $response = array(
@@ -188,7 +192,8 @@ class UserController extends Controller
 
             // Update the user with validated data
             $data = $validator->validated();
-
+            $data['updated_by'] = Auth::user()->id;
+            
             // Update user data
             $user->update($data);
 
@@ -225,7 +230,7 @@ class UserController extends Controller
 
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("superadmin.user.add_and_edit", compact('modal_title', 'user', 'role'))->render(),
+            'html' => View::make("common.user.add_and_edit", compact('modal_title', 'user', 'role'))->render(),
         ]);
     }
 
@@ -261,6 +266,7 @@ class UserController extends Controller
 
             // Update the user with validated data
             $data = $validator->validated();
+            $data['updated_by'] = Auth::user()->id;
 
             // If password is provided, hash it
             if (!empty($data['password'])) {

@@ -31,9 +31,11 @@ $(document).ready(function () {
             },
             columns: [
                 { data: 'serial_no', name: 'serial_no', orderable: false, searchable: false, width: '10%' },
-                { data: 'name', name: 'name', width: '25%' },
-                { data: 'status', name: 'status', searchable: false, orderable: false, width: '20%' },
-                { data: 'created_at', name: 'created_at', width: '25%' },
+                { data: 'name', name: 'name', width: '20%' },
+                { data: 'permission', name: 'permission', orderable: false, searchable: false, width: '10%' },
+                { data: 'status', name: 'status', searchable: false, orderable: false, width: '15%' },
+                { data: 'created_at', name: 'created_at', width: '15%' },
+                { data: 'created_by', name: 'created_by', width: '10%' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, width: '20%' }
             ]
         });
@@ -247,6 +249,59 @@ $(document).ready(function () {
                 }
             });
             loaderToggle();
+        } else {
+            toast_error();
+        }
+    });
+
+    $(document).on("change", ".parent_menu", function(e) {
+        e.preventDefault();
+        let route = $(this).data('route');
+        if($(this).is(":checked")) {
+            $("."+route+"_child").prop("checked", true);
+        } else {
+            $("."+route+"_child").prop("checked", false);
+        }
+    });
+
+    $(document).on("change", ".child_menu", function(e) {
+        e.preventDefault();
+        let route = $(this).data('parent'); 
+        // if ($("." + route + "_child:checked").length === $("." + route + "_child").length) {}
+        if ($("." + route + "_child:checked").length > 0) {
+            $("." + route+"_parent").prop("checked", true); 
+        } else {
+            $("." + route+"_parent").prop("checked", false); 
+        }
+    });
+
+    $(document).on('click', '.show-permission', function (event) {
+        event.preventDefault();
+        let id = $(this).attr('data-id');
+        if (id) {
+            var selectValues = $("#permission_" + id).text();
+            var jsonData = JSON.stringify(selectValues);
+            var parsedData = JSON.parse(selectValues);
+            var html = "";
+            html += '<div class="modal-header">';
+            html += '<h5 class="modal-title" id="exampleModalLongTitle">Permission Detail</h5>';
+            html += '<button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">';
+            html += '<span aria-hidden="true">&times;</span>';
+            html += '</button>';
+            html += '</div>';
+            html += '<div class="modal-body text-left">';
+            $.each(parsedData, function(k, v) {
+                html += '<p>';
+                html += '<b>'+(k+1)+': </b>'+v;
+                html += '</p>';
+            });
+            html += '</div>';
+            html += '<div class="modal-footer text-center">';
+            html += '<button type="button" class="btn btn-theme-dark close-modal" style="">';
+            html += '<i class="icon-arrow-left13"></i> Back';
+            html += '</button>';
+            html += '</div>';
+            make_modal("show-shift-modal", html, true, "modal-xl");
         } else {
             toast_error();
         }

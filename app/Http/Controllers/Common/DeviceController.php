@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Common;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Models\Device;
 use Illuminate\Http\Request;
-use App\Models\Role;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
 use DataTables;
 
-class RoleController extends Controller
+class DeviceController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -31,46 +32,52 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         if($request->ajax()) {
-            $data = Role::orderBy('created_at','DESC')->get();
+            $data = Device::with('user', 'createdBy')->orderBy('created_at','DESC')->get();
             $i = 0;
             return Datatables::of($data)
                 ->addColumn('serial_no', function ($row) use (&$i) {
                     return $i += 1;
                 })
+                ->addColumn('user', function ($row) {
+                    return !empty($row->user->name) ? $row->user->name : '--------';
+                })
+                ->addColumn('shift', function ($row) {
+                    return '<button class="text-primary btn btn-outline-secondary show-shift" data-id="' . $row->id . '" title="Show Shift" style="text-align: center;display: block;">
+                                <div style="display: none;" id="shift_' . $row->id . '">' . $row->shift . '</div>
+                                <i class="icon-eye2"></i>
+                            </button>';
+                })
                 ->addColumn('status', function ($row) {
-                    return '<select class="form-control status-role" data-id="' . $row->id . '">
+                    return '<select class="form-control status-device" data-id="' . $row->id . '">
                                 <option value="1" ' . ($row->status == 1 ? 'selected' : '') . '>Active</option>
                                 <option value="2" ' . ($row->status == 2 ? 'selected' : '') . '>Inactive</option>
                             </select>';
-                })
+                })                
                 ->addColumn('created_at', function ($row) {
                     return date('dS F Y', strtotime($row->created_at));
                 })
+                ->addColumn('created_by', function ($row) {
+                    return !empty($row->createdBy->name) ? $row->createdBy->name : '--------';
+                })
                 ->addColumn('action', function ($row) {
-                    return (!in_array($row->id, [1, 2, 3])) ? '<button class="text-info btn btn-outline-secondary edit-role" data-id="' . $row->id . '" title="Edit">
+                    return '<button class="text-info btn btn-outline-secondary edit-device" data-id="' . $row->id . '" title="Edit">
                                 <i class="icon-pencil7"></i>
                             </button>
                             &nbsp;&nbsp;
-                            <button class="text-danger btn btn-outline-secondary delete-role" data-id="' . $row->id . '" title="Delete">
-                                <i class="icon-trash"></i>
-                            </button>' : '<button class="text-info btn btn-outline-secondary" disabled title="Edit">
-                                <i class="icon-pencil7"></i>
-                            </button>
-                            &nbsp;&nbsp;
-                            <button class="text-danger btn btn-outline-secondary" disabled title="Delete">
+                            <button class="text-danger btn btn-outline-secondary delete-device" data-id="' . $row->id . '" title="Delete">
                                 <i class="icon-trash"></i>
                             </button>';
                 })
-                ->rawColumns(['serial_no', 'status', 'created_at', 'action'])
+                ->rawColumns(['serial_no', 'user', 'shift', 'status', 'created_at', 'created_by', 'action'])
                 ->make(true);
         }
 
-        $title = "Role | " . ucwords(str_replace("_", " ", config('app.name', 'Laravel')));
+        $title = "Device | " . ucwords(str_replace("_", " ", config('app.name', 'Laravel')));
         $breadcrumbs = [
-			route('roles.index') => 'Role',
+			route('devices.index') => 'Device',
 			'javascript: void(0)' => 'List',
 		];
-        return view('superadmin.role.index', compact('title', 'breadcrumbs'));
+        return view('common.device.index', compact('title', 'breadcrumbs'));
     }
 
     /**
@@ -80,10 +87,11 @@ class RoleController extends Controller
      */
     public function create()
     {
-        $modal_title = "Add Role";
+        $modal_title = "Add Device";
+        $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("superadmin.role.add_and_edit", compact('modal_title'))->render(),
+            'html' => View::make("common.device.add_and_edit", compact('modal_title', 'user'))->render(),
         ]);
     }
 
@@ -97,7 +105,9 @@ class RoleController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string', 'min:3', 'max:50'],
+                'name' => ['required', 'string'],
+                'user_id' => ['required', 'numeric'],
+                'device_id' => ['required', 'string', 'unique:devices,device_id'],
             ]);
     
             if ($validator->fails()) {
@@ -108,21 +118,33 @@ class RoleController extends Controller
                 );
                 return response()->json($response);
             }
+
+            $shiftLength = count($request->shift_name);
+            $shiftArray = [];
+            for ($i=0; $i < $shiftLength; $i++) { 
+                $shiftArray[] = [
+                    'shift_name' => $request->shift_name[$i],
+                    'shift_start' => $request->shift_start[$i],
+                    'shift_end' => $request->shift_end[$i],
+                ];
+            }
     
             $data = $validator->validated();
+            $data['shift'] = json_encode($shiftArray);
             $data['status'] = 1;
-            $role = Role::create($data);
-            if(!$role) {
+            $data['created_by'] = Auth::user()->id;
+            $device = Device::create($data);
+            if(!$device) {
                 $response = array(
                     'statusCode' => 0,
                     'message' => "Something went wrong!",
                 );
                 return response()->json($response);
-            } 
-           
+            }
+
             $response = array(
                 'statusCode' => 1,
-                'message' => "Role created successfully!",
+                'message' => "Device created successfully!",
             );
             return response()->json($response);
         } catch (Exception $error) {
@@ -143,8 +165,8 @@ class RoleController extends Controller
     public function show($id, Request $request)
     {
         try {
-            // Find the role to update
-            $role = Role::findOrFail($id);
+            // Find the device to update
+            $device = Device::findOrFail($id);
 
             // Validation rules
             $validator = Validator::make($request->all(), [
@@ -159,15 +181,16 @@ class RoleController extends Controller
                 ]);
             }
 
-            // Update the role with validated data
+            // Update the device with validated data
             $data = $validator->validated();
-
-            // Update role data
-            $role->update($data);
+            $data['updated_by'] = Auth::user()->id;
+            
+            // Update device data
+            $device->update($data);
 
             return response()->json([
                 'statusCode' => 1,
-                'message' => 'Role status updated successfully!',
+                'message' => 'Device status updated successfully!',
             ]);
         } catch (Exception $error) {
             $response = array(
@@ -186,18 +209,19 @@ class RoleController extends Controller
      */
     public function edit($id)
     {
-        $modal_title = "Update Role";
-        $role = Role::where('id', $id)->first();
-        if (!$role) {
+        $modal_title = "Update Device";
+        $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
+        $device = Device::where('id', $id)->first();
+        if (!$device) {
             return response()->json([
                 'statusCode' => 0,
-                'message' => 'Role not found!',
+                'message' => 'Device not found!',
             ]);
         }
 
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("superadmin.role.add_and_edit", compact('modal_title', 'role'))->render(),
+            'html' => View::make("common.device.add_and_edit", compact('modal_title', 'device', 'user'))->render(),
         ]);
     }
 
@@ -211,31 +235,44 @@ class RoleController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            // Find the role to update
-            $role = Role::findOrFail($id);
+            // Find the device to update
+            $device = Device::findOrFail($id);
 
             // Validation rules
             $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string', 'min:3', 'max:50'],               
+                'name' => ['required', 'string'],
+                'user_id' => ['required', 'numeric'],
+                'device_id' => ['required', 'string', 'unique:devices,device_id,' . $device->id],
             ]);
-
-            // Check for validation failure
+    
             if ($validator->fails()) {
-                return response()->json([
+                $error = $validator->errors()->first();
+                $response = array(
                     'statusCode' => 0,
-                    'message' => $validator->errors()->first(),
-                ]);
+                    'message' => $error,
+                );
+                return response()->json($response);
             }
 
-            // Update the role with validated data
-            $data = $validator->validated();
+            $shiftLength = count($request->shift_name);
+            $shiftArray = [];
+            for ($i=0; $i < $shiftLength; $i++) { 
+                $shiftArray[] = [
+                    'shift_name' => $request->shift_name[$i],
+                    'shift_start' => $request->shift_start[$i],
+                    'shift_end' => $request->shift_end[$i],
+                ];
+            }
 
-            // Update role data
-            $role->update($data);
-          
+            $data = $validator->validated();
+            $data['shift'] = json_encode($shiftArray);
+            $data['updated_by'] = Auth::user()->id;
+
+            // Update device data
+            $device->update($data);
             return response()->json([
                 'statusCode' => 1,
-                'message' => 'Role updated successfully!',
+                'message' => 'Device updated successfully!',
             ]);
         } catch (Exception $error) {
             $response = array(
@@ -254,24 +291,24 @@ class RoleController extends Controller
      */
     public function destroy($id)
     {
-        $role = Role::find($id);
-        if (!$role) {
+        $device = Device::find($id);
+        if (!$device) {
             return response()->json([
                 'statusCode' => 0,
-                'message' => 'Role not found!',
+                'message' => 'Device not found!',
             ]);
         }
 
-        // Attempt to delete the role
-        if ($role->delete()) {
+        // Attempt to delete the device
+        if ($device->delete()) {
             return response()->json([
                 'statusCode' => 1,
-                'message' => 'Role deleted successfully!',
+                'message' => 'Device deleted successfully!',
             ]);
         } else {
             return response()->json([
                 'statusCode' => 0,
-                'message' => 'Error occurred while deleting the role.',
+                'message' => 'Error occurred while deleting the device.',
             ]);
         }
     }

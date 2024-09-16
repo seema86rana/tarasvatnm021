@@ -92,7 +92,6 @@
     <script type="text/javascript" src="{{ asset('assets/admin/js/plugins/forms/styling/uniform.min.js') }}"></script>
     <script type="text/javascript" src="{{ asset('assets/admin/js/plugins/notifications/jgrowl.min.js') }}"></script>
 
-	
 	@section('footer_js')
 	@show
 

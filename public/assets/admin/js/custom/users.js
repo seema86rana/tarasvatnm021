@@ -31,12 +31,13 @@ $(document).ready(function () {
             },
             columns: [
                 { data: 'serial_no', name: 'serial_no', orderable: false, searchable: false, width: '5%' },
-                { data: 'name', name: 'name', width: '15%' },
+                { data: 'name', name: 'name', width: '10%' },
                 { data: 'role', name: 'role', width: '5%' },
                 { data: 'phone_number', name: 'phone_number', width: '10%' },
-                { data: 'email', name: 'email', width: '20%' },
+                { data: 'email', name: 'email', width: '15%' },
                 { data: 'status', name: 'status', searchable: false, orderable: false, width: '10%' },
-                { data: 'created_at', name: 'created_at', width: '15%' },
+                { data: 'created_at', name: 'created_at', width: '10%' },
+                { data: 'created_by', name: 'created_by', width: '10%' },
                 { data: 'verified_at', name: 'verified_at', width: '10%' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, width: '10%' }
             ]
