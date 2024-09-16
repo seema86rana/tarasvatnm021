@@ -9,12 +9,17 @@ if (!function_exists('menuAccesspermission')) {
         try {
             $name = request()->route()->getName();
             $param = explode(".", $name)[0] ?? '';
-            $user = user::with('role')->where('id', Auth::user()->role_id)->first();
+            // echo $param."----";die;
+            $defaultPermission = ['profile'];
+            if (Auth::user()->role_id == 0) {
+                return true;
+            }
+            $user = user::with('role')->where('role_id', Auth::user()->role_id)->first();
             if(!$user->role->permission) {
                 return false;
             }
             $permission = json_decode($user->role->permission, true);
-            if(in_array($param, $permission)) {
+            if(in_array($param, $permission) || in_array($param, $defaultPermission)) {
                 return true;
             }
             return false;
@@ -58,7 +63,7 @@ if (!function_exists('userMenuList')) {
                             ->get();
             }
             else {
-                $user = user::with('role')->where('id', Auth::user()->role_id)->first();
+                $user = user::with('role')->where('role_id', Auth::user()->role_id)->first();
                 if(!$user->role->permission) {
                     return false;
                 }

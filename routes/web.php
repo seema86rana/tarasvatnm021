@@ -35,21 +35,21 @@ Route::group(['namespace' => '', 'prefix' => 'common', 'middleware' => ['auth', 
     Route::resource('dashboard', CommonDashboardController::class);
 
     Route::resource('profile', CommonProfileController::class);
-    Route::post('profile/{id}', [CommonProfileController::class, 'update']);
-    Route::post('password/{id}', [CommonProfileController::class, 'password'])->name('password');
+    Route::post('profile/{id}', [CommonProfileController::class, 'update'])->name('profile.update');
+    Route::post('profile/password/{id}', [CommonProfileController::class, 'password'])->name('profile.password');
 
     Route::resource('users', CommonUserController::class);
-    Route::post('users/{id}', [CommonUserController::class, 'update']);
+    Route::post('users/{id}', [CommonUserController::class, 'update'])->name('users.update');;
 
     Route::resource('roles', CommonRoleontroller::class);
-    Route::post('roles/{id}', [CommonRoleontroller::class, 'update']);
+    Route::post('roles/{id}', [CommonRoleontroller::class, 'update'])->name('roles.update');;
 
     Route::resource('devices', CommonDeviceController::class);
-    Route::post('devices/{id}', [CommonDeviceController::class, 'update']);
+    Route::post('devices/{id}', [CommonDeviceController::class, 'update'])->name('devices.update');;
 
     Route::resource('nodes', CommonNodeController::class);
-    Route::post('nodes/{id}', [CommonNodeController::class, 'update']);
+    Route::post('nodes/{id}', [CommonNodeController::class, 'update'])->name('nodes.update');;
 
     Route::resource('machines', CommonMachineController::class);
-    Route::post('machines/{id}', [CommonMachineController::class, 'update']);
+    Route::post('machines/{id}', [CommonMachineController::class, 'update'])->name('machines.update');;
 });

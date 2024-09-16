@@ -28,7 +28,7 @@ class UsersTableSeeder extends Seeder
             ],
             [
                 'name' => 'Admin User',
-                'role_id' => 2, // Admin role
+                'role_id' => 1, // Admin role
                 'phone_number' => '1234567890',
                 'email' => 'admin@yopmail.com',
                 'email_verified_at' => Carbon::now(),
@@ -39,7 +39,7 @@ class UsersTableSeeder extends Seeder
             ],
             [
                 'name' => 'User User',
-                'role_id' => 3, // Regular user role
+                'role_id' => 2, // Regular user role
                 'phone_number' => '0987654321',
                 'email' => 'user@yopmail.com',
                 'email_verified_at' => Carbon::now(),

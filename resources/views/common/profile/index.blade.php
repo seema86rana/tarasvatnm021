@@ -127,7 +127,7 @@
 			<h5 class="panel-title">Update Password</h5>
 		</div>
 		<div class="panel-body">
-			<form action="{{ route('password', Auth::user()->id) }}" method="post" autocomplete="off">
+			<form action="{{ route('profile.password', Auth::user()->id) }}" method="post" autocomplete="off">
 				@csrf
 				<div class="form-group">
 					<div class="row">
