@@ -61,7 +61,6 @@ $(document).ready(function () {
             type: 'GET',
             dataType: 'json',
             beforeSend: function () {
-                loaderToggle(1);
             },
             complete: function (response) {
                 let result = response.responseJSON;
@@ -78,15 +77,17 @@ $(document).ready(function () {
         });
     });
 
-    $(document).on("click", "#save-user", function(e) {
+    $(document).on("click", "#save-user", async function(e) {
         e.preventDefault();
 
         if(!validation("add-user-form")) {
             return false;
         }
+        let thisMain = $(this);
         // let formData = new FormData(document.getElementById("add-user-form"));
         let formData = new FormData($("#add-user-form").get(0));
-
+        thisMain.prop('disabled', true);
+        await loaderToggle(1);
         $.ajax({
             url: userUrl,
             type: 'POST',
@@ -97,7 +98,6 @@ $(document).ready(function () {
             dataType: 'json',
             data: formData,
             beforeSubmit: function () {
-                loaderToggle(1);
             },
             complete: function (data) {
 
@@ -110,9 +110,11 @@ $(document).ready(function () {
                     jQuery('.load-main').addClass('hidden');
                     toast_error(data.message, 'Error');
                 }
+                thisMain.prop('disabled', false);
                 loaderToggle(0);
             },
             error: function (error) {
+                thisMain.prop('disabled', false);
                 loaderToggle(0);
             }
         });
@@ -123,12 +125,12 @@ $(document).ready(function () {
         let id = $(this).attr('data-id');
         if (id) {
             let edit_callback = function () {
+                loaderToggle(1);
                 $.ajax({
                     url: userUrl + '/' + id + '/edit',
                     type: 'GET',
                     dataType: 'json',
                     beforeSend: function () {
-                        loaderToggle(1);
                     },
                     complete: function (response) {
                         let result = response.responseJSON;
@@ -143,7 +145,6 @@ $(document).ready(function () {
                         toast_error();
                     }
                 });
-                loaderToggle();
             };
             swal_confirmation(edit_callback, 'Are you sure?', 'You won\'t be able to revert this!', 'Yes, edit it!');
         } else {
@@ -151,16 +152,18 @@ $(document).ready(function () {
         }
     });
 
-    $(document).on("click", "#update-user", function(e) {
+    $(document).on("click", "#update-user", async function(e) {
         e.preventDefault();
 
         if(!validation("edit-user-form")) {
             return false;
         }
-        let id = $(this).attr('data-id');
+        let thisMain = $(this);
+        let id = thisMain.attr('data-id');
         let formData = new FormData(document.getElementById("edit-user-form"));
         // let formData = new FormData($("#edit-user-form").get(0));
-
+        thisMain.prop('disabled', true);
+        await loaderToggle(1);
         $.ajax({
             url: userUrl + '/' + id,
             type: 'POST',
@@ -171,7 +174,6 @@ $(document).ready(function () {
             dataType: 'json',
             data: formData,
             beforeSubmit: function () {
-                loaderToggle(1);
             },
             complete: function (data) {
 
@@ -184,9 +186,11 @@ $(document).ready(function () {
                     jQuery('.load-main').addClass('hidden');
                     toast_error(data.message, 'Error');
                 }
+                thisMain.prop('disabled', false);
                 loaderToggle(0);
             },
             error: function (error) {
+                thisMain.prop('disabled', false);
                 loaderToggle(0);
             }
         });
@@ -197,12 +201,12 @@ $(document).ready(function () {
         let id = $(this).attr('data-id');
         if (id) {
             let delete_callback = function () {
+                loaderToggle(1);
                 $.ajax({
                     url: userUrl + '/' + id,
                     type: 'DELETE',
                     dataType: 'json',
                     beforeSend: function () {
-                        loaderToggle(1);
                     },
                     complete: function (response) {
                         let result = response.responseJSON;
@@ -217,7 +221,7 @@ $(document).ready(function () {
                         toast_error();
                     }
                 });
-                loaderToggle();
+                loaderToggle(0);
             };
             swal_confirmation(delete_callback);
         } else {
@@ -230,13 +234,13 @@ $(document).ready(function () {
         let id = $(this).attr('data-id');
         let status = $(this).val();
         if (id) {
+            loaderToggle(1);
             $.ajax({
                 url: userUrl + '/' + id,
                 type: 'GET',
                 data: {status},
                 dataType: 'json',
                 beforeSend: function () {
-                    loaderToggle(1);
                 },
                 complete: function (response) {
                     let result = response.responseJSON;
@@ -251,7 +255,7 @@ $(document).ready(function () {
                     toast_error();
                 }
             });
-            loaderToggle();
+            loaderToggle(0);
         } else {
             toast_error();
         }
