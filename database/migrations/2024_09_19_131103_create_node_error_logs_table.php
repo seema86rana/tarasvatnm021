@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDeviceTable extends Migration
+class CreateNodeErrorLogsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,12 @@ class CreateDeviceTable extends Migration
      */
     public function up()
     {
-        Schema::create('devices', function (Blueprint $table) {
+        Schema::create('node_error_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
             $table->unsignedBigInteger('user_id');
-            $table->text('shift');
-            $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
+            $table->unsignedBigInteger('device_id');
+            $table->unsignedBigInteger('node_id');
+            $table->integer('status')->comment('1->Not found, 2->Duplicate');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->timestamps();
@@ -32,6 +32,6 @@ class CreateDeviceTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('devices');
+        Schema::dropIfExists('node_error_logs');
     }
 }

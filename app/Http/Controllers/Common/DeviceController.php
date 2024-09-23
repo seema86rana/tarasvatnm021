@@ -105,9 +105,8 @@ class DeviceController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string'],
+                'name' => ['required', 'string', 'unique:devices,name'],
                 'user_id' => ['required', 'numeric'],
-                'device_id' => ['required', 'string', 'unique:devices,device_id'],
             ]);
     
             if ($validator->fails()) {
@@ -240,9 +239,8 @@ class DeviceController extends Controller
 
             // Validation rules
             $validator = Validator::make($request->all(), [
-                'name' => ['required', 'string'],
+                'name' => ['required', 'string', 'unique:devices,name,' . $device->id],
                 'user_id' => ['required', 'numeric'],
-                'device_id' => ['required', 'string', 'unique:devices,device_id,' . $device->id],
             ]);
     
             if ($validator->fails()) {
