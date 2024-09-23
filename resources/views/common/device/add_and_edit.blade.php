@@ -63,14 +63,6 @@
         </div>
         <div class="form-group">
             <div class="row">
-                <div class="col-md-12">
-                    <label class="col-form-label label_text text-lg-right" for="device_id">Device ID <small class="req text-danger">*</small></label>
-                    <input type="text" name="device_id" class="form-control device_id" id="device_id" placeholder="Enter device id" tabindex="3" value="{{ isset($device) ? $device->device_id : old('device_id') }}" required autofocus />
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="row">
                 <div class="col-md-12 text-center">
                     SHIFT SECTION
                     <hr />

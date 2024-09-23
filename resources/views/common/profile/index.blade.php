@@ -32,7 +32,7 @@
 			</div>
 		</div>	
 		<div class="panel-body">
-			<form action="{{ route('profile.update', Auth::user()->id) }}" method="post" autocomplete="off" enctype="multipart/form-data">
+			<form action="{{ route('profile.updates', Auth::user()->id) }}" method="post" autocomplete="off" enctype="multipart/form-data">
 				@csrf
 				@if ( isset( $user ) )
 					<input type="hidden" name="id" id="user_id" value="{{ $user->id }}" />

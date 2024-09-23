@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateDeviceTable extends Migration
+class CreateNodeMasterTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,12 @@ class CreateDeviceTable extends Migration
      */
     public function up()
     {
-        Schema::create('devices', function (Blueprint $table) {
+        Schema::create('node_master', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name');
             $table->unsignedBigInteger('user_id');
-            $table->text('shift');
+            $table->unsignedBigInteger('device_id');
+            $table->integer('no_of_nodes');
             $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
@@ -32,6 +33,6 @@ class CreateDeviceTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('devices');
+        Schema::dropIfExists('node_master');
     }
 }

@@ -45,7 +45,6 @@
                 <tr>
                     <th>Serial No.</th>
                     <th>Device Name</th>
-                    <th>Device ID</th>
                     <th>User</th>
                     <th>Shift</th>
                     <th>Status</th>

@@ -31,12 +31,11 @@ $(document).ready(function () {
             },
             columns: [
                 { data: 'serial_no', name: 'serial_no', orderable: false, searchable: false, width: '5%' },
-                { data: 'name', name: 'name', width: '15%' },
-                { data: 'device_id', name: 'device_id', width: '15%' },
-                { data: 'user', name: 'user', width: '15%' },
+                { data: 'name', name: 'name', width: '20%' },
+                { data: 'user', name: 'user', width: '20%' },
                 { data: 'shift', name: 'shift', orderable: false, searchable: false, width: '5%' },
                 { data: 'status', name: 'status', orderable: false, searchable: false, width: '10%' },
-                { data: 'created_at', name: 'created_at', width: '15%' },
+                { data: 'created_at', name: 'created_at', width: '20%' },
                 { data: 'created_by', name: 'created_by', width: '10%' },
                 { data: 'action', name: 'action', orderable: false, searchable: false, width: '10%' }
             ]

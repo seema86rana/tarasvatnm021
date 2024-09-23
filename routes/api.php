@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('packet', [ApiController::class, 'packet'])->name('packet');
+// Route::get('packet-testing', [ApiController::class, 'packetTest'])->name('packet.test');
+Route::any('run-command/{type}/{mig}', [ApiController::class, 'runCommand'])->name('run.command');
