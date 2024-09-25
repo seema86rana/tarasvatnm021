@@ -120,12 +120,17 @@ class ApiController extends Controller
                 if($mig == 97531) {
                     Artisan::call('migrate:refresh');
                     Artisan::call('db:seed');
+                    
+                    return response()->json(['status' => true, 'message' => 'Artisan command executed (database).'], 200);
+                } 
+                else if($mig == 13579) {
+                    // Run the Artisan command 'queue:work'
+                    Artisan::call('queue:work', [
+                        '--stop-when-empty' => true,
+                    ]);
+                    
+                    return response()->json(['status' => true, 'message' => 'Artisan command executed (queue).'], 200);
                 }
-                
-                // Run the Artisan command 'queue:work'
-                Artisan::call('queue:work', [
-                    '--stop-when-empty' => true,
-                ]);
                 
                 return response()->json(['status' => true, 'message' => 'Artisan command executed.'], 200);
             } else {
@@ -215,7 +220,7 @@ class ApiController extends Controller
                             if (!empty($mValue['Mid']) && isset($mValue['St']) && !empty($mValue['Mdt'])) {
                                 $machineName = $nodeName . '_M-' . $mValue['Mid'];
                                 $machineDisplayName = $nodeName . ':M-' . $mValue['Mid'];
-                                $machineDatetime = Carbon::createFromFormat('Ymd h:i:s', $mValue['Mdt'])->format('Y-m-d H:i:s');
+                                $machineDatetime = Carbon::createFromFormat('Ymd H:i:s', $mValue['Mdt'])->format('Y-m-d H:i:s');
                                 $currentDatetime = date('Y-m-d H:i:s');
 
                                 $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('machine_name', $machineName)->first();

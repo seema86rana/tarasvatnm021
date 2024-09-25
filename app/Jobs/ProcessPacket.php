@@ -96,7 +96,7 @@ class ProcessPacket implements ShouldQueue
                         if (!empty($mValue['Mid']) && isset($mValue['St']) && !empty($mValue['Mdt'])) {
                             $machineName = $nodeName . '_M-' . $mValue['Mid'];
                             $machineDisplayName = $nodeName . ':M-' . $mValue['Mid'];
-                            $machineDatetime = Carbon::createFromFormat('Ymd h:i:s', $mValue['Mdt'])->format('Y-m-d H:i:s');
+                            $machineDatetime = Carbon::createFromFormat('Ymd H:i:s', $mValue['Mdt'])->format('Y-m-d H:i:s');
                             $currentDatetime = date('Y-m-d H:i:s');
 
                             $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('machine_name', $machineName)->first();
