@@ -8,6 +8,7 @@ use App\Http\Controllers\Common\ProfileController as CommonProfileController;
 use App\Http\Controllers\Common\DeviceController as CommonDeviceController;
 use App\Http\Controllers\Common\NodeController as CommonNodeController;
 use App\Http\Controllers\Common\MachineController as CommonMachineController;
+use App\Http\Controllers\FrontEnd\BirdViewController as FrontEndBirdViewController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -21,18 +22,24 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
-Route::get('/', function () {
-    return redirect()->route('dashboard.index');
-});
+Route::get('/', [FrontEndBirdViewController::class, 'index']);
+// Route::get('/', function () {
+//     return redirect()->route('dashboard.index');
+// });
+
 Route::get('/dashboard', function () {
     return redirect()->route('dashboard.index');
 });
+
 // auth
 Auth::routes(['verify' => true]);
+
 // common
 Route::group(['namespace' => '', 'prefix' => 'common', 'middleware' => ['auth', 'verified', 'permission']], function () {
 
     Route::resource('dashboard', CommonDashboardController::class);
+
+    Route::resource('birdview', FrontEndBirdViewController::class);
 
     Route::resource('profile', CommonProfileController::class);
     Route::post('profile/{id}', [CommonProfileController::class, 'update'])->name('profile.updates');

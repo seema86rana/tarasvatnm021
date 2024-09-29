@@ -21,7 +21,7 @@ class MachineStatus extends Model
         'total_pick',
         'avg_total_pick',
         'total_pick_shift_wise',
-        'avg_efficiency',
+        'efficiency',
         'no_of_stoppage',
         'last_stop',
         'last_running',
@@ -34,4 +34,8 @@ class MachineStatus extends Model
         'created_by',
         'updated_by',
     ];
+    
+    public function machineMaster() {
+        return $this->hasOne(MachineMaster::class, 'id', 'machine_id');
+    }
 }

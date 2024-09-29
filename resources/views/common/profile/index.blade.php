@@ -1,4 +1,4 @@
-@extends('layout.main')
+@extends('layouts.main')
 
 @section('title')
 {{ $title }}
@@ -16,7 +16,7 @@
     </div>
 
     @if ( isset( $breadcrumbs ) )
-    @include('layout.include.breadcrumb', ['breadcrumbs' => $breadcrumbs])
+    @include('layouts.include.breadcrumb', ['breadcrumbs' => $breadcrumbs])
     @endif
 </div>
 @endsection
@@ -28,7 +28,7 @@
 		</div>
 		<div class="row px-4 removable-flash-messages">
 			<div class="col-md-12">
-				@include('layout.include.message')
+				@include('layouts.include.message')
 			</div>
 		</div>	
 		<div class="panel-body">

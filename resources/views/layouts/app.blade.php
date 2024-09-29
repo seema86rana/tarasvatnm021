@@ -8,6 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ ucwords(str_replace("_", " ", config('app.name', 'Laravel'))) }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico')}}">
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
