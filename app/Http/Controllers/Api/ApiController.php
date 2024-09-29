@@ -21,6 +21,11 @@ use Illuminate\Support\Facades\Artisan;
 
 class ApiController extends Controller
 {
+    public function __construct()
+    {
+        date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
+    }
+
     public function packet(Request $request)
     {
         try {
@@ -183,7 +188,6 @@ class ApiController extends Controller
             // -----------------------------------------------------------------------------------------------------------------------------------------
             $deviceId = $reqData['Did'];
             $totalNode = $reqData['Tnd'];
-            date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
             $device = Device::where('name', $deviceId)->where('status', 1)->first();
             $nodeErrorLogsArray = [];
             $machineLogsArray = [];
@@ -191,7 +195,7 @@ class ApiController extends Controller
             for ($i = 0; $i < $totalNode; $i++) {
                 if (isset($reqData['Nd'][$i])) {
                     $nodeData = $reqData['Nd'][$i];
-                    $nodeName = 'N-' . ($nodeData['Nid'] ?? md5(time().rand(11111, 99999)));
+                    $nodeName = 'N' . ($nodeData['Nid'] ?? md5(time().rand(11111, 99999)));
 
                     $nodeMasterTable = NodeMaster::where('device_id', $device->id)->where('name', $nodeName)->first();
                     if ($nodeMasterTable) {
@@ -218,8 +222,8 @@ class ApiController extends Controller
                         $machineData = $nodeData['Md'];
                         foreach ($machineData as $mKey => $mValue) {
                             if (!empty($mValue['Mid']) && isset($mValue['St']) && !empty($mValue['Mdt'])) {
-                                $machineName = $nodeName . '_M-' . $mValue['Mid'];
-                                $machineDisplayName = $nodeName . ':M-' . $mValue['Mid'];
+                                $machineName = $nodeName . '-M' . $mValue['Mid'];
+                                $machineDisplayName = $nodeName . ':M' . $mValue['Mid'];
                                 $machineDatetime = Carbon::createFromFormat('Ymd H:i:s', $mValue['Mdt'])->format('Y-m-d H:i:s');
                                 $currentDatetime = date('Y-m-d H:i:s');
 
@@ -257,11 +261,11 @@ class ApiController extends Controller
                                 $shiftStart = $machineDate . ' 00:00:00';
                                 $shiftEnd = $machineDate . ' 23:59:59';
                                 foreach ($deviceShift as $dsKey => $dsValue) {
-                                    // $shiftStart = date("y-m-d H:i:s", strtotime(($machineDate . " " . $dsValue['shift_start'])));
-                                    $shiftStart = date("y-m-d H:i:s", strtotime(($currentDate . " " . $dsValue['shift_start'])));
-                                    // $shiftEnd = date("y-m-d H:i:s", strtotime(($machineDate . " " . $dsValue['shift_end'])));
-                                    $shiftEnd = date("y-m-d H:i:s", strtotime(($currentDate . " " . $dsValue['shift_end'])));
-                                    if (strtotime($machineDatetime) >= strtotime($shiftStart) && strtotime($machineDatetime) <= strtotime($shiftEnd)) {
+                                    // $shiftStart = date("Y-m-d H:i:s", strtotime(($machineDate . " " . $dsValue['shift_start'])));
+                                    $shiftStart = date("Y-m-d H:i:s", strtotime(($currentDate . " " . $dsValue['shift_start'])));
+                                    // $shiftEnd = date("Y-m-d H:i:s", strtotime(($machineDate . " " . $dsValue['shift_end'])));
+                                    $shiftEnd = date("Y-m-d H:i:s", strtotime(($currentDate . " " . $dsValue['shift_end'])));
+                                    if (strtotime($machineDatetime) >= strtotime($shiftStart) && strtotime($machineDatetime) < strtotime($shiftEnd)) {
                                         $shiftName = $dsValue['shift_name'];
                                         break;
                                     }
@@ -275,18 +279,8 @@ class ApiController extends Controller
 
                                 $machineLogsSpeed = $machineLogsTable->get()->pluck('speed');
                                 $machineLogsPick = $machineLogsTable->get()->pluck('pick');
-
-                                $pickShiftWise = $machineLogsTable->whereBetween('machine_datetime', [$shiftStart, $shiftEnd])->pluck('pick');
-                                $totalPick = array_sum(($pickShiftWise ? $pickShiftWise->toArray() : []));
-                                if (strtotime($machineDatetime) >= strtotime($shiftStart) && strtotime($machineDatetime) <= strtotime($shiftEnd)) {
-                                    $totalPick += (int)$dsValue['shift_name'];
-                                }
-                                $machineLogsMode = $machineLogsTable->where('mode', 0)->get()->pluck('mode');
-                                $stoppage = array_sum($machineLogsMode ? $machineLogsMode->toArray() : []);
-                                if ($mValue['St'] == 0) {
-                                    $stoppage += 1;
-                                }
                                 $machineLogsLastRec = $machineLogsTable->orderBy('id', 'DESC')->first();
+
                                 $lastRecDatetime = date('Y-m-d H:i:s');
                                 if($machineLogsLastRec) {
                                     $lastRecDatetime = $machineLogsLastRec->current_datetime;
@@ -358,11 +352,9 @@ class ApiController extends Controller
                                     'machine_id' => $machineMasterTable->id,
                                     'speed' => (int)$mValue['Spd'],
                                     'avg_speed' => round(((array_sum($machineLogsSpeed ? $machineLogsSpeed->toArray() : []) + (int)$mValue['Spd']) / (count($machineLogsSpeed ? $machineLogsSpeed->toArray() : []) + 1)), 2),
-                                    'total_pick' => (int)$mValue['Tp'],
+                                    'total_pick' => (array_sum($machineLogsPick ? $machineLogsPick->toArray() : []) + (int)$mValue['Tp']),
                                     'avg_total_pick' => round(((array_sum($machineLogsPick ? $machineLogsPick->toArray() : []) + (int)$mValue['Tp']) / (count($machineLogsPick ? $machineLogsPick->toArray() : []) + 1)), 2),
-                                    'total_pick_shift_wise' => $totalPick,
-                                    'avg_efficiency' => $effiency,
-                                    'no_of_stoppage' => $stoppage,
+                                    'efficiency' => $effiency,
                                     'last_stop' => $diffMinLastStop,
                                     'last_running' => $diffMinLastRunning,
                                     'total_running' => $diffMinTotalRunning,
@@ -374,8 +366,18 @@ class ApiController extends Controller
                                 ];
 
                                 if ($machineStatusTable) {
+                                    $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] + $machineStatusTable->total_pick_shift_wise;
+                                    $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
+                                    if($mValue['St'] == 0) {
+                                        $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
+                                    }
                                     $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
                                 } else {
+                                    $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'];
+                                    $machineStatusData['no_of_stoppage'] = 0;
+                                    if($mValue['St'] == 0) {
+                                        $machineStatusData['no_of_stoppage'] = 1;
+                                    }
                                     $insertMachineStatus = MachineStatus::create($machineStatusData);
                                 }
                             }
@@ -388,7 +390,7 @@ class ApiController extends Controller
                         continue;
                     }
                     else {
-                        $nodeName = 'N-' . md5(time().rand(11111, 99999));
+                        $nodeName = 'N' . md5(time().rand(11111, 99999));
                         
                         $nodeMasterData = [
                             'name' => $nodeName,

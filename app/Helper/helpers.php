@@ -9,8 +9,7 @@ if (!function_exists('menuAccesspermission')) {
         try {
             $name = request()->route()->getName();
             $param = explode(".", $name)[0] ?? '';
-            // echo $param."----";die;
-            $defaultPermission = ['profile'];
+            $defaultPermission = ['profile', 'birdview'];
             if (Auth::user()->role_id == 0) {
                 return true;
             }
