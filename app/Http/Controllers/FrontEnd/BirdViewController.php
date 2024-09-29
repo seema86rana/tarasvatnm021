@@ -63,9 +63,9 @@ class BirdViewController extends Controller
             if (!$deviceData) {
                 return response()->json(['status' => false, 'message' => 'Device not found!'], 201);
             }
-            $shiftName = '';
-            $shiftStart = '';
-            $shiftEnd = '';
+            $shiftName = 'Shift D';
+            $shiftStart = '00:00 AM';
+            $shiftEnd = '00:00 PM';
             $getShiftStart = $datetime;
             $getShiftEnd = $datetime;
             $dId = [];
