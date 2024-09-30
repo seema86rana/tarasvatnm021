@@ -35,7 +35,7 @@ Route::get('/dashboard', function () {
 Auth::routes(['verify' => true]);
 
 // common
-Route::group(['namespace' => '', 'prefix' => 'common', 'middleware' => ['auth', 'verified', 'permission']], function () {
+Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth', 'verified', 'permission']], function () {
 
     Route::resource('dashboard', CommonDashboardController::class);
 
@@ -53,10 +53,4 @@ Route::group(['namespace' => '', 'prefix' => 'common', 'middleware' => ['auth', 
 
     Route::resource('devices', CommonDeviceController::class);
     Route::post('devices/{id}', [CommonDeviceController::class, 'update'])->name('devices.updates');;
-
-    Route::resource('nodes', CommonNodeController::class);
-    Route::post('nodes/{id}', [CommonNodeController::class, 'update'])->name('nodes.updates');;
-
-    Route::resource('machines', CommonMachineController::class);
-    Route::post('machines/{id}', [CommonMachineController::class, 'update'])->name('machines.updates');;
 });

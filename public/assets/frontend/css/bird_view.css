@@ -184,20 +184,20 @@ ul{
     margin: 0 0 0.3vw;
 }
 .machine_wrapper{
-    padding: 2vw;
+    padding: 1vw 2vw 2vw;
 }
 
 .machine_inner_wrapper {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.6vw;
+    gap: 11px;
 }
 .machine_box {
     padding: 0.9vh 0.5vw;
-    padding-right: 2vw;
+    /* padding-right: 2vw; */
     border-radius: 0.4vw;
-    width: fit-content;
+    width: calc(100% / 16 - 11px);
     white-space: nowrap;
     cursor: pointer;
 }

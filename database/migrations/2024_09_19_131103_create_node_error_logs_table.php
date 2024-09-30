@@ -21,7 +21,9 @@ class CreateNodeErrorLogsTable extends Migration
             $table->integer('status')->comment('1->Not found, 2->Duplicate');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
-            $table->timestamps();
+            // $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

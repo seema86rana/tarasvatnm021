@@ -15,6 +15,11 @@ use Illuminate\Http\Request;
 
 class BirdViewController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
     public function __construct()
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
@@ -28,6 +33,9 @@ class BirdViewController extends Controller
      */
     public function index()
     {
+        if (Auth::user()->role_id == 0) {
+            return redirect()->route('dashboard.index');
+        }
         $title = "Bird View";
         return view('frontend.birdview.index', compact('title'));
     }
@@ -68,6 +76,8 @@ class BirdViewController extends Controller
             $shiftEnd = '00:00 PM';
             $getShiftStart = $datetime;
             $getShiftEnd = $datetime;
+            $getShiftStartArray = [];
+            $getShiftEndArray = [];
             $dId = [];
             foreach ($deviceData as $dKey => $dValue) {
                 $deviceShift = json_decode($dValue->shift, true);
@@ -79,6 +89,8 @@ class BirdViewController extends Controller
                         $shiftStart = date('h:i A', strtotime($getShiftStart));
                         $shiftEnd = date('h:i A', strtotime($getShiftEnd));
                         $dId[] = $dValue->id;
+                        $getShiftStartArray[] = $getShiftStart;
+                        $getShiftEndArray[] = $getShiftEnd;
                         break;
                     }
                 }
@@ -93,8 +105,8 @@ class BirdViewController extends Controller
             $machineData = MachineStatus::with('machineMaster')
                             ->whereIn('device_id', $dId)
                             ->whereDate('machine_date', date('Y-m-d'))
-                            ->where('shift_start_datetime', $getShiftStart)
-                            ->where('shift_end_datetime', $getShiftEnd)
+                            ->whereIn('shift_start_datetime', $getShiftStartArray)
+                            ->whereIn('shift_end_datetime', $getShiftEndArray)
                             ->where('user_id', $authId)->get();
 
             // echo "<pre>";

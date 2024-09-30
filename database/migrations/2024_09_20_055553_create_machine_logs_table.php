@@ -20,6 +20,7 @@ class CreateMachineLogsTable extends Migration
             $table->unsignedBigInteger('node_id');
             $table->unsignedBigInteger('machine_id');
             $table->dateTime('machine_datetime');
+            $table->dateTime('device_datetime');
             $table->dateTime('current_datetime');
             $table->tinyInteger('mode')->default(0)->comment('1->Start, 0->Stop');
             $table->integer('speed')->nullable();
@@ -27,7 +28,9 @@ class CreateMachineLogsTable extends Migration
             $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
-            $table->timestamps();
+            // $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

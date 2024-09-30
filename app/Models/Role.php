@@ -19,6 +19,8 @@ class Role extends Model
         'updated_by',
     ];
 
+    public $timestamps = false;
+
     public function users() {
         return $this->hasMany(User::class, 'id', 'role_id');
     }

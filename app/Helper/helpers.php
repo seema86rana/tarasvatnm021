@@ -10,7 +10,11 @@ if (!function_exists('menuAccesspermission')) {
             $name = request()->route()->getName();
             $param = explode(".", $name)[0] ?? '';
             $defaultPermission = ['profile', 'birdview'];
+            $restrictedPermission = [];
             if (Auth::user()->role_id == 0) {
+                $restrictedPermission[] = "birdview";
+            }
+            if (Auth::user()->role_id == 0 && !in_array($param, $restrictedPermission)) {
                 return true;
             }
             $user = user::with('role')->where('role_id', Auth::user()->role_id)->first();
@@ -18,7 +22,7 @@ if (!function_exists('menuAccesspermission')) {
                 return false;
             }
             $permission = json_decode($user->role->permission, true);
-            if(in_array($param, $permission) || in_array($param, $defaultPermission)) {
+            if((in_array($param, $permission) || in_array($param, $defaultPermission)) && !in_array($param, $restrictedPermission)) {
                 return true;
             }
             return false;

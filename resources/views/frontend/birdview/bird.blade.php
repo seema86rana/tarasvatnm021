@@ -113,7 +113,7 @@
         @endphp
         <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }}" data-id="{{ $mValue->id }}">
             <h6>{{ $mValue->machineMaster->machine_display_name }}</h6>
-            <h4>{{ $mValue->efficiency }} % <span>{{ (int)$mValue->last_running }}</span></h4>
+            <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->last_running <= 9 ? ('0'.(int)$mValue->last_running) : (int)$mValue->last_running }}</span></h4>
             <input type="hidden" id="birdModalData{{ $mValue->id }}" value="{{ json_encode($birdModalData) }}">
         </div>
     @endforeach

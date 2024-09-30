@@ -35,6 +35,8 @@ class MachineStatus extends Model
         'updated_by',
     ];
     
+    public $timestamps = false;
+    
     public function machineMaster() {
         return $this->hasOne(MachineMaster::class, 'id', 'machine_id');
     }

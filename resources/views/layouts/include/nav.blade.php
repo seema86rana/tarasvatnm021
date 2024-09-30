@@ -1,9 +1,9 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
 	<div class="navbar-header">
-		<a  href="javascript: void(0)" style="padding: 8px;">
-			<b style="font-size: 15px;margin: auto;margin-left: 25px;">{{ explode(" ", ucwords(str_replace("_", " ", config('app.name', 'Laravel'))))[0] }}</b>
-			<br>
-			<span style="margin-left: 75px;">{{ explode(" ", ucwords(str_replace("_", " ", config('app.name', 'Laravel'))))[1] }} {{ explode(" ", ucwords(str_replace("_", " ", config('app.name', 'Laravel'))))[2] }}</span>
+		<a  href="{{ url('/') }}" style="display: flex;">
+			<img class="FullLogo" src="{{asset('/')}}assets/logo.png" alt="">
+			<!-- <img class="IconLogo" src="{{asset('/')}}assets/test_logo.png" alt=""> -->
+			<img class="" src="{{asset('/')}}assets/test_logo.png" alt="">
 		</a>
 
 		<ul class="nav navbar-nav visible-xs-block">

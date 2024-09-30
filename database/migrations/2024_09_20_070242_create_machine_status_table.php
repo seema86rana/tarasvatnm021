@@ -36,7 +36,9 @@ class CreateMachineStatusTable extends Migration
             $table->integer('status')->comment('1->Start, 0->Stop');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
-            $table->timestamps();
+            // $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
         });
     }
 

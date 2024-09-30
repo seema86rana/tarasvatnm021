@@ -21,7 +21,9 @@
                             <h4><span id="shift_name">Shift D</span> <span id="shift_start_end_time">00:00 AM - 00:00 PM</span></h4>
                         </div>
                     </div>
-                    <div class="col-md-3"></div>
+                    <div class="col-md-3">
+                        <a href="{{ route('dashboard.index') }}" class="btn btn-outline-secondary" style="float: inline-end;">Dashboard</a>
+                    </div>
                 </div>
             </div>
         </div>

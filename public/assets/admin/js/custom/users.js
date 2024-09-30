@@ -261,6 +261,38 @@ $(document).ready(function () {
         }
     });
 
+    $(document).on('click', '.show-device', function (event) {
+        event.preventDefault();
+        let id = $(this).attr('data-id');
+        if (id) {
+            var selectValues = $("#device_" + id).text();
+            var jsonData = JSON.stringify(selectValues);
+            var parsedData = JSON.parse(selectValues);
+            var html = "";
+            html += '<div class="modal-header">';
+            html += '<h5 class="modal-title" id="exampleModalLongTitle">Device Detail</h5>';
+            html += '<button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">';
+            html += '<span aria-hidden="true">&times;</span>';
+            html += '</button>';
+            html += '</div>';
+            html += '<div class="modal-body text-center">';
+            $.each(parsedData, function(k, v) {
+                html += '<p>';
+                html += '<b>Device '+(k+1)+'): </b>'+v.name;
+                html += '</p>';
+            });
+            html += '</div>';
+            html += '<div class="modal-footer text-center">';
+            html += '<button type="button" class="btn btn-theme-dark close-modal" style="">';
+            html += '<i class="icon-arrow-left13"></i> Back';
+            html += '</button>';
+            html += '</div>';
+            make_modal("show-shift-modal", html, true, "modal-xl");
+        } else {
+            toast_error();
+        }
+    });
+
 });
 
 function sw() {

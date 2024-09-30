@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ ucwords(str_replace("_", " ", config('app.name', 'Laravel'))) }}</title>
-    <link rel="icon" href="{{ asset('favicon.ico')}}">
+    <link rel="icon" href="{{asset('/')}}assets/logo.png">
     
     <!-- Global stylesheets -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,300,100,500,700,900" rel="stylesheet" type="text/css">

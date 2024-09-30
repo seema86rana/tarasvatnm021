@@ -9,7 +9,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', ucwords(str_replace("_", " ", config('app.name', 'Laravel'))))</title>
-    <link rel="icon" href="{{ asset('favicon.ico')}}">
+    <link rel="icon" href="{{asset('/')}}assets/logo.png">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- SweetAlert2 CSS -->

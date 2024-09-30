@@ -25,6 +25,8 @@ class Device extends Model
         'updated_by',
     ];
 
+    public $timestamps = false;
+
     public function user() {
         return $this->hasOne(User::class, 'id', 'user_id'); 
     }

@@ -21,15 +21,8 @@ class RolesTableSeeder extends Seeder
         // Seed the table with data
         DB::table('roles')->insert([
             [
-                'name' => 'Admin',
-                'permission' => json_encode(['dashboard', 'devices', 'nodes', 'machines']),
-                'status' => 1, // Active status
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),               
-            ],
-            [
                 'name' => 'User',
-                'permission' => json_encode(['dashboard', 'nodes', 'machines']),
+                'permission' => json_encode(['dashboard']),
                 'status' => 1, // Active status
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

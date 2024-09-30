@@ -21,6 +21,7 @@ class DeviceController extends Controller
      */
     public function __construct()
     {
+        date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->middleware('auth');
     }
 

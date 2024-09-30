@@ -17,6 +17,7 @@ class MachineLogs extends Model
         'node_id',
         'machine_id',
         'machine_datetime',
+        'device_datetime',
         'current_datetime',
         'mode',
         'speed',
@@ -25,4 +26,6 @@ class MachineLogs extends Model
         'created_by',
         'updated_by',
     ];
+
+    public $timestamps = false;
 }

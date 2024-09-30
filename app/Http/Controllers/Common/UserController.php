@@ -25,6 +25,7 @@ class UserController extends Controller
      */
     public function __construct()
     {
+        date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->middleware('auth');
     }
 
@@ -36,7 +37,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if($request->ajax()) {
-            $data = User::with('role', 'createdBy')->whereNotIn('role_id', [0])->orderBy('created_at','DESC')->get();
+            $data = User::with('role', 'createdBy', 'device')->whereNotIn('role_id', [0])->orderBy('created_at','DESC')->get();
             $i = 0;
             return Datatables::of($data)
                 ->addColumn('serial_no', function ($row) use (&$i) {
@@ -68,13 +69,18 @@ class UserController extends Controller
                     return $row->email_verified_at ? date('dS M Y', strtotime($row->email_verified_at)) : '--------';
                 })
                 ->addColumn('action', function ($row) {
-                    return '<button class="text-info btn btn-outline-secondary edit-user" data-id="' . $row->id . '" title="Edit">
+                    return '<div style="display: flex;"><button class="text-primary btn btn-outline-secondary show-device" data-id="' . $row->id . '" title="Show device" style="text-align: center;display: block;">
+                                <div style="display: none;" id="device_' . $row->id . '">' . $row->device . '</div>
+                                <i class="icon-eye2"></i>
+                            </button>
+                            &nbsp;
+                            <button class="text-info btn btn-outline-secondary edit-user" data-id="' . $row->id . '" title="Edit">
                                 <i class="icon-pencil7"></i>
                             </button>
-                            &nbsp;&nbsp;
+                            &nbsp;
                             <button class="text-danger btn btn-outline-secondary delete-user" data-id="' . $row->id . '" title="Delete">
                                 <i class="icon-trash"></i>
-                            </button>';
+                            </button></div>';
                 })
                 ->rawColumns(['serial_no', 'role', 'phone_number', 'email', 'status', 'created_at', 'created_by', 'verified_at', 'action'])
                 ->make(true);

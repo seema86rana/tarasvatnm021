@@ -22,6 +22,8 @@ class Menu extends Model
         'updated_by',
     ];
 
+    public $timestamps = false;
+
     public function subMenu() {
         return $this->hasMany(Menu::class, 'parent_id', 'id');
     }

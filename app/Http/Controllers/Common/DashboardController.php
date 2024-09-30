@@ -9,6 +9,16 @@ use Illuminate\Support\Facades\Auth;
 class DashboardController extends Controller
 {
     /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
+    }
+
+    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response

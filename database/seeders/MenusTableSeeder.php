@@ -51,38 +51,18 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
             [
-                'name' => 'Node', // 4
+                'name' => 'Setting', // 4
                 'parent_id' => 0,
-                'route' => 'nodes',
-                'icon' => '<i class="icon-blog"></i>',
+                'route' => 'settings',
+                'icon' => '<i class="icon-cog3"></i>',
                 'position' => 4,
                 'status' => 1,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
             [
-                'name' => 'Machine', // 5
-                'parent_id' => 0,
-                'route' => 'machines',
-                'icon' => '<i class="fa fa-cogs"></i>',
-                'position' => 5,
-                'status' => 1,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
-            [
-                'name' => 'Setting', // 6
-                'parent_id' => 0,
-                'route' => 'settings',
-                'icon' => '<i class="icon-cog3"></i>',
-                'position' => 6,
-                'status' => 1,
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
-            [
-                'name' => 'Role & permission', // 7
-                'parent_id' => 6, // Setting
+                'name' => 'Role & permission', // 5
+                'parent_id' => 4, // Setting
                 'route' => 'roles',
                 'icon' => '<i class="fa fa-user-times"></i>',
                 'position' => 1,

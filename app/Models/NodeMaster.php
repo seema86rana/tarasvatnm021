@@ -20,4 +20,6 @@ class NodeMaster extends Model
         'created_by',
         'updated_by',
     ];
+
+    public $timestamps = false;
 }

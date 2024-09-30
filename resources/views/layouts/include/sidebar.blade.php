@@ -84,20 +84,6 @@
                         </a>
                     </li>
                     @endif
-                    @if(menuAccesspermission('nodes'))
-                    <li class="{{ request()->routeIs('nodes.index') ? 'active' : '' }}">
-                        <a href="{{ route('nodes.index') }}">
-                            <i class="icon-blog"></i> <span>Node</span>
-                        </a>
-                    </li>
-                    @endif
-                    @if(menuAccesspermission('machines'))
-                    <li class="{{ request()->routeIs('machines.index') ? 'active' : '' }}">
-                        <a href="{{ route('machines.index') }}">
-                            <i class="fa fa-cogs"></i> <span>Machine</span>
-                        </a>
-                    </li>
-                    @endif
                     @if(menuAccesspermission('roles'))
                     <li class="{{ request()->routeIs('roles.index') ? 'active' : '' }}">
                         <a href="{{ route('roles.index') }}">

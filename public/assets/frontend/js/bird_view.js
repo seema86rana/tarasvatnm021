@@ -19,12 +19,12 @@ $(document).ready(function() {
         $("#machine_name").html(modalData.name);
         $("#machine_titleBackground").removeClass().addClass('machine_title ' + modalData.backgroundClass);
         $("#machine_dot").removeClass().addClass('dot ' + modalData.dotBackgroundClass);
-        $("#machine_efficiency").html(modalData.efficiency < 10 ? '0'+modalData.efficiency : modalData.efficiency);
+        $("#machine_efficiency").html((modalData.efficiency < 10 ? '0'+modalData.efficiency : modalData.efficiency) + '%');
         $("#machine_speed").html(modalData.speed < 10 ? '0'+modalData.speed : modalData.speed);
         $("#machine_running").html(modalData.running);
         $("#machine_stop").html(modalData.stop);
-        $("#machine_totalPickThisShift").html(modalData.pickThisShift < 10 ? '0'+modalData.pickThisShift : modalData.pickThisShift);
-        $("#machine_totalPickToday").html(modalData.pickThisDay < 10 ? '0'+modalData.pickThisDay : modalData.pickThisDay);
+        $("#machine_totalPickThisShift").html(numberFormat(modalData.pickThisShift < 10 ? '0'+modalData.pickThisShift : modalData.pickThisShift));
+        $("#machine_totalPickToday").html(numberFormat(modalData.pickThisDay < 10 ? '0'+modalData.pickThisDay : modalData.pickThisDay));
         $("#machine_stoppages").html(modalData.stoppage < 10 ? '0'+modalData.stoppage : modalData.stoppage);
         $("#machineModal").modal('show');
     });
@@ -62,7 +62,7 @@ function fetchData() {
 function setBirdviewHeader() {
     var headerData = JSON.parse($("#birdHeaderData").val());
     // console.log(headerData);
-    $("#averageMachineEfficiency").html(headerData.averageMachineEfficiency < 10 ? '0'+headerData.averageMachineEfficiency : headerData.averageMachineEfficiency);
+    $("#averageMachineEfficiency").html((headerData.averageMachineEfficiency < 10 ? '0'+headerData.averageMachineEfficiency : headerData.averageMachineEfficiency) + '%');
     $("#averageMachineSpeed").html(headerData.averageMachineSpeed < 10 ? '0'+headerData.averageMachineSpeed : headerData.averageMachineSpeed);
     $("#totalMachineRunning").html(headerData.totalMachineRunning < 10 ? '0'+headerData.totalMachineRunning : headerData.totalMachineRunning);
     $("#totalMachineStop").html(headerData.totalMachineStop < 10 ? '0'+headerData.totalMachineStop : headerData.totalMachineStop);
@@ -70,6 +70,11 @@ function setBirdviewHeader() {
     $("#totalYellowEfficiency").html(headerData.totalYellowEfficiency < 10 ? '0'+headerData.totalYellowEfficiency : headerData.totalYellowEfficiency);
     $("#totalOrangeEfficiency").html(headerData.totalOrangeEfficiency < 10 ? '0'+headerData.totalOrangeEfficiency : headerData.totalOrangeEfficiency);
     $("#totalRedEfficiency").html(headerData.totalRedEfficiency < 10 ? '0'+headerData.totalRedEfficiency : headerData.totalRedEfficiency);
+}
+
+function numberFormat(number) {
+    var number = parseInt(number);
+    return number.toLocaleString('en-IN');
 }
 
 // Configure the base Toast instance
