@@ -10,7 +10,7 @@ $(document).ready(function() {
     fetchData();
     setInterval(() => {
         fetchData();
-    }, 5000);
+    }, 7500);
 
     $(document).on('click', '.machine_box', function() {
         var id = $(this).data('id');

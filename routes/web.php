@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
-Route::get('/', [FrontEndBirdViewController::class, 'index']);
+Route::get('/', [FrontEndBirdViewController::class, 'index'])->name('home');
 // Route::get('/', function () {
 //     return redirect()->route('dashboard.index');
 // });

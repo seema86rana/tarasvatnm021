@@ -22,7 +22,10 @@
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <a href="{{ route('dashboard.index') }}" class="btn btn-outline-secondary" style="float: inline-end;">Dashboard</a>
+                        <a href="javascript: void(0)" class="btn btn-outline-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="float: inline-end;">Logout</a>
+						<form method="POST" id="logout-form" action="{{ route('logout') }}">
+							@csrf
+						</form>
                     </div>
                 </div>
             </div>

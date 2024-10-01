@@ -157,21 +157,34 @@ class ProcessPacket implements ShouldQueue
                                                             ->where('device_id', $device->id)
                                                             ->where('user_id', $device->user_id)
                                                             ->where('node_id', $nodeMasterTable->id)
-                                                            ->whereDate('machine_datetime', $machineDate);
-
-                            $machineLogsSpeed = $machineLogsTable->get()->pluck('speed');
-                            $machineLogsPick = $machineLogsTable->get()->pluck('pick');
-                            $machineLogsLastRec = $machineLogsTable->orderBy('id', 'DESC')->first();
+                                                            ->whereDate('machine_datetime', $machineDate)
+                                                            ->orderBy('id', 'DESC')->first();
 
                             $lastRecDatetime = date('Y-m-d H:i:s');
-                            if($machineLogsLastRec) {
-                                $lastRecDatetime = $machineLogsLastRec->device_datetime;
+                            if($machineLogsTable) {
+                                $lastRecDatetime = $machineLogsTable->device_datetime;
                             }
 
                             $currentTime = Carbon::parse($currentDatetime);
                             $lastRecTime = Carbon::parse($lastRecDatetime);
                             $shiftStartTime = Carbon::parse($shiftStart);
                             $machineTime = Carbon::parse($machineDatetime);
+
+                            if ($nodeMasterTable->id == 1 && $machineMasterTable->id == 1) {
+                                $path = public_path("assets/packet/n1m1.txt");
+
+                                if (!file_exists(dirname($path))) {
+                                    mkdir(dirname($path), 0755, true);
+                                }
+                            
+                                $content = "-------------------------------- $currentDatetime --------------------------------" . PHP_EOL;
+                                $content .= "Device datetime: $deviceDatetime, ";
+                                $content .= "Machine datetime: $machineDatetime, "  . PHP_EOL . PHP_EOL;
+                            
+                                if (file_put_contents($path, $content, FILE_APPEND) === false) {
+                                    Log::error("Failed to write to the file: $path");
+                                }
+                            }
 
                             $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
                                                 ->where('device_id', $device->id)
@@ -192,9 +205,7 @@ class ProcessPacket implements ShouldQueue
                                 'node_id' => $nodeMasterTable->id,
                                 'machine_id' => $machineMasterTable->id,
                                 'speed' => (int)$mValue['Spd'],
-                                'avg_speed' => round(((array_sum($machineLogsSpeed ? $machineLogsSpeed->toArray() : []) + (int)$mValue['Spd']) / (count($machineLogsSpeed ? $machineLogsSpeed->toArray() : []) + 1)), 2),
-                                'total_pick' => (array_sum($machineLogsPick ? $machineLogsPick->toArray() : []) + (int)$mValue['Tp']),
-                                'avg_total_pick' => round(((array_sum($machineLogsPick ? $machineLogsPick->toArray() : []) + (int)$mValue['Tp']) / (count($machineLogsPick ? $machineLogsPick->toArray() : []) + 1)), 2),
+                                'total_pick' => (int)$mValue['Tp'],
                                 'shift_name' => $shiftName,
                                 'shift_start_datetime' => $shiftStart,
                                 'shift_end_datetime' => $shiftEnd,
@@ -203,7 +214,7 @@ class ProcessPacket implements ShouldQueue
                             ];
 
                             if ($machineStatusTable) {
-                                $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] + $machineStatusTable->total_pick_shift_wise;
+                                $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] - (int)$machineStatusTable->total_pick;
                                 $diffMinShiftStop = $machineStatusTable->shift_stop ?? 0;
                                 $diffMinShiftRunning = $machineStatusTable->shift_running ?? 0;
 
@@ -272,9 +283,10 @@ class ProcessPacket implements ShouldQueue
                                                     ->whereDate('machine_date', $machineDate)
                                                     ->first();
                                 if($machineStatusTableNew) {
-                                    $machineStatusData['total_stop'] = (int)$diffMinShiftStop + (int)$machineStatusTableNew->shift_stop;
-                                    $machineStatusData['total_running'] = (int)$diffMinShiftRunning + (int)$machineStatusTableNew->shift_running;
-                                    $machineStatusData['total_time'] = (int)$diffMinShiftTime + (int)$machineStatusTableNew->shift_time;
+                                    $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] - (int)$machineStatusTableNew->total_pick;
+                                    $machineStatusData['total_stop'] = (int)$diffMinShiftStop + (int)$machineStatusTableNew->total_stop;
+                                    $machineStatusData['total_running'] = (int)$diffMinShiftRunning + (int)$machineStatusTableNew->total_running;
+                                    $machineStatusData['total_time'] = (int)$diffMinShiftTime + (int)$machineStatusTableNew->total_time;
                                     $machineStatusData['total_efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
                                 } 
                                 $insertMachineStatus = MachineStatus::create($machineStatusData);

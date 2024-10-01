@@ -23,6 +23,6 @@ class CheckPermission
         }
 
         // Redirect or return an error if not an admin
-        return redirect()->route('dashboard.index')->with('error', 'You do not have permission to access this module.');
+        return redirect()->route('home')->with('error', 'You do not have permission to access this module.');
     }
 }
