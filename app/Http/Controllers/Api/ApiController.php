@@ -272,7 +272,7 @@ class ApiController extends Controller
                                 foreach ($deviceShift as $dsKey => $dsValue) {
                                     $shiftStart = date("Y-m-d H:i:s", strtotime(($deviceDate . " " . $dsValue['shift_start'])));
                                     $shiftEnd = date("Y-m-d H:i:s", strtotime(($deviceDate . " " . $dsValue['shift_end'])));
-                                    if (strtotime($machineDatetime) >= strtotime($shiftStart) && strtotime($machineDatetime) < strtotime($shiftEnd)) {
+                                    if (strtotime($deviceDatetime) >= strtotime($shiftStart) && strtotime($deviceDatetime) < strtotime($shiftEnd)) {
                                         $shiftName = $dsValue['shift_name'];
                                         break;
                                     }
