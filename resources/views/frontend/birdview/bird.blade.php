@@ -89,13 +89,13 @@
             $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->efficiency, 2);
             $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
 
-            $hour = $mValue->last_running / 60;
+            $hour = $mValue->shift_running / 60;
             $hourR = $hour <= 9 ? ('0'.round($hour)) : round($hour);
-            $min = $mValue->last_running % 60;
+            $min = $mValue->shift_running % 60;
             $minR = $min < 10 ? ('0'.$min) : $min;
-            $hour = $mValue->last_stop / 60;
+            $hour = $mValue->shift_stop / 60;
             $hourS = $hour <= 9 ? ('0'.round($hour)) : round($hour);
-            $min = $mValue->last_stop % 60;
+            $min = $mValue->shift_stop % 60;
             $minS = $min < 10 ? ('0'.$min) : $min;
 
             $birdModalData = [
@@ -113,7 +113,7 @@
         @endphp
         <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }}" data-id="{{ $mValue->id }}">
             <h6>{{ $mValue->machineMaster->machine_display_name }}</h6>
-            <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->last_running <= 9 ? ('0'.(int)$mValue->last_running) : (int)$mValue->last_running }}</span></h4>
+            <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->total_running <= 9 ? ('0'.(int)$mValue->total_running) : (int)$mValue->total_running }}</span></h4>
             <input type="hidden" id="birdModalData{{ $mValue->id }}" value="{{ json_encode($birdModalData) }}">
         </div>
     @endforeach

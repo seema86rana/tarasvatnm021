@@ -137,9 +137,9 @@ class ProcessPacket implements ShouldQueue
                             $machineDate = date('Y-m-d', strtotime($machineDatetime));
                             $deviceDate = date('Y-m-d', strtotime($deviceDatetime));
                             $currentDate = date('Y-m-d', strtotime($currentDatetime));
-                            $shiftName = 'Shift D';
-                            $shiftStart = $machineDate . ' 00:00:00';
-                            $shiftEnd = $machineDate . ' 23:59:59';
+                            $shiftName = '';
+                            $shiftStart = '';
+                            $shiftEnd = '';
                             foreach ($deviceShift as $dsKey => $dsValue) {
                                 $shiftStart = date("Y-m-d H:i:s", strtotime(($deviceDate . " " . $dsValue['shift_start'])));
                                 $shiftEnd = date("Y-m-d H:i:s", strtotime(($deviceDate . " " . $dsValue['shift_end'])));
@@ -147,6 +147,10 @@ class ProcessPacket implements ShouldQueue
                                     $shiftName = $dsValue['shift_name'];
                                     break;
                                 }
+                            }
+
+                            if(empty($shiftName) || empty($shiftStart) || empty($shiftEnd)) {
+                                continue;
                             }
 
                             $machineLogsTable = MachineLogs::where('machine_id', $machineMasterTable->id)
@@ -173,13 +177,14 @@ class ProcessPacket implements ShouldQueue
                                                 ->where('device_id', $device->id)
                                                 ->where('user_id', $device->user_id)
                                                 ->where('node_id', $nodeMasterTable->id)
+                                                ->whereDate('machine_date', $machineDate)
                                                 ->where('shift_start_datetime', $shiftStart)
                                                 ->where('shift_end_datetime', $shiftEnd)
                                                 ->first();
 
-                            $diffMinTotalRunning = $shiftStartTime->diffInMinutes($currentTime);
-                            $diffMinLastStop = 0;
-                            $diffMinLastRunning = 0;
+                            $diffMinShiftTime = $shiftStartTime->diffInMinutes($currentTime);
+                            $diffMinShiftStop = 0;
+                            $diffMinShiftRunning = 0;
 
                             $machineStatusData = [
                                 'user_id' => $device->user_id,
@@ -190,7 +195,6 @@ class ProcessPacket implements ShouldQueue
                                 'avg_speed' => round(((array_sum($machineLogsSpeed ? $machineLogsSpeed->toArray() : []) + (int)$mValue['Spd']) / (count($machineLogsSpeed ? $machineLogsSpeed->toArray() : []) + 1)), 2),
                                 'total_pick' => (array_sum($machineLogsPick ? $machineLogsPick->toArray() : []) + (int)$mValue['Tp']),
                                 'avg_total_pick' => round(((array_sum($machineLogsPick ? $machineLogsPick->toArray() : []) + (int)$mValue['Tp']) / (count($machineLogsPick ? $machineLogsPick->toArray() : []) + 1)), 2),
-                                'total_running' => $diffMinTotalRunning,
                                 'shift_name' => $shiftName,
                                 'shift_start_datetime' => $shiftStart,
                                 'shift_end_datetime' => $shiftEnd,
@@ -200,33 +204,33 @@ class ProcessPacket implements ShouldQueue
 
                             if ($machineStatusTable) {
                                 $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] + $machineStatusTable->total_pick_shift_wise;
-                                $diffMinLastStop = $machineStatusTable->last_stop ?? 0;
-                                $diffMinLastRunning = $machineStatusTable->last_running ?? 0;
+                                $diffMinShiftStop = $machineStatusTable->shift_stop ?? 0;
+                                $diffMinShiftRunning = $machineStatusTable->shift_running ?? 0;
 
                                 if ($mValue['St'] == 1 && $machineStatusTable->status == 1) {
                                     $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                                    $diffMinLastStop = $diffMinLastStop;
-                                    $diffMinLastRunning += $lastRecTime->diffInMinutes($currentTime);
+                                    $diffMinShiftStop = $diffMinShiftStop;
+                                    $diffMinShiftRunning += $lastRecTime->diffInMinutes($currentTime);
                                 }
                                 else if ($mValue['St'] == 1 && $machineStatusTable->status == 0) {
                                     $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                                    $diffMinLastStop += $lastRecTime->diffInMinutes($machineTime);
-                                    $diffMinLastRunning += $machineTime->diffInMinutes($currentTime);
+                                    $diffMinShiftStop += $lastRecTime->diffInMinutes($machineTime);
+                                    $diffMinShiftRunning += $machineTime->diffInMinutes($currentTime);
                                 }
                                 else if ($mValue['St'] == 0 && $machineStatusTable->status == 1) {
                                     $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
-                                    $diffMinLastStop = $machineTime->diffInMinutes($currentTime);
-                                    $diffMinLastRunning += $lastRecTime->diffInMinutes($machineTime);
+                                    $diffMinShiftStop = $machineTime->diffInMinutes($currentTime);
+                                    $diffMinShiftRunning += $lastRecTime->diffInMinutes($machineTime);
                                 }
                                 else if ($mValue['St'] == 0 && $machineStatusTable->status == 0) {
                                     $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                                    $diffMinLastStop += $lastRecTime->diffInMinutes($currentTime);
-                                    $diffMinLastRunning = $diffMinLastRunning;
+                                    $diffMinShiftStop += $lastRecTime->diffInMinutes($currentTime);
+                                    $diffMinShiftRunning = $diffMinShiftRunning;
                                 }
                                 else {
                                     $machineStatusData['no_of_stoppage'] = 0;
-                                    $diffMinLastStop = 0;
-                                    $diffMinLastRunning = 0;
+                                    $diffMinShiftStop = 0;
+                                    $diffMinShiftRunning = 0;
                                 }
                             } 
                             else {
@@ -234,27 +238,31 @@ class ProcessPacket implements ShouldQueue
                                 
                                 if ($mValue['St'] == 1) {
                                     $machineStatusData['no_of_stoppage'] = 0;
-                                    $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
-                                    $diffMinLastRunning = $machineTime->diffInMinutes($currentTime);
+                                    $diffMinShiftStop = $shiftStartTime->diffInMinutes($machineTime);
+                                    $diffMinShiftRunning = $machineTime->diffInMinutes($currentTime);
                                 }
                                 else if ($mValue['St'] == 0) {
                                     $machineStatusData['no_of_stoppage'] = 1;
-                                    $diffMinLastStop = $machineTime->diffInMinutes($currentTime);
-                                    $diffMinLastRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                    $diffMinShiftStop = $machineTime->diffInMinutes($currentTime);
+                                    $diffMinShiftRunning = $shiftStartTime->diffInMinutes($machineTime);
                                 }
                                 else {
                                     $machineStatusData['no_of_stoppage'] = 0;
-                                    $diffMinLastStop = 0;
-                                    $diffMinLastRunning = 0;
+                                    $diffMinShiftStop = 0;
+                                    $diffMinShiftRunning = 0;
                                 }
                             }
 
-                            $machineStatusData['efficiency'] = round((($diffMinLastRunning / $diffMinTotalRunning) * 100), 2);
+                            $machineStatusData['shift_stop'] = $diffMinShiftStop;
+                            $machineStatusData['shift_running'] = $diffMinShiftRunning;
+                            $machineStatusData['shift_time'] = $diffMinShiftTime;
+                            $machineStatusData['shift_efficiency'] = round((($machineStatusData['shift_running'] / $machineStatusData['shift_time']) * 100), 2);
+                            $machineStatusData['total_stop'] = $diffMinShiftStop;
+                            $machineStatusData['total_running'] = $diffMinShiftRunning;
+                            $machineStatusData['total_time'] = $diffMinShiftTime;
+                            $machineStatusData['total_efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
 
                             if ($machineStatusTable) {
-                                $machineStatusData['last_stop'] = $diffMinLastStop;
-                                $machineStatusData['last_running'] = $diffMinLastRunning;
-
                                 $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
                             } else {
                                 $machineStatusTableNew = MachineStatus::where('machine_id', $machineMasterTable->id)
@@ -263,18 +271,13 @@ class ProcessPacket implements ShouldQueue
                                                     ->where('node_id', $nodeMasterTable->id)
                                                     ->whereDate('machine_date', $machineDate)
                                                     ->first();
-
                                 if($machineStatusTableNew) {
-                                    $machineStatusData['last_stop'] = (int)$diffMinLastStop + (int)$machineStatusTableNew->last_stop;
-                                    $machineStatusData['last_running'] = (int)$diffMinLastRunning + (int)$machineStatusTableNew->last_running;
-                                    
-                                    $insertMachineStatus = MachineStatus::create($machineStatusData);
-                                } else {
-                                    $machineStatusData['last_stop'] = $diffMinLastStop;
-                                    $machineStatusData['last_running'] = $diffMinLastRunning;
-
-                                    $insertMachineStatus = MachineStatus::create($machineStatusData);
-                                }
+                                    $machineStatusData['total_stop'] = (int)$diffMinShiftStop + (int)$machineStatusTableNew->shift_stop;
+                                    $machineStatusData['total_running'] = (int)$diffMinShiftRunning + (int)$machineStatusTableNew->shift_running;
+                                    $machineStatusData['total_time'] = (int)$diffMinShiftTime + (int)$machineStatusTableNew->shift_time;
+                                    $machineStatusData['total_efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
+                                } 
+                                $insertMachineStatus = MachineStatus::create($machineStatusData);
                             }
                         }
                     }

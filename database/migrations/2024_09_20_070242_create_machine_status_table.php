@@ -24,11 +24,15 @@ class CreateMachineStatusTable extends Migration
             $table->unsignedBigInteger('total_pick')->nullable();
             $table->decimal('avg_total_pick', 10, 2)->nullable();
             $table->unsignedBigInteger('total_pick_shift_wise')->nullable();
-            $table->decimal('efficiency', 10, 2)->nullable();
             $table->unsignedBigInteger('no_of_stoppage')->nullable();
-            $table->decimal('last_stop', 10, 2)->nullable();
-            $table->decimal('last_running', 10, 2)->nullable();
+            $table->decimal('shift_stop', 10, 2)->nullable();
+            $table->decimal('shift_running', 10, 2)->nullable();
+            $table->decimal('shift_time', 10, 2)->nullable();
+            $table->decimal('shift_efficiency', 10, 2)->nullable();
+            $table->decimal('total_stop', 10, 2)->nullable();
             $table->decimal('total_running', 10, 2)->nullable();
+            $table->decimal('total_time', 10, 2)->nullable();
+            $table->decimal('total_efficiency', 10, 2)->nullable();
             $table->string('shift_name')->nullable();
             $table->dateTime('shift_start_datetime')->nullable();
             $table->dateTime('shift_end_datetime')->nullable();
