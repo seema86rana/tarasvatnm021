@@ -15,7 +15,7 @@
         'averageMachineSpeed' => 0,
     ];
 
-    function birdBackgroundClass($efficiency, &$birdHeaderData) {
+    function birdBackgroundClass($shift_efficiency, &$birdHeaderData) {
         // background color class
         $green = 'bg_light_green';
         $yellow = 'bg_light_yellow';
@@ -23,17 +23,17 @@
         $red = 'bg_light_red';
         $dark = 'bg_light_dark';
 
-        switch ($efficiency) {
-            case ($efficiency >= 90):
+        switch ($shift_efficiency) {
+            case ($shift_efficiency >= 90):
                 $birdHeaderData['totalGreenEfficiency'] += 1;
                 return $green;
-            case ($efficiency >= 70 && $efficiency <= 90):
+            case ($shift_efficiency >= 70 && $shift_efficiency <= 90):
                 $birdHeaderData['totalYellowEfficiency'] += 1;
                 return $yellow;
-            case ($efficiency >= 50 && $efficiency <= 70):
+            case ($shift_efficiency >= 50 && $shift_efficiency <= 70):
                 $birdHeaderData['totalOrangeEfficiency'] += 1;
                 return $orange;
-            case ($efficiency <= 50):
+            case ($shift_efficiency <= 50):
                 $birdHeaderData['totalRedEfficiency'] += 1;
                 return $red;
             default:
@@ -42,7 +42,7 @@
         }
     }
 
-    function dotBackgroundClass($efficiency) {
+    function dotBackgroundClass($shift_efficiency) {
         // background color class
         $green = 'bg_green';
         $yellow = 'bg_yellow';
@@ -50,14 +50,14 @@
         $red = 'bg_red';
         $dark = 'bg_dark';
 
-        switch ($efficiency) {
-            case ($efficiency >= 90):
+        switch ($shift_efficiency) {
+            case ($shift_efficiency >= 90):
                 return $green;
-            case ($efficiency >= 70 && $efficiency <= 90):
+            case ($shift_efficiency >= 70 && $shift_efficiency <= 90):
                 return $yellow;
-            case ($efficiency >= 50 && $efficiency <= 70):
+            case ($shift_efficiency >= 50 && $shift_efficiency <= 70):
                 return $orange;
-            case ($efficiency <= 50):
+            case ($shift_efficiency <= 50):
                 return $red;
             default:
                 return $dark;
@@ -86,7 +86,7 @@
 @if(isset($machineData) && count($machineData->toArray()) > 0)
     @foreach($machineData as $mKey => $mValue)
         @php 
-            $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->efficiency, 2);
+            $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->shift_efficiency, 2);
             $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
 
             $hour = $mValue->shift_running / 60;
@@ -100,9 +100,9 @@
 
             $birdModalData = [
                     'name' => $mValue->machineMaster->machine_display_name,
-                    'backgroundClass' => birdBackgroundClass($mValue->efficiency, $birdHeaderData),
-                    'dotBackgroundClass' => dotBackgroundClass($mValue->efficiency),
-                    'efficiency' => $mValue->efficiency,
+                    'backgroundClass' => birdBackgroundClass($mValue->shift_efficiency, $birdHeaderData),
+                    'dotBackgroundClass' => dotBackgroundClass($mValue->shift_efficiency),
+                    'shift_efficiency' => $mValue->shift_efficiency,
                     'speed' => $mValue->speed,
                     'running' => '- '.$hourR.'h '.$minR.'m',
                     'stop' => '- '.$hourS.'h '.$minS.'m',
@@ -113,7 +113,7 @@
         @endphp
         <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }}" data-id="{{ $mValue->id }}">
             <h6>{{ $mValue->machineMaster->machine_display_name }}</h6>
-            <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->total_running <= 9 ? ('0'.(int)$mValue->total_running) : (int)$mValue->total_running }}</span></h4>
+            <h4>{{ $mValue->total_efficiency }} % <span>{{ $mValue->total_running <= 9 ? ('0'.(int)$mValue->total_running) : (int)$mValue->total_running }}</span></h4>
             <input type="hidden" id="birdModalData{{ $mValue->id }}" value="{{ json_encode($birdModalData) }}">
         </div>
     @endforeach
