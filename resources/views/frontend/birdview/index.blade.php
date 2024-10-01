@@ -11,21 +11,37 @@
         <div class="top_header">
             <div class="container-fluid">
                 <div class="row align-items-center">
-                    <div class="col-md-3">
+                    <div class="col-6 col-md-3 order-1 order-md-1">
                         <div class="logo">
-                            <img src="{{ asset('/') }}assets/frontend/image/bird_view.svg" alt="">
+                            <img src="{{ asset('/') }}assets/logo.svg" alt="">
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 order-3 order-md-2">
                         <div class="shift_wrapper">
                             <h4><span id="shift_name">Shift D</span> <span id="shift_start_end_time">00:00 AM - 00:00 PM</span></h4>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <a href="javascript: void(0)" class="btn btn-outline-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="float: inline-end;">Logout</a>
-						<form method="POST" id="logout-form" action="{{ route('logout') }}">
-							@csrf
-						</form>
+                    <div class="col-6 col-md-3 order-2 order-md-3">
+                        <div class="user_dropdownn">
+                            <div class="dropdown">
+                                <button class="dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                    @if(!empty(Auth::user()->profile_image))
+                                        <img src="{{ url('/assets/profile_image').'/'.Auth::user()->profile_image }}" alt=""> {{ Auth::user()->name ?? 'Jon Doe'}}
+                                    @else
+                                        <img src="{{ asset('assets/user/images/user-profile.webp') }}" alt=""> {{ Auth::user()->name ?? 'Jon Doe'}}
+                                    @endif
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                                <!-- <li><a class="dropdown-item" href="#">My Profile</a></li> -->
+                                <li>
+                                    <a class="dropdown-item" href="javascript: void(0)" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
+                                    <form method="POST" id="logout-form" action="{{ route('logout') }}">
+                                        @csrf
+                                    </form>
+                                </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

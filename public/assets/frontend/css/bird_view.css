@@ -101,7 +101,7 @@ ul{
    
 }
 .logo img{
-    width: 6vw;
+    width: 9vw;
 }
 
 .shift_wrapper h4{
@@ -120,6 +120,21 @@ ul{
 }
 .header_bottom{
     padding: 0.5vw 2vw;
+}
+.user_dropdownn{
+    text-align: right;
+}
+.user_dropdownn .dropdown .dropdown-toggle{
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-size: 16px;
+}
+.user_dropdownn .dropdown .dropdown-toggle img{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 5px;
 }
 .avarage_wrapper ul{
     display: flex;
@@ -330,15 +345,15 @@ ul{
 }
 
 @media(max-width: 991px){
-    .logo{
-        text-align: center;
-    }
     .logo img {
         width: 90px;
         margin: 0 0 5px;
     }
     .shift_wrapper h4 {
         font-size: 13px;
+    }
+    .shift_wrapper {
+        margin: 10px 0 0;
     }
     .shift_wrapper h4 span {
         font-size: 12px;
@@ -406,6 +421,67 @@ ul{
     }
     .machine_inner_wrapper {
         gap: 6px;
+    }
+    .modal .modal-dialog {
+        max-width: 500px;
+    }
+    .machine_detail_wrap {
+        padding: 15px;
+    }
+    .machine_title {
+        padding: 10px;
+        margin: 0 0 15px;
+        border-radius: 5px;
+    }
+    .machine_title h4 {
+        font-size: 16px;
+    }
+    .machine_title h4 span {
+        margin-left: 10px;
+    }
+    .machine_title h4 span.dot {
+        right: 15px;
+        width: 12px;
+        height: 12px;
+    }
+    .machine_speed_wrap {
+        margin: 0 0 20px;
+    }
+    .machine_speed_wrap ul li {
+        font-size: 13px;
+    }
+    .machine_speed_wrap ul li span {
+        font-size: 28px;
+    }
+    .machine_rs_wrap {
+        margin: 0 0 20px;
+    }
+    .machine_rs_wrap ul li {
+        padding: 8px;
+        margin: 0 0 5px;
+        border-radius: 4px;
+        font-size: 13px;
+    }
+    .machine_work_wrap ul {
+        gap: 10px;
+        align-items: stretch;
+    }
+    .machine_work_wrap ul li {
+        width: calc(33.333% - 7px);
+        padding: 10px;
+        font-size: 12px;
+        border-radius: 5px;
+    }
+    .machine_work_wrap ul li span {
+        font-size: 17px;
+        margin: 0 0 5px;
+    }
+    .user_dropdownn .dropdown .dropdown-toggle {
+        font-size: 0;
+    }
+    .user_dropdownn .dropdown .dropdown-toggle img {
+        width: 40px;
+        height: 40px;
     }
 }
 @media(max-width: 767px){
