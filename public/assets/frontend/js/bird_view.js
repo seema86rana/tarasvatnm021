@@ -19,7 +19,7 @@ $(document).ready(function() {
         $("#machine_name").html(modalData.name);
         $("#machine_titleBackground").removeClass().addClass('machine_title ' + modalData.backgroundClass);
         $("#machine_dot").removeClass().addClass('dot ' + modalData.dotBackgroundClass);
-        $("#machine_efficiency").html((modalData.efficiency < 10 ? '0'+modalData.efficiency : modalData.efficiency) + '%');
+        $("#machine_efficiency").html((modalData.shift_efficiency < 10 ? '0'+modalData.shift_efficiency : modalData.shift_efficiency) + '%');
         $("#machine_speed").html(modalData.speed < 10 ? '0'+modalData.speed : modalData.speed);
         $("#machine_running").html(modalData.running);
         $("#machine_stop").html(modalData.stop);
