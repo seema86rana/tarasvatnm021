@@ -20,8 +20,9 @@ class CreateMachineStatusTable extends Migration
             $table->unsignedBigInteger('node_id');
             $table->unsignedBigInteger('machine_id');
             $table->unsignedBigInteger('speed')->nullable();
+            $table->unsignedBigInteger('intime_pick')->nullable();
+            $table->unsignedBigInteger('shift_pick')->nullable();
             $table->unsignedBigInteger('total_pick')->nullable();
-            $table->unsignedBigInteger('total_pick_shift_wise')->nullable();
             $table->unsignedBigInteger('no_of_stoppage')->nullable();
             $table->decimal('shift_stop', 10, 2)->nullable();
             $table->decimal('shift_running', 10, 2)->nullable();

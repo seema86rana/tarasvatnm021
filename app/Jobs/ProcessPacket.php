@@ -214,7 +214,9 @@ class ProcessPacket implements ShouldQueue
                             ];
 
                             if ($machineStatusTable) {
-                                $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] - (int)$machineStatusTable->total_pick;
+                                $machineStatusData['intime_pick'] = (int)$mValue['Tp'] - (int)$machineStatusTable->total_pick;
+                                $machineStatusData['shift_pick'] = (int)$machineStatusData['intime_pick'] + (int)$machineStatusTable->shift_pick;
+
                                 $diffMinShiftStop = $machineStatusTable->shift_stop ?? 0;
                                 $diffMinShiftRunning = $machineStatusTable->shift_running ?? 0;
 
@@ -245,7 +247,8 @@ class ProcessPacket implements ShouldQueue
                                 }
                             } 
                             else {
-                                $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'];
+                                $machineStatusData['intime_pick'] = (int)$mValue['Tp'];
+                                $machineStatusData['shift_pick'] = (int)$mValue['Tp'];
                                 
                                 if ($mValue['St'] == 1) {
                                     $machineStatusData['no_of_stoppage'] = 0;
@@ -281,9 +284,10 @@ class ProcessPacket implements ShouldQueue
                                                     ->where('user_id', $device->user_id)
                                                     ->where('node_id', $nodeMasterTable->id)
                                                     ->whereDate('machine_date', $machineDate)
-                                                    ->first();
+                                                    ->orderBy('id', 'desc')->first();
                                 if($machineStatusTableNew) {
-                                    $machineStatusData['total_pick_shift_wise'] = (int)$mValue['Tp'] - (int)$machineStatusTableNew->total_pick;
+                                    $machineStatusData['intime_pick'] = (int)$mValue['Tp'] - (int)$machineStatusTableNew->total_pick;
+                                    $machineStatusData['shift_pick'] = (int)$machineStatusData['intime_pick'];
                                     $machineStatusData['total_stop'] = (int)$diffMinShiftStop + (int)$machineStatusTableNew->total_stop;
                                     $machineStatusData['total_running'] = (int)$diffMinShiftRunning + (int)$machineStatusTableNew->total_running;
                                     $machineStatusData['total_time'] = (int)$diffMinShiftTime + (int)$machineStatusTableNew->total_time;
