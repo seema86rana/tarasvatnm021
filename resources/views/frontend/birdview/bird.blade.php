@@ -99,7 +99,7 @@
                     'speed' => $mValue->speed,
                     'running' => '- '.$hourR.'h '.$minR.'m',
                     'stop' => '- '.$hourS.'h '.$minS.'m',
-                    'pickThisShift' => $mValue->shift_pick <= 0 ? $mValue->intime_pick : $mValue->shift_pick,
+                    'pickThisShift' => $mValue->shift_pick <= 0 ? $mValue->total_pick : $mValue->shift_pick,
                     'pickThisDay' => $mValue->total_pick,
                     'stoppage' => $mValue->no_of_stoppage,
                 ];

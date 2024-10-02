@@ -454,7 +454,12 @@ class ApiController extends Controller
                                 $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
 
                                 if ($machineStatusTable) {
-                                    $machineStatusData['shift_pick'] = (int)$machineStatusData['total_pick'] - (int)$machineStatusTable->intime_pick;
+                                    if($machineStatusTable->intime_pick <= 0) {
+                                        $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
+                                        $machineStatusData['shift_pick'] = $machineStatusData['intime_pick'];
+                                    } else {
+                                        $machineStatusData['shift_pick'] = (int)$machineStatusData['total_pick'] - (int)$machineStatusTable->intime_pick;
+                                    }
                                     MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
                                 } else {
                                     $machineStatusData['intime_pick'] = (int)$mValue['Tp'];
