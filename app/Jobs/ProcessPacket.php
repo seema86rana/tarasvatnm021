@@ -330,6 +330,9 @@ class ProcessPacket implements ShouldQueue
                             } else {
                                 $machineStatusData['intime_pick'] = (int)$mValue['Tp'];
                                 $machineStatusData['shift_pick'] = (int)$mValue['Tp'];
+                                if($machineStatusData['last_stop'] > 0) {
+                                    $machineStatusData['no_of_stoppage'] = 1;
+                                }
                                 MachineStatus::create($machineStatusData);
                             }
                         }
