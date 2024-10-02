@@ -51,7 +51,9 @@
     <div class="page-container">
         <div class="page-content">
 
-            @include('layouts.include.sidebar')
+            @if(Auth::user()->role_id == 0)
+                @include('layouts.include.sidebar')
+            @endif
 
             <div class="content-wrapper">
 

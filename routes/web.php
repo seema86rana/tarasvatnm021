@@ -34,16 +34,18 @@ Route::get('/dashboard', function () {
 // auth
 Auth::routes(['verify' => true]);
 
-// common
+// profile
+Route::resource('profile', CommonProfileController::class);
+Route::post('profile/{id}', [CommonProfileController::class, 'update'])->name('profile.updates');
+Route::post('profile/password/{id}', [CommonProfileController::class, 'password'])->name('profile.password');
+
+// birdview
+Route::resource('birdview', FrontEndBirdViewController::class);
+
+// backend
 Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth', 'verified', 'permission']], function () {
 
     Route::resource('dashboard', CommonDashboardController::class);
-
-    Route::resource('birdview', FrontEndBirdViewController::class);
-
-    Route::resource('profile', CommonProfileController::class);
-    Route::post('profile/{id}', [CommonProfileController::class, 'update'])->name('profile.updates');
-    Route::post('profile/password/{id}', [CommonProfileController::class, 'password'])->name('profile.password');
 
     Route::resource('users', CommonUserController::class);
     Route::post('users/{id}', [CommonUserController::class, 'update'])->name('users.updates');;
