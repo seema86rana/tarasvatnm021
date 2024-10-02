@@ -83,11 +83,11 @@
             $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
 
             $hour = $mValue->last_running / 60;
-            $hourR = $hour <= 9 ? ('0'.round($hour)) : round($hour);
+            $hourR = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
             $min = $mValue->last_running % 60;
             $minR = $min < 10 ? ('0'.$min) : $min;
             $hour = $mValue->last_stop / 60;
-            $hourS = $hour <= 9 ? ('0'.round($hour)) : round($hour);
+            $hourS = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
             $min = $mValue->last_stop % 60;
             $minS = $min < 10 ? ('0'.$min) : $min;
 
