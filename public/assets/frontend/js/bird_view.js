@@ -37,14 +37,21 @@ function fetchData() {
                 $("#shift_name").html(response.shiftName);
                 $("#shift_start_end_time").html(response.shiftStartEnd);
                 $("#machine_data").html(response.html);
+
                 setTimeout(() => {
                     setBirdviewHeader();
                 }, 250);
-                setTimeout(() => {
-                    if($("#dynamicModalId").val()) {                        
-                        showModalData($("#dynamicModalId").val());
-                    }
-                }, 750);
+
+                if ($("#shiftMatching").val() != response.shiftStartEnd) {
+                    $("#machineModal").modal('hide');
+                } else {
+                    setTimeout(() => {
+                        if($("#dynamicModalId").val()) {                        
+                            showModalData($("#dynamicModalId").val());
+                        }
+                    }, 750);
+                }
+                $("#shiftMatching").val(response.shiftStartEnd);
             } else {
                 toastError(response.message);
             }
@@ -62,6 +69,7 @@ function setBirdviewHeader() {
     $("#averageMachineEfficiency").html((headerData.averageMachineEfficiency < 10 ? '0'+headerData.averageMachineEfficiency : headerData.averageMachineEfficiency) + '%');
     $("#averageMachineSpeed").html(headerData.averageMachineSpeed < 10 ? '0'+headerData.averageMachineSpeed : headerData.averageMachineSpeed);
     $("#totalMachineRunning").html(headerData.totalMachineRunning < 10 ? '0'+headerData.totalMachineRunning : headerData.totalMachineRunning);
+    $("#deviceTime").html(headerData.deviceTime);
     $("#totalMachineStop").html(headerData.totalMachineStop < 10 ? '0'+headerData.totalMachineStop : headerData.totalMachineStop);
     $("#totalGreenEfficiency").html(headerData.totalGreenEfficiency < 10 ? '0'+headerData.totalGreenEfficiency : headerData.totalGreenEfficiency);
     $("#totalYellowEfficiency").html(headerData.totalYellowEfficiency < 10 ? '0'+headerData.totalYellowEfficiency : headerData.totalYellowEfficiency);

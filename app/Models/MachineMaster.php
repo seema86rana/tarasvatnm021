@@ -17,6 +17,7 @@ class MachineMaster extends Model
         'node_id',
         'machine_name',
         'machine_display_name',
+        'device_datetime',
         'status',
         'created_by',
         'updated_by',

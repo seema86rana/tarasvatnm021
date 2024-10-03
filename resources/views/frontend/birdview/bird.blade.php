@@ -7,6 +7,7 @@
         'totalRedEfficiency' => 0,
         'totalDarkEfficiency' => 0,
         'totalMachineRunning' => 0,
+        'deviceTime' => date('h:i A'),
         'totalMachineStop' => 0,
         'totalMachineMaintainance' => 0,
         'totalMachineEfficiency' => 0,
@@ -78,49 +79,52 @@
 
 @if(isset($machineData) && count($machineData->toArray()) > 0)
     @php $countActive = 0 @endphp
-    @foreach($machineData as $mKey => $mValue)
-        @php 
-            $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->efficiency, 2);
-            if($mValue->status == 1) {
-                $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
-                $countActive += 1; 
-            }
+    <div class="machine_inner_wrapper">
+        @foreach($machineData as $mKey => $mValue)
+            @php 
+                $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->efficiency, 2);
+                $birdHeaderData['deviceTime'] = date('h:i A', strtotime($mValue->machineMaster->device_datetime ?? date('Y-m-d H:i:s')));
+                if($mValue->status == 1) {
+                    $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
+                    $countActive += 1; 
+                }
 
-            $hour = $mValue->last_running / 60;
-            $hourR = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
-            $min = $mValue->last_running % 60;
-            $minR = $min < 10 ? ('0'.$min) : $min;
-            $hour = $mValue->last_stop / 60;
-            $hourS = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
-            $min = $mValue->last_stop % 60;
-            $minS = $min < 10 ? ('0'.$min) : $min;
+                $hour = $mValue->last_running / 60;
+                $hourR = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
+                $min = $mValue->last_running % 60;
+                $minR = $min < 10 ? ('0'.$min) : $min;
+                $hour = $mValue->last_stop / 60;
+                $hourS = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
+                $min = $mValue->last_stop % 60;
+                $minS = $min < 10 ? ('0'.$min) : $min;
 
-            $birdModalData = [
-                    'name' => $mValue->machineMaster->machine_display_name,
-                    'backgroundClass' => birdBackgroundClass($mValue->efficiency, $birdHeaderData),
-                    'dotBackgroundClass' => dotBackgroundClass($mValue->status),
-                    'efficiency' => $mValue->efficiency,
-                    'speed' => $mValue->speed,
-                    'running' => '- '.$hourR.'h '.$minR.'m',
-                    'stop' => '- '.$hourS.'h '.$minS.'m',
-                    'pickThisShift' => $mValue->shift_pick,
-                    'pickThisDay' => $mValue->total_pick,
-                    'stoppage' => $mValue->no_of_stoppage,
-                ];
-        @endphp
-        <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }}" data-id="{{ $mValue->id }}">
-            <h6>{{ $mValue->machineMaster->machine_display_name }}</h6>
-            <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->speed <= 9 ? ('0'.(int)$mValue->speed) : (int)$mValue->speed }}</span></h4>
-            <input type="hidden" id="birdModalData{{ $mValue->id }}" value="{{ json_encode($birdModalData) }}">
-        </div>
-    @endforeach
+                $birdModalData = [
+                        'name' => $mValue->machineMaster->machine_display_name,
+                        'backgroundClass' => birdBackgroundClass($mValue->efficiency, $birdHeaderData),
+                        'dotBackgroundClass' => dotBackgroundClass($mValue->status),
+                        'efficiency' => $mValue->efficiency,
+                        'speed' => $mValue->speed,
+                        'running' => '- '.$hourR.'h '.$minR.'m',
+                        'stop' => '- '.$hourS.'h '.$minS.'m',
+                        'pickThisShift' => $mValue->shift_pick,
+                        'pickThisDay' => $mValue->total_pick,
+                        'stoppage' => $mValue->no_of_stoppage,
+                    ];
+            @endphp
+            <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }}" data-id="{{ $mValue->id }}">
+                <h6>{{ $mValue->machineMaster->machine_display_name }}</h6>
+                <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->speed <= 9 ? ('0'.(int)$mValue->speed) : (int)$mValue->speed }}</span></h4>
+                <input type="hidden" id="birdModalData{{ $mValue->id }}" value="{{ json_encode($birdModalData) }}">
+            </div>
+        @endforeach
+    </div>
     @php 
         $birdHeaderData['averageMachineEfficiency'] += round(($birdHeaderData['totalMachineEfficiency'] / count($machineData->toArray())), 2);
         $birdHeaderData['averageMachineSpeed'] += round((($birdHeaderData['totalMachineSpeed'] > 0 ? $birdHeaderData['totalMachineSpeed'] / $countActive : 0)), 2);
     @endphp
 @else
-<div class="row justify-content-center">
-    <div class="col-sm-12 p-1 text-center">
+<div class="row justify-content-center" style="display: initial;">
+    <div class="col-sm-12 text-center">
         <h1>No Data Found!</h1>
     </div>
 </div>

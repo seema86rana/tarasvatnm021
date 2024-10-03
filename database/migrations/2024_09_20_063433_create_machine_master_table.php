@@ -20,6 +20,7 @@ class CreateMachineMasterTable extends Migration
             $table->unsignedBigInteger('node_id');
             $table->string('machine_name');
             $table->string('machine_display_name');
+            $table->dateTime('device_datetime');
             $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();

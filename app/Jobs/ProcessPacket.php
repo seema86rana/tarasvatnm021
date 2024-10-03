@@ -115,8 +115,15 @@ class ProcessPacket implements ShouldQueue
                                     'node_id' => $nodeMasterTable->id,
                                     'machine_name' => $machineName,
                                     'machine_display_name' => $machineDisplayName,
+                                    'device_datetime' => $deviceDatetime,
                                 ];
                                 $machineMasterTable = MachineMaster::create($machineMasterData);
+                            }
+                            else {
+                                $machineMasterData = [
+                                    'device_datetime' => $deviceDatetime,
+                                ];
+                                MachineMaster::where('id', $machineMasterTable->id)->update($machineMasterData);
                             }
 
                             $machineLogsData = [
@@ -302,9 +309,21 @@ class ProcessPacket implements ShouldQueue
                                         $diffMinTotalRunning = 0;
                                     }
                                 }
-                                else { 
-                                    $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
-                                    $machineStatusData['shift_pick'] = 0;
+                                else {
+                                    $machineStatusTablePrevious = MachineStatus::where('machine_id', $machineMasterTable->id)
+                                                            ->where('device_id', $device->id)
+                                                            ->where('user_id', $device->user_id)
+                                                            ->where('node_id', $nodeMasterTable->id)
+                                                            ->orderBy('id', 'desc')->first();
+
+                                    if ($machineStatusTablePrevious) {
+                                        $machineStatusData['intime_pick'] = $machineStatusTablePrevious->total_pick;
+                                        $machineStatusData['shift_pick'] = (int)$mValue['Tp'] - (int)$machineStatusData['intime_pick'];
+                                    } else {
+                                        $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
+                                        $machineStatusData['shift_pick'] = 0;
+                                    } 
+
                                     if ($mValue['St'] == 1) {
                                         $machineStatusData['no_of_stoppage'] = 0;
                                         $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);

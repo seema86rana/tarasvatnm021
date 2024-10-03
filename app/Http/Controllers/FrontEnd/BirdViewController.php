@@ -95,13 +95,7 @@ class BirdViewController extends Controller
                     }
                 }
             }
-            // echo "<pre>";
-            // echo $shiftName, '------';
-            // echo $shiftStart, '------';
-            // echo $shiftEnd, '------';
-            // print_r($dId);
-            // die;
-
+            
             $machineData = MachineStatus::with('machineMaster')
                             ->whereIn('device_id', $dId)
                             ->whereDate('machine_date', date('Y-m-d'))
@@ -109,9 +103,21 @@ class BirdViewController extends Controller
                             ->whereIn('shift_end_datetime', $getShiftEndArray)
                             ->where('user_id', $authId)->get();
 
-            // echo "<pre>";
-            // print_r($machineData->toArray());
-            // die;
+            if(count($machineData->toArray()) <= 0) {
+                $machineSingleData = MachineStatus::with('machineMaster')
+                                ->where('user_id', $authId)->orderBy('id', 'DESC')->first();
+
+                if($machineSingleData) {
+                    $machineData = MachineStatus::with('machineMaster')
+                                ->where('device_id', $machineSingleData->device_id)
+                                ->where('machine_date', $machineSingleData->machine_date)
+                                ->where('shift_name', $machineSingleData->shift_name)
+                                ->where('shift_start_datetime', $machineSingleData->shift_start_datetime)
+                                ->where('shift_end_datetime', $machineSingleData->shift_end_datetime)
+                                ->where('user_id', $authId)->get();
+                }
+            }
+
             return response()->json([
                 'status' => true,
                 'shiftName' => $shiftName,

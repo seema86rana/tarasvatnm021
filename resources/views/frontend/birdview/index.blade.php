@@ -49,7 +49,7 @@
         <div class="header_bottom">
             <div class="container-fluid">
                 <div class="row align-items-center">
-                    <div class="col-md-5">
+                    <div class="col-4">
                         <div class="avarage_wrapper">
                             <ul>
                                 <li>Avg. Efficiency <span class="text_orange" id="averageMachineEfficiency">00</span></li>
@@ -57,15 +57,16 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-3">
                         <div class="rs_wrapper">
                             <ul>
                                 <li class="r_box">R : <span id="totalMachineRunning">00</span></li>
+                                <li class="t_box" id="deviceTime">00:00 AM</li>
                                 <li class="s_box">S : <span id="totalMachineStop">00</span></li>
                             </ul>
                         </div>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-5">
                         <div class="percent_wrapper">
                             <ul>
                                 <li class="bg_light_green"><span class="text_green" id="totalGreenEfficiency">00</span>90-100%</li>
@@ -83,7 +84,8 @@
     <section class="machine_wrapper">
         <div class="container-fluid">
             <input type="hidden" id="dynamicModalId">
-            <div class="machine_inner_wrapper" id="machine_data"></div>
+            <input type="hidden" id="shiftMatching">
+            <div id="machine_data"></div>
         </div>
     </section>
 
