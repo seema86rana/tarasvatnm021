@@ -116,7 +116,7 @@
     @endforeach
     @php 
         $birdHeaderData['averageMachineEfficiency'] += round(($birdHeaderData['totalMachineEfficiency'] / count($machineData->toArray())), 2);
-        $birdHeaderData['averageMachineSpeed'] += round(($birdHeaderData['totalMachineSpeed'] / $countActive), 2);
+        $birdHeaderData['averageMachineSpeed'] += round((($birdHeaderData['totalMachineSpeed'] > 0 ? $birdHeaderData['totalMachineSpeed'] / $countActive : 0)), 2);
     @endphp
 @else
 <div class="row justify-content-center">
