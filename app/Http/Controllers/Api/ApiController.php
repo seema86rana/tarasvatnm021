@@ -438,7 +438,7 @@ class ApiController extends Controller
                                     }
 
                                     if ($mValue['St'] == 1) {
-                                        $diffMinTotalRunning = $machineTime->diffInMinutes($deviceTime);
+                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
                                     }
                                     else if ($mValue['St'] == 0) {
                                         $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
@@ -464,9 +464,6 @@ class ApiController extends Controller
                                 } else {
                                     $machineStatusData['intime_pick'] = (int)$mValue['Tp'];
                                     $machineStatusData['shift_pick'] = (int)$mValue['Tp'];
-                                    if($machineStatusData['last_stop'] > 0) {
-                                        $machineStatusData['no_of_stoppage'] = 1;
-                                    }
                                     MachineStatus::create($machineStatusData);
                                 }
                             }
