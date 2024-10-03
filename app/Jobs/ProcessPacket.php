@@ -304,7 +304,7 @@ class ProcessPacket implements ShouldQueue
                                 }
                                 else { 
                                     $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
-                                    $machineStatusData['shift_pick'] = $machineStatusData['total_pick'];
+                                    $machineStatusData['shift_pick'] = 0;
                                     if ($mValue['St'] == 1) {
                                         $machineStatusData['no_of_stoppage'] = 0;
                                         $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);

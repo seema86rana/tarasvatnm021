@@ -77,10 +77,14 @@
 
 
 @if(isset($machineData) && count($machineData->toArray()) > 0)
+    @php $countActive = 0 @endphp
     @foreach($machineData as $mKey => $mValue)
         @php 
             $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->efficiency, 2);
-            $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
+            if($mValue->status == 1) {
+                $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
+                $countActive += 1; 
+            }
 
             $hour = $mValue->last_running / 60;
             $hourR = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
@@ -99,7 +103,7 @@
                     'speed' => $mValue->speed,
                     'running' => '- '.$hourR.'h '.$minR.'m',
                     'stop' => '- '.$hourS.'h '.$minS.'m',
-                    'pickThisShift' => $mValue->shift_pick <= 0 ? $mValue->total_pick : $mValue->shift_pick,
+                    'pickThisShift' => $mValue->shift_pick,
                     'pickThisDay' => $mValue->total_pick,
                     'stoppage' => $mValue->no_of_stoppage,
                 ];
@@ -112,7 +116,7 @@
     @endforeach
     @php 
         $birdHeaderData['averageMachineEfficiency'] += round(($birdHeaderData['totalMachineEfficiency'] / count($machineData->toArray())), 2);
-        $birdHeaderData['averageMachineSpeed'] += round(($birdHeaderData['totalMachineSpeed'] / count($machineData->toArray())), 2);
+        $birdHeaderData['averageMachineSpeed'] += round(($birdHeaderData['totalMachineSpeed'] / $countActive), 2);
     @endphp
 @else
 <div class="row justify-content-center">

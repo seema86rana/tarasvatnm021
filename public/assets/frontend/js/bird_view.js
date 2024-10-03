@@ -14,19 +14,11 @@ $(document).ready(function() {
 
     $(document).on('click', '.machine_box', function() {
         var id = $(this).data('id');
-        var modalData = JSON.parse($("#birdModalData"+id).val());
-        // console.log(modalData);
-        $("#machine_name").html(modalData.name);
-        $("#machine_titleBackground").removeClass().addClass('machine_title ' + modalData.backgroundClass);
-        $("#machine_dot").removeClass().addClass('dot ' + modalData.dotBackgroundClass);
-        $("#machine_efficiency").html((modalData.efficiency < 10 ? '0'+modalData.efficiency : modalData.efficiency) + '%');
-        $("#machine_speed").html(modalData.speed < 10 ? '0'+modalData.speed : modalData.speed);
-        $("#machine_running").html(modalData.running);
-        $("#machine_stop").html(modalData.stop);
-        $("#machine_totalPickThisShift").html(modalData.pickThisShift < 10 ? '0'+modalData.pickThisShift : numberFormat(modalData.pickThisShift));
-        $("#machine_totalPickToday").html(modalData.pickThisDay < 10 ? '0'+modalData.pickThisDay : numberFormat(modalData.pickThisDay));
-        $("#machine_stoppages").html(modalData.stoppage < 10 ? '0'+modalData.stoppage : modalData.stoppage);
-        $("#machineModal").modal('show');
+        showModalData(id);
+    });
+
+    $('#machineModal').on('hidden.bs.modal', function (e) {
+        $("#dynamicModalId").val('');
     });
 
 });
@@ -48,6 +40,11 @@ function fetchData() {
                 setTimeout(() => {
                     setBirdviewHeader();
                 }, 250);
+                setTimeout(() => {
+                    if($("#dynamicModalId").val()) {                        
+                        showModalData($("#dynamicModalId").val());
+                    }
+                }, 750);
             } else {
                 toastError(response.message);
             }
@@ -70,6 +67,23 @@ function setBirdviewHeader() {
     $("#totalYellowEfficiency").html(headerData.totalYellowEfficiency < 10 ? '0'+headerData.totalYellowEfficiency : headerData.totalYellowEfficiency);
     $("#totalOrangeEfficiency").html(headerData.totalOrangeEfficiency < 10 ? '0'+headerData.totalOrangeEfficiency : headerData.totalOrangeEfficiency);
     $("#totalRedEfficiency").html(headerData.totalRedEfficiency < 10 ? '0'+headerData.totalRedEfficiency : headerData.totalRedEfficiency);
+}
+
+function showModalData(id) {
+    var modalData = JSON.parse($("#birdModalData"+id).val());
+    $("#dynamicModalId").val(id);
+    // console.log(modalData);
+    $("#machine_name").html(modalData.name);
+    $("#machine_titleBackground").removeClass().addClass('machine_title ' + modalData.backgroundClass);
+    $("#machine_dot").removeClass().addClass('dot ' + modalData.dotBackgroundClass);
+    $("#machine_efficiency").html((modalData.efficiency < 10 ? '0'+modalData.efficiency : modalData.efficiency) + '%');
+    $("#machine_speed").html(modalData.speed < 10 ? '0'+modalData.speed : modalData.speed);
+    $("#machine_running").html(modalData.running);
+    $("#machine_stop").html(modalData.stop);
+    $("#machine_totalPickThisShift").html(modalData.pickThisShift < 10 ? '0'+modalData.pickThisShift : numberFormat(modalData.pickThisShift));
+    $("#machine_totalPickToday").html(modalData.pickThisDay < 10 ? '0'+modalData.pickThisDay : numberFormat(modalData.pickThisDay));
+    $("#machine_stoppages").html(modalData.stoppage < 10 ? '0'+modalData.stoppage : modalData.stoppage);
+    $("#machineModal").modal('show');
 }
 
 function numberFormat(number) {

@@ -82,6 +82,7 @@
 
     <section class="machine_wrapper">
         <div class="container-fluid">
+            <input type="hidden" id="dynamicModalId">
             <div class="machine_inner_wrapper" id="machine_data"></div>
         </div>
     </section>
@@ -109,7 +110,7 @@
                         <div class="machine_work_wrap">
                             <ul>
                                 <li><span class="text_orange" id="machine_totalPickThisShift">00</span>Picks in this shift</li>
-                                <li><span class="text_orange" id="machine_totalPickToday">00</span>Total Picks today</li>
+                                <li><span class="text_orange" id="machine_totalPickToday">00</span>Total Picks</li>
                                 <li><span class="text_red" id="machine_stoppages">00</span>Stoppages in this shift</li>
                             </ul>
                         </div>
