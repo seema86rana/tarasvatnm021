@@ -231,11 +231,11 @@ class ApiController extends Controller
                             if (!empty($mValue['Mid']) && isset($mValue['St']) && !empty($mValue['Mdt'])) {
                                 $machineName = $nodeName . '-M' . $mValue['Mid'];
                                 $machineDisplayName = $nodeName . ':M' . $mValue['Mid'];
-
+    
                                 $utcMachineDatetime = Carbon::createFromFormat('Ymd H:i:s', $mValue['Mdt'], env('DEVICE_TIMEZONE', 'UTC'));
                                 $machineDatetime = $utcMachineDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'));
                                 $machineDatetime = $machineDatetime->format('Y-m-d H:i:s');
-
+    
                                 $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('machine_name', $machineName)->first();
                                 if (!$machineMasterTable) {
                                     $machineMasterData = [
@@ -247,7 +247,7 @@ class ApiController extends Controller
                                     ];
                                     $machineMasterTable = MachineMaster::create($machineMasterData);
                                 }
-
+    
                                 $machineLogsData = [
                                     'user_id' => $machineMasterTable->user_id,
                                     'device_id' => $device->id,
@@ -261,7 +261,7 @@ class ApiController extends Controller
                                     'pick' => $mValue['Tp'] ?? '',
                                 ];
                                 $machineLogsArray[] = $machineLogsData;
-
+    
                                 $deviceShift = json_decode($device->shift, true);
                                 $machineDate = date('Y-m-d', strtotime($machineDatetime));
                                 $deviceDate = date('Y-m-d', strtotime($deviceDatetime));
@@ -277,28 +277,28 @@ class ApiController extends Controller
                                         break;
                                     }
                                 }
-
+    
                                 if(empty($shiftName) || empty($shiftStart) || empty($shiftEnd)) {
                                     continue;
                                 }
-
+    
                                 $machineLogsTable = MachineLogs::where('machine_id', $machineMasterTable->id)
                                                                 ->where('device_id', $device->id)
                                                                 ->where('user_id', $device->user_id)
                                                                 ->where('node_id', $nodeMasterTable->id)
                                                                 ->whereDate('machine_datetime', $machineDate)
                                                                 ->orderBy('id', 'DESC')->first();
-
+    
                                 $lastRecDatetime = $deviceDatetime;
                                 if($machineLogsTable) {
                                     $lastRecDatetime = $machineLogsTable->device_datetime;
                                 }
-
+    
                                 $deviceTime = Carbon::parse($deviceDatetime);
                                 $lastRecTime = Carbon::parse($lastRecDatetime);
                                 $shiftStartTime = Carbon::parse($shiftStart);
                                 $machineTime = Carbon::parse($machineDatetime);
-
+    
                                 if ($nodeMasterTable->id == 1 && $machineMasterTable->id == 1) {
                                     $path = public_path("assets/packet/n1m1.txt");
     
@@ -316,7 +316,7 @@ class ApiController extends Controller
                                         Log::error("Failed to write to the file: $path");
                                     }
                                 }
-
+    
                                 $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
                                                     ->where('device_id', $device->id)
                                                     ->where('user_id', $device->user_id)
@@ -325,11 +325,11 @@ class ApiController extends Controller
                                                     ->where('shift_start_datetime', $shiftStart)
                                                     ->where('shift_end_datetime', $shiftEnd)
                                                     ->first();
-
+    
                                 $diffMinLastStop = 0;
                                 $diffMinLastRunning = 0;
                                 $diffMinTotalRunning = 0;
-
+    
                                 $machineStatusData = [
                                     'user_id' => $device->user_id,
                                     'device_id' => $device->id,
@@ -344,12 +344,12 @@ class ApiController extends Controller
                                     'machine_date' => $machineDate,
                                     'status' => $mValue['St'] ?? 0,
                                 ];
-
+    
                                 if ($machineStatusTable) {
                                     $diffMinLastStop = $machineStatusTable->last_stop ?? 0;
                                     $diffMinLastRunning = $machineStatusTable->last_running ?? 0;
                                     $diffMinTotalRunning = $machineStatusTable->total_running ?? 0;
-
+    
                                     if ($mValue['St'] == 1 && $machineStatusTable->status == 1) {
                                         $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
                                         $diffMinLastStop = $diffMinLastStop;
@@ -388,11 +388,13 @@ class ApiController extends Controller
                                                         ->where('node_id', $nodeMasterTable->id)
                                                         ->whereDate('machine_date', $machineDate)
                                                         ->orderBy('id', 'desc')->first();
-
+    
                                     if ($machineStatusTableOld) {
+                                        $machineStatusData['intime_pick'] = $machineStatusTableOld->total_pick;
+                                        $machineStatusData['shift_pick'] = (int)$mValue['Tp'] - (int)$machineStatusData['intime_pick'];
                                         $diffMinLastStop = $machineStatusTableOld->last_stop ?? 0;
                                         $diffMinLastRunning = $machineStatusTableOld->last_running ?? 0;
-
+    
                                         if ($mValue['St'] == 1 && $machineStatusTableOld->status == 1) {
                                             $machineStatusData['no_of_stoppage'] = 0;
                                             $diffMinLastStop = $diffMinLastStop;
@@ -418,8 +420,20 @@ class ApiController extends Controller
                                             $diffMinLastStop = 0;
                                             $diffMinLastRunning = 0;
                                         }
+    
+                                        if ($mValue['St'] == 1) {
+                                            $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
+                                        }
+                                        else if ($mValue['St'] == 0) {
+                                            $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                        }
+                                        else {
+                                            $diffMinTotalRunning = 0;
+                                        }
                                     }
-                                    else {                                        
+                                    else { 
+                                        $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
+                                        $machineStatusData['shift_pick'] = $machineStatusData['total_pick'];
                                         if ($mValue['St'] == 1) {
                                             $machineStatusData['no_of_stoppage'] = 0;
                                             $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
@@ -435,35 +449,42 @@ class ApiController extends Controller
                                             $diffMinLastStop = 0;
                                             $diffMinLastRunning = 0;
                                         }
-                                    }
-
-                                    if ($mValue['St'] == 1) {
-                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
-                                    }
-                                    else if ($mValue['St'] == 0) {
-                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
-                                    }
-                                    else {
-                                        $diffMinTotalRunning = 0;
+    
+                                        if ($mValue['St'] == 1) {
+                                            $diffMinTotalRunning = $machineTime->diffInMinutes($deviceTime);
+                                        }
+                                        else if ($mValue['St'] == 0) {
+                                            $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                        }
+                                        else {
+                                            $diffMinTotalRunning = 0;
+                                        }
+    
+                                        if($diffMinLastStop > 0) {
+                                            $machineStatusData['no_of_stoppage'] = 1;
+                                        }
                                     }
                                 }
-
+    
                                 $machineStatusData['last_stop'] = $diffMinLastStop;
                                 $machineStatusData['last_running'] = $diffMinLastRunning;
                                 $machineStatusData['total_running'] = $diffMinTotalRunning;
-                                $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
-
+    
+                                if($machineStatusData['total_running'] != 0 && $machineStatusData['total_time'] != 0) {
+                                    $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
+                                } else {
+                                    $machineStatusData['efficiency'] = 0;
+                                }
+    
                                 if ($machineStatusTable) {
                                     if($machineStatusTable->intime_pick <= 0) {
                                         $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
-                                        $machineStatusData['shift_pick'] = $machineStatusData['intime_pick'];
+                                        $machineStatusData['shift_pick'] = $machineStatusData['total_pick'];
                                     } else {
                                         $machineStatusData['shift_pick'] = (int)$machineStatusData['total_pick'] - (int)$machineStatusTable->intime_pick;
                                     }
                                     MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
                                 } else {
-                                    $machineStatusData['intime_pick'] = (int)$mValue['Tp'];
-                                    $machineStatusData['shift_pick'] = (int)$mValue['Tp'];
                                     MachineStatus::create($machineStatusData);
                                 }
                             }

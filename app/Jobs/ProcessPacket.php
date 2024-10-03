@@ -261,6 +261,8 @@ class ProcessPacket implements ShouldQueue
                                                     ->orderBy('id', 'desc')->first();
 
                                 if ($machineStatusTableOld) {
+                                    $machineStatusData['intime_pick'] = $machineStatusTableOld->total_pick;
+                                    $machineStatusData['shift_pick'] = (int)$mValue['Tp'] - (int)$machineStatusData['intime_pick'];
                                     $diffMinLastStop = $machineStatusTableOld->last_stop ?? 0;
                                     $diffMinLastRunning = $machineStatusTableOld->last_running ?? 0;
 
@@ -289,8 +291,20 @@ class ProcessPacket implements ShouldQueue
                                         $diffMinLastStop = 0;
                                         $diffMinLastRunning = 0;
                                     }
+
+                                    if ($mValue['St'] == 1) {
+                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
+                                    }
+                                    else if ($mValue['St'] == 0) {
+                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                    }
+                                    else {
+                                        $diffMinTotalRunning = 0;
+                                    }
                                 }
-                                else {                                        
+                                else { 
+                                    $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
+                                    $machineStatusData['shift_pick'] = $machineStatusData['total_pick'];
                                     if ($mValue['St'] == 1) {
                                         $machineStatusData['no_of_stoppage'] = 0;
                                         $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
@@ -306,35 +320,42 @@ class ProcessPacket implements ShouldQueue
                                         $diffMinLastStop = 0;
                                         $diffMinLastRunning = 0;
                                     }
-                                }
 
-                                if ($mValue['St'] == 1) {
-                                    $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
-                                }
-                                else if ($mValue['St'] == 0) {
-                                    $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
-                                }
-                                else {
-                                    $diffMinTotalRunning = 0;
+                                    if ($mValue['St'] == 1) {
+                                        $diffMinTotalRunning = $machineTime->diffInMinutes($deviceTime);
+                                    }
+                                    else if ($mValue['St'] == 0) {
+                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                    }
+                                    else {
+                                        $diffMinTotalRunning = 0;
+                                    }
+
+                                    if($diffMinLastStop > 0) {
+                                        $machineStatusData['no_of_stoppage'] = 1;
+                                    }
                                 }
                             }
 
                             $machineStatusData['last_stop'] = $diffMinLastStop;
                             $machineStatusData['last_running'] = $diffMinLastRunning;
                             $machineStatusData['total_running'] = $diffMinTotalRunning;
-                            $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
+
+                            if($machineStatusData['total_running'] != 0 && $machineStatusData['total_time'] != 0) {
+                                $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
+                            } else {
+                                $machineStatusData['efficiency'] = 0;
+                            }
 
                             if ($machineStatusTable) {
                                 if($machineStatusTable->intime_pick <= 0) {
                                     $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
-                                    $machineStatusData['shift_pick'] = $machineStatusData['intime_pick'];
+                                    $machineStatusData['shift_pick'] = $machineStatusData['total_pick'];
                                 } else {
                                     $machineStatusData['shift_pick'] = (int)$machineStatusData['total_pick'] - (int)$machineStatusTable->intime_pick;
                                 }
                                 MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
                             } else {
-                                $machineStatusData['intime_pick'] = (int)$mValue['Tp'];
-                                $machineStatusData['shift_pick'] = (int)$mValue['Tp'];
                                 MachineStatus::create($machineStatusData);
                             }
                         }
