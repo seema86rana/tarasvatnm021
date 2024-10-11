@@ -11,6 +11,7 @@ use App\Models\NodeErrorLogs;
 use App\Models\MachineMaster;
 use App\Models\MachineLogs;
 use App\Models\MachineStatus;
+use App\Models\TempMachineStatus;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
@@ -306,24 +307,6 @@ class ApiController extends Controller
                                 $shiftStartTime = Carbon::parse($shiftStart);
                                 $machineTime = Carbon::parse($machineDatetime);
     
-                                if ($nodeMasterTable->id == 1 && $machineMasterTable->id == 1) {
-                                    $path = public_path("assets/packet/n1m1.txt");
-    
-                                    if (!file_exists(dirname($path))) {
-                                        mkdir(dirname($path), 0755, true);
-                                    }
-                                
-                                    $content = "-------------------------------- $currentDatetime --------------------------------" . PHP_EOL;
-                                    $content .= "Status: " . $mValue['St'];
-                                    $content .= "Device datetime: $deviceDatetime, ";
-                                    $content .= "lastRec datetime: $lastRecDatetime, ";
-                                    $content .= "Machine datetime: $machineDatetime, "  . PHP_EOL . PHP_EOL;
-                                
-                                    if (file_put_contents($path, $content, FILE_APPEND) === false) {
-                                        Log::error("Failed to write to the file: $path");
-                                    }
-                                }
-    
                                 $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
                                                     ->where('device_id', $device->id)
                                                     ->where('user_id', $device->user_id)
@@ -502,9 +485,19 @@ class ApiController extends Controller
                                     } else {
                                         $machineStatusData['shift_pick'] = (int)$machineStatusData['total_pick'] - (int)$machineStatusTable->intime_pick;
                                     }
-                                    MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
+                                    $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
+                                    //-----------------------------------------------------------------
+                                    $machineStatusData['machine_status_id'] = $machineStatusTable->id;
+                                    $machineStatusData['machine_log'] = json_encode($machineLogsData);
+                                    TempMachineStatus::insert($machineStatusData);
+                                    //-----------------------------------------------------------------
                                 } else {
-                                    MachineStatus::create($machineStatusData);
+                                    $insertMachineStatus = MachineStatus::create($machineStatusData);
+                                    //-----------------------------------------------------------------
+                                    $machineStatusData['machine_status_id'] = $insertMachineStatus->id;
+                                    $machineStatusData['machine_log'] = json_encode($machineLogsData);
+                                    TempMachineStatus::insert($machineStatusData);
+                                    //-----------------------------------------------------------------
                                 }
                             }
                         }
