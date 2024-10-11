@@ -106,8 +106,8 @@
                         'speed' => $mValue->speed,
                         'running' => '- '.$hourR.'h '.$minR.'m',
                         'stop' => '- '.$hourS.'h '.$minS.'m',
-                        'pickThisShift' => $mValue->shift_pick,
-                        'pickThisDay' => $mValue->total_pick,
+                        'pickThisShift' => $mValue->pickCalculation->shift_pick,
+                        'pickThisDay' => $mValue->pickCalculation->total_pick,
                         'stoppage' => $mValue->no_of_stoppage,
                     ];
             @endphp

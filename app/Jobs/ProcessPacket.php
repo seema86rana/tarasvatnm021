@@ -16,6 +16,7 @@ use App\Models\MachineMaster;
 use App\Models\MachineLogs;
 use App\Models\MachineStatus;
 use App\Models\TempMachineStatus;
+use App\Models\PickCalculation;
 use Carbon\Carbon;
 
 class ProcessPacket implements ShouldQueue
@@ -197,7 +198,6 @@ class ProcessPacket implements ShouldQueue
                                 'node_id' => $nodeMasterTable->id,
                                 'machine_id' => $machineMasterTable->id,
                                 'speed' => (int)$mValue['Spd'],
-                                'total_pick' => (int)$mValue['Tp'],
                                 'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
                                 'shift_name' => $shiftName,
                                 'shift_start_datetime' => $shiftStart,
@@ -206,7 +206,11 @@ class ProcessPacket implements ShouldQueue
                                 'status' => $mValue['St'] ?? 0,
                             ];
 
+                            $pickResponse = [];
+
                             if ($machineStatusTable) {
+                                $pickResponse = $this->pickCalculation((int)$mValue['Tp'], $machineStatusTable->id, 'update');
+
                                 $diffMinLastStop = $machineStatusTable->last_stop ?? 0;
                                 $diffMinLastRunning = $machineStatusTable->last_running ?? 0;
                                 $diffMinTotalRunning = $machineStatusTable->total_running ?? 0;
@@ -251,8 +255,8 @@ class ProcessPacket implements ShouldQueue
                                                     ->orderBy('id', 'desc')->first();
 
                                 if ($machineStatusTableOld) {
-                                    $machineStatusData['intime_pick'] = $machineStatusTableOld->total_pick;
-                                    $machineStatusData['shift_pick'] = (int)$mValue['Tp'] - (int)$machineStatusData['intime_pick'];
+                                    $pickResponse = $this->pickCalculation((int)$mValue['Tp'], $machineStatusTableOld->id, 'insert');
+
                                     $diffMinLastStop = $machineStatusTableOld->last_stop ?? 0;
                                     $diffMinLastRunning = $machineStatusTableOld->last_running ?? 0;
 
@@ -300,11 +304,9 @@ class ProcessPacket implements ShouldQueue
                                                             ->orderBy('id', 'desc')->first();
 
                                     if ($machineStatusTablePrevious) {
-                                        $machineStatusData['intime_pick'] = $machineStatusTablePrevious->total_pick;
-                                        $machineStatusData['shift_pick'] = (int)$mValue['Tp'] - (int)$machineStatusData['intime_pick'];
+                                        $pickResponse = $this->pickCalculation((int)$mValue['Tp'],$machineStatusTablePrevious->id, 'insert');
                                     } else {
-                                        $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
-                                        $machineStatusData['shift_pick'] = 0;
+                                        $pickResponse = $this->pickCalculation((int)$mValue['Tp'], NULL, 'insert');
                                     } 
 
                                     if ($mValue['St'] == 1) {
@@ -350,20 +352,46 @@ class ProcessPacket implements ShouldQueue
                             }
 
                             if ($machineStatusTable) {
-                                if($machineStatusTable->intime_pick <= 0) {
-                                    $machineStatusData['intime_pick'] = $machineStatusData['total_pick'];
-                                    $machineStatusData['shift_pick'] = $machineStatusData['total_pick'];
-                                } else {
-                                    $machineStatusData['shift_pick'] = (int)$machineStatusData['total_pick'] - (int)$machineStatusTable->intime_pick;
-                                }
+                                // echo "<pre>";
+                                // print_r($pickResponse);
+                                // die;
                                 $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
+
+                                if($pickResponse['status']) {
+                                    if ($pickResponse['isUpdate'] && $pickResponse['id']) {
+                                        $pickData = [
+                                            'machine_status_id' => $machineStatusTable->id,
+                                            'status' => 1,
+                                        ];
+                                        PickCalculation::where('id', $pickResponse['id'])->update($pickData);
+                                    }
+                                } else {
+                                    // die('Something went wrong!');
+                                }
+                                
                                 //-----------------------------------------------------------------
                                 $machineStatusData['machine_status_id'] = $machineStatusTable->id;
                                 $machineStatusData['machine_log'] = json_encode($machineLogsData);
                                 TempMachineStatus::insert($machineStatusData);
                                 //-----------------------------------------------------------------
                             } else {
+                                // echo "<pre>";
+                                // print_r($pickResponse);
+                                // die;
                                 $insertMachineStatus = MachineStatus::create($machineStatusData);
+
+                                if($pickResponse['status']) {
+                                    if ($pickResponse['isUpdate'] && $pickResponse['id']) {
+                                        $pickData = [
+                                            'machine_status_id' => $insertMachineStatus->id,
+                                            'status' => 1,
+                                        ];
+                                        PickCalculation::where('id', $pickResponse['id'])->update($pickData);
+                                    }
+                                } else {
+                                    die('Something went wrong!');
+                                }
+
                                 //-----------------------------------------------------------------
                                 $machineStatusData['machine_status_id'] = $insertMachineStatus->id;
                                 $machineStatusData['machine_log'] = json_encode($machineLogsData);
@@ -410,5 +438,85 @@ class ProcessPacket implements ShouldQueue
         }
         
         \Log::info("Processing data for Device ID: {$deviceId}, Node Data: " . json_encode($nodeData));
-    }  
+    }
+
+    protected function pickCalculation(int $pick, int $id = NULL, string $type = 'update')
+    {
+        if ($id != NULL) {
+            $pickTable = PickCalculation::where('machine_status_id', $id)->first();
+            if(!$pickTable) {
+                throw new pickCalculationException("Error Processing Request", 1);
+                die;
+            }
+
+            $difference_pick = 0;
+            $new_pick = 0;
+            $total_pick = 0;
+
+            if($pickTable->total_pick <= $pick) {
+                $difference_pick = 0;
+                $new_pick = 0;
+                $total_pick = $pick;
+            }
+            else {
+                if ($pickTable->new_pick <= $pick) {
+                    $difference_pick = $pick - $pickTable->new_pick;
+                    $new_pick = $pick;
+                    $total_pick = $pickTable->total_pick + $difference_pick;
+                }
+                else {
+                    $difference_pick = 0;
+                    $new_pick = $pick;
+                    $total_pick = $pickTable->total_pick + $pick;
+                }
+            }
+
+            if ($type == "update") {
+                $pickData = [
+                    'shift_pick' => $total_pick - $pickTable->intime_pick,
+                    'total_pick' => $total_pick,
+                    'new_pick' => $new_pick,
+                    'difference_pick' => $difference_pick,
+                ];
+                $updatePick = PickCalculation::where('id', $pickTable->id)->update($pickData);
+                if($updatePick) {
+                    return ['status' => true, 'isUpdate' => false, 'id' => 0];
+                } else {
+                    return ['status' => false, 'isUpdate' => false, 'id' => 0];
+                }
+            } 
+            else {
+                $pickData = [
+                    'intime_pick' => $pickTable->total_pick,
+                    'shift_pick' => $total_pick - $pickTable->total_pick,
+                    'total_pick' => $total_pick,
+                    'new_pick' => $new_pick,
+                    'difference_pick' => $difference_pick,
+                    'status' => 0,
+                ];
+                $insertPick = PickCalculation::create($pickData);
+                if($insertPick) {
+                    return ['status' => true, 'isUpdate' => true, 'id' => $insertPick->id];
+                } else {
+                    return ['status' => false, 'isUpdate' => true, 'id' => 0];
+                }
+            }
+        }
+        else {
+            $pickData = [
+                'intime_pick' => $pick,
+                'shift_pick' => 0,
+                'total_pick' => $pick,
+                'new_pick' => 0,
+                'difference_pick' => 0,
+                'status' => 0,
+            ];
+            $insertPick = PickCalculation::create($pickData);
+            if($insertPick) {
+                return ['status' => true, 'isUpdate' => true, 'id' => $insertPick->id];
+            } else {
+                return ['status' => false, 'isUpdate' => true, 'id' => 0];
+            }
+        }
+    }
 }

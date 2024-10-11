@@ -96,7 +96,7 @@ class BirdViewController extends Controller
                 }
             }
             
-            $machineData = MachineStatus::with('machineMaster')
+            $machineData = MachineStatus::with('machineMaster', 'pickCalculation')
                             ->whereIn('device_id', $dId)
                             ->whereDate('machine_date', date('Y-m-d'))
                             ->whereIn('shift_start_datetime', $getShiftStartArray)
@@ -104,11 +104,11 @@ class BirdViewController extends Controller
                             ->where('user_id', $authId)->get();
 
             if(count($machineData->toArray()) <= 0) {
-                $machineSingleData = MachineStatus::with('machineMaster')
+                $machineSingleData = MachineStatus::with('machineMaster', 'pickCalculation')
                                 ->where('user_id', $authId)->orderBy('id', 'DESC')->first();
 
                 if($machineSingleData) {
-                    $machineData = MachineStatus::with('machineMaster')
+                    $machineData = MachineStatus::with('machineMaster', 'pickCalculation')
                                 ->where('device_id', $machineSingleData->device_id)
                                 ->where('machine_date', $machineSingleData->machine_date)
                                 ->where('shift_name', $machineSingleData->shift_name)
@@ -117,6 +117,10 @@ class BirdViewController extends Controller
                                 ->where('user_id', $authId)->get();
                 }
             }
+
+            // echo "<pre>";
+            // print_r($machineData->toArray());
+            // die;
 
             return response()->json([
                 'status' => true,

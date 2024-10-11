@@ -17,9 +17,6 @@ class MachineStatus extends Model
         'node_id',
         'machine_id',
         'speed',
-        'intime_pick',
-        'shift_pick',
-        'total_pick',
         'no_of_stoppage',
         'last_stop',
         'last_running',
@@ -39,5 +36,9 @@ class MachineStatus extends Model
     
     public function machineMaster() {
         return $this->hasOne(MachineMaster::class, 'id', 'machine_id');
+    }
+
+    public function pickCalculation() {
+        return $this->hasOne(PickCalculation::class, 'machine_status_id', 'id');
     }
 }
