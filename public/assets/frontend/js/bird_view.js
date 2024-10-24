@@ -88,6 +88,8 @@ function showModalData(id) {
     $("#machine_speed").html(modalData.speed < 10 ? '0'+modalData.speed : modalData.speed);
     $("#machine_running").html(modalData.running);
     $("#machine_stop").html(modalData.stop);
+    $("#machine_total_running").html(modalData.total_running);
+    $("#machine_total_time").html(modalData.total_time);
     $("#machine_totalPickThisShift").html(modalData.pickThisShift < 10 ? '0'+modalData.pickThisShift : numberFormat(modalData.pickThisShift));
     $("#machine_totalPickToday").html(modalData.pickThisDay < 10 ? '0'+modalData.pickThisDay : numberFormat(modalData.pickThisDay));
     $("#machine_stoppages").html(modalData.stoppage < 10 ? '0'+modalData.stoppage : modalData.stoppage);

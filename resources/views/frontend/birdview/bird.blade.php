@@ -39,7 +39,8 @@
                 return $red;
             default:
                 $birdHeaderData['totalDarkEfficiency'] += 1;
-                return $dark;
+                return $red;
+                // return $dark;
         }
     }
 
@@ -54,7 +55,8 @@
         } elseif($status == 0) {
             return $red;
         } else {
-            return $dark;
+            return $red;
+            // return $dark;
         }
     }
 
@@ -71,7 +73,8 @@
             return $close;
         } else {
             $birdHeaderData['totalMachineMaintainance'] += 1;
-            return $maintainance;
+            return $close;
+            // return $maintainance;
         }
     }
 ?>
@@ -93,10 +96,21 @@
                 $hourR = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
                 $min = $mValue->last_running % 60;
                 $minR = $min < 10 ? ('0'.$min) : $min;
+
                 $hour = $mValue->last_stop / 60;
                 $hourS = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
                 $min = $mValue->last_stop % 60;
                 $minS = $min < 10 ? ('0'.$min) : $min;
+
+                $hour = $mValue->total_running / 60;
+                $hourTR = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
+                $min = $mValue->total_running % 60;
+                $minTR = $min < 10 ? ('0'.$min) : $min;
+
+                $hour = $mValue->total_time / 60;
+                $hourTT = $hour <= 9 ? ('0'.floor($hour)) : floor($hour);
+                $min = $mValue->total_time % 60;
+                $minTT = $min < 10 ? ('0'.$min) : $min;
 
                 $birdModalData = [
                         'name' => $mValue->machineMaster->machine_display_name,
@@ -106,6 +120,8 @@
                         'speed' => $mValue->speed,
                         'running' => '- '.$hourR.'h '.$minR.'m',
                         'stop' => '- '.$hourS.'h '.$minS.'m',
+                        'total_running' => '- '.$hourTR.'h '.$minTR.'m',
+                        'total_time' => '- '.$hourTT.'h '.$minTT.'m',
                         'pickThisShift' => $mValue->pickCalculation->shift_pick,
                         'pickThisDay' => $mValue->pickCalculation->total_pick,
                         'stoppage' => $mValue->no_of_stoppage,

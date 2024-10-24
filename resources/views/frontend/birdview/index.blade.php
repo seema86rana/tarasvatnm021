@@ -105,8 +105,10 @@
                         </div>
                         <div class="machine_rs_wrap">
                             <ul>
-                                <li class="text_green">R <span class="text_dark" id="machine_running">- 00h 00m</span></li>
-                                <li class="text_red">S <span class="text_dark" id="machine_stop">- 00h 00m</span></li>
+                                <li class="text_green">Last Run <span class="text_dark" id="machine_running">- 00h 00m</span></li>
+                                <li class="text_red">Last Stop <span class="text_dark" id="machine_stop">- 00h 00m</span></li>
+                                <li class="text_orange">Total Run <span class="text_dark" id="machine_total_running">- 00h 00m</span></li>
+                                <li class="text_blue">Total Time <span class="text_dark" id="machine_total_time">- 00h 00m</span></li>
                             </ul>
                         </div>
                         <div class="machine_work_wrap">
