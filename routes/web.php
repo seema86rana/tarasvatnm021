@@ -8,6 +8,7 @@ use App\Http\Controllers\Common\ProfileController as CommonProfileController;
 use App\Http\Controllers\Common\DeviceController as CommonDeviceController;
 use App\Http\Controllers\Common\NodeController as CommonNodeController;
 use App\Http\Controllers\Common\MachineController as CommonMachineController;
+use App\Http\Controllers\Common\ReportController as CommonReportController;
 use App\Http\Controllers\FrontEnd\BirdViewController as FrontEndBirdViewController;
 use Illuminate\Support\Facades\Auth;
 
@@ -48,11 +49,14 @@ Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth',
     Route::resource('dashboard', CommonDashboardController::class);
 
     Route::resource('users', CommonUserController::class);
-    Route::post('users/{id}', [CommonUserController::class, 'update'])->name('users.updates');;
+    Route::post('users/{id}', [CommonUserController::class, 'update'])->name('users.updates');
 
     Route::resource('roles', CommonRoleontroller::class);
-    Route::post('roles/{id}', [CommonRoleontroller::class, 'update'])->name('roles.updates');;
+    Route::post('roles/{id}', [CommonRoleontroller::class, 'update'])->name('roles.updates');
 
     Route::resource('devices', CommonDeviceController::class);
-    Route::post('devices/{id}', [CommonDeviceController::class, 'update'])->name('devices.updates');;
+    Route::post('devices/{id}', [CommonDeviceController::class, 'update'])->name('devices.updates');
+
+    Route::resource('reports', CommonReportController::class);
+    Route::post('reports/{id}', [CommonReportController::class, 'update'])->name('reports.updates');
 });

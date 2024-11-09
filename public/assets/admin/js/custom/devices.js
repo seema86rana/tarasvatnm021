@@ -2,6 +2,7 @@
 
 $(document).ready(function () {
 
+    loaderToggle(1);
     let $devices_dt = null;
     if ($('.devices-dt').length) {
         $devices_dt = $('.devices-dt').DataTable({
@@ -29,6 +30,9 @@ $(document).ready(function () {
             preDrawCallback: function () {
                 $(this).find('tbody tr').slice(-3).find('.dropdown, .btn-group').removeClass('dropup');
             },
+            initComplete: function() {
+                loaderToggle(0); // Close the loader after the data has loaded
+            },
             columns: [
                 { data: 'serial_no', name: 'serial_no', orderable: false, searchable: false, width: '5%' },
                 { data: 'name', name: 'name', width: '20%' },
@@ -45,10 +49,12 @@ $(document).ready(function () {
         $('.dataTables_filter input[type=search]').attr('placeholder', 'Type to search...');
 
         // Enable Select2 select for the length option
+        /*
         $('.dataTables_length select').select2({
             minimumResultsForSearch: Infinity,
             width: 'auto'
         });
+        */
     }
 
     $(document).on('click', '.add-device', function (e) {

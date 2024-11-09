@@ -70,6 +70,16 @@ class MenusTableSeeder extends Seeder
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
+            [
+                'name' => 'Report', // 6
+                'parent_id' => 0,
+                'route' => 'reports',
+                'icon' => '<i class="icon-clippy"></i>',
+                'position' => 5,
+                'status' => 1,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
         ]);
     }
 }

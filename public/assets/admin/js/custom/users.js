@@ -2,6 +2,7 @@
 
 $(document).ready(function () {
 
+    loaderToggle(1);
     let $users_dt = null;
     if ($('.users-dt').length) {
         $users_dt = $('.users-dt').DataTable({
@@ -29,6 +30,9 @@ $(document).ready(function () {
             preDrawCallback: function () {
                 $(this).find('tbody tr').slice(-3).find('.dropdown, .btn-group').removeClass('dropup');
             },
+            initComplete: function() {
+                loaderToggle(0); // Close the loader after the data has loaded
+            },
             columns: [
                 { data: 'serial_no', name: 'serial_no', orderable: false, searchable: false, width: '5%' },
                 { data: 'name', name: 'name', width: '10%' },
@@ -47,10 +51,12 @@ $(document).ready(function () {
         $('.dataTables_filter input[type=search]').attr('placeholder', 'Type to search...');
 
         // Enable Select2 select for the length option
+        /*
         $('.dataTables_length select').select2({
             minimumResultsForSearch: Infinity,
             width: 'auto'
         });
+        */
     }
 
     $(document).on('click', '.add-user', function (e) {
@@ -87,7 +93,7 @@ $(document).ready(function () {
         // let formData = new FormData(document.getElementById("add-user-form"));
         let formData = new FormData($("#add-user-form").get(0));
         thisMain.prop('disabled', true);
-        await loaderToggle(1);
+        loaderToggle(1);
         $.ajax({
             url: userUrl,
             type: 'POST',
