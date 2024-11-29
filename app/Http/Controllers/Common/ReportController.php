@@ -42,8 +42,10 @@ class ReportController extends Controller
             $node_id = $request->node_id;
             $machine_id = $request->machine_id;
             $date = $request->date;
+            $start = $request->start;
+            $length = $request->length;
 
-            $data = MachineLogs::with('user', 'device', 'node', 'machine')
+            $query = MachineLogs::with('user', 'device', 'node', 'machine')
                 ->when(!empty($user_id), function ($query) use ($user_id) {
                     return $query->where('user_id', $user_id);
                 })
@@ -58,11 +60,15 @@ class ReportController extends Controller
                 })
                 ->when(!empty($date), function ($query) use ($date) {
                     return $query->whereDate('device_datetime', date('Y-m-d', strtotime($date)));
-                })
-                ->orderBy('id','ASC')->get();
+                });
+                
+                $totalRecord = $query->count();
+                $data = $query->orderBy('id','ASC');
 
-            $i = 0;
+            $i = $start;
             return Datatables::of($data)
+                ->setTotalRecords($totalRecord) // Important for pagination with large data
+                ->setFilteredRecords($totalRecord) // If you implement search, update this dynamically
                 ->addColumn('serial_no', function ($row) use (&$i) {
                     return $i += 1;
                 })

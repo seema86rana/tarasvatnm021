@@ -504,7 +504,8 @@ class ApiController extends Controller
                                         $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
                                     }
                                     else if ($mValue['St'] == 0) {
-                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                        $diff = $shiftStartTime->diff($machineTime);
+                                        $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
                                     }
                                     else {
                                         $diffMinTotalRunning = 0;
@@ -543,7 +544,8 @@ class ApiController extends Controller
                                         $diffMinTotalRunning = $machineTime->diffInMinutes($deviceTime);
                                     }
                                     else if ($mValue['St'] == 0) {
-                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                        $diff = $shiftStartTime->diff($machineTime);
+                                        $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
                                     }
                                     else {
                                         $diffMinTotalRunning = 0;

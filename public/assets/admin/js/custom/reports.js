@@ -168,6 +168,19 @@ $(document).ready(function () {
         });
     });
 
+    $(document).on("click", ".reload-report", async function (e) {
+        // Add spinning effect to the icon
+        $(this).find('.fa-refresh').addClass('fa-spin');
+        
+        // Reload the DataTable
+        await $reports_dt.ajax.reload();
+    
+        // Remove spinning effect after 1 second
+        setTimeout(() => {
+            $(this).find('.fa-refresh').removeClass('fa-spin');
+        }, 1000);
+    });
+
 });
 
 function sw() {

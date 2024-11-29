@@ -29,6 +29,9 @@
             <button class="btn btn-theme-dark btn-labeled filter-report">
                 <b><i class="fa fa-filter"></i></b> Filter
             </button>
+            <button class="btn btn-theme-dark btn-labeled reload-report">
+                <b><i class="fa fa-refresh"></i></b> Reload
+            </button>
             <!-- <button class="btn btn-theme-dark btn-labeled">
                 <b><i class="fa fa-file-excel-o" aria-hidden="true"></i></b> Export XLSX
             </button> -->
