@@ -30,7 +30,7 @@ class CreateMachineStatusTable extends Migration
             $table->dateTime('shift_start_datetime')->nullable();
             $table->dateTime('shift_end_datetime')->nullable();
             $table->date('machine_date')->nullable();
-            $table->integer('status')->comment('1->Start, 0->Stop');
+            $table->unsignedBigInteger('status')->comment('1->Start, 0->Stop');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             // $table->timestamps();

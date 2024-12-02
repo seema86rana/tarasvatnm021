@@ -22,8 +22,8 @@ class CreateMachineLogsTable extends Migration
             $table->dateTime('machine_datetime');
             $table->dateTime('device_datetime');
             $table->dateTime('current_datetime');
-            $table->tinyInteger('mode')->default(0)->comment('1->Start, 0->Stop');
-            $table->integer('speed')->nullable();
+            $table->unsignedBigInteger('mode')->default(0)->comment('1->Start, 0->Stop');
+            $table->unsignedBigInteger('speed')->nullable();
             $table->unsignedBigInteger('pick')->nullable();
             $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
             $table->integer('created_by')->nullable();
