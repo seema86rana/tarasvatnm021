@@ -327,7 +327,7 @@ class ProcessPacket implements ShouldQueue
                                     }
 
                                     if ($mValue['St'] == 1) {
-                                        $diffMinTotalRunning = $machineTime->diffInMinutes($deviceTime);
+                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
                                     }
                                     else if ($mValue['St'] == 0) {
                                         $diff = $shiftStartTime->diff($machineTime);
