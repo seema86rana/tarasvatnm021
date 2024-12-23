@@ -1,4 +1,4 @@
-@extends('layouts.bs')
+@extends('layouts.bootstrap')
 
 @section('title', $title)
 

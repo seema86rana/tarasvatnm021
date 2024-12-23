@@ -1,15 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Common\RoleController as CommonRoleontroller;
-use App\Http\Controllers\Common\UserController as CommonUserController;
-use App\Http\Controllers\Common\DashboardController as CommonDashboardController;
-use App\Http\Controllers\Common\ProfileController as CommonProfileController;
-use App\Http\Controllers\Common\DeviceController as CommonDeviceController;
-use App\Http\Controllers\Common\NodeController as CommonNodeController;
-use App\Http\Controllers\Common\MachineController as CommonMachineController;
-use App\Http\Controllers\Common\ReportController as CommonReportController;
+use App\Http\Controllers\Backend\RoleController as BackendRoleontroller;
+use App\Http\Controllers\Backend\UserController as BackendUserController;
+use App\Http\Controllers\Backend\DashboardController as BackendDashboardController;
+use App\Http\Controllers\Backend\ProfileController as BackendProfileController;
+use App\Http\Controllers\Backend\DeviceController as BackendDeviceController;
+use App\Http\Controllers\Backend\ReportController as BackendReportController;
 use App\Http\Controllers\FrontEnd\BirdViewController as FrontEndBirdViewController;
+use App\Http\Controllers\FrontEnd\HomeController as FrontEndHomeController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -23,7 +22,9 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
-Route::get('/', [FrontEndBirdViewController::class, 'index'])->name('home');
+Route::get('/', [FrontEndHomeController::class, 'index'])->name('home');
+
+Route::get('/bird', [FrontEndBirdViewController::class, 'index'])->name('bird.view');
 // Route::get('/', function () {
 //     return redirect()->route('dashboard.index');
 // });
@@ -36,9 +37,9 @@ Route::get('/dashboard', function () {
 Auth::routes(['verify' => true]);
 
 // profile
-Route::resource('profile', CommonProfileController::class);
-Route::post('profile/{id}', [CommonProfileController::class, 'update'])->name('profile.updates');
-Route::post('profile/password/{id}', [CommonProfileController::class, 'password'])->name('profile.password');
+Route::resource('profile', BackendProfileController::class);
+Route::post('profile/{id}', [BackendProfileController::class, 'update'])->name('profile.updates');
+Route::post('profile/password/{id}', [BackendProfileController::class, 'password'])->name('profile.password');
 
 // birdview
 Route::resource('birdview', FrontEndBirdViewController::class);
@@ -46,17 +47,17 @@ Route::resource('birdview', FrontEndBirdViewController::class);
 // backend
 Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth', 'verified', 'permission']], function () {
 
-    Route::resource('dashboard', CommonDashboardController::class);
+    Route::resource('dashboard', BackendDashboardController::class);
 
-    Route::resource('users', CommonUserController::class);
-    Route::post('users/{id}', [CommonUserController::class, 'update'])->name('users.updates');
+    Route::resource('users', BackendUserController::class);
+    Route::post('users/{id}', [BackendUserController::class, 'update'])->name('users.updates');
 
-    Route::resource('roles', CommonRoleontroller::class);
-    Route::post('roles/{id}', [CommonRoleontroller::class, 'update'])->name('roles.updates');
+    Route::resource('roles', BackendRoleontroller::class);
+    Route::post('roles/{id}', [BackendRoleontroller::class, 'update'])->name('roles.updates');
 
-    Route::resource('devices', CommonDeviceController::class);
-    Route::post('devices/{id}', [CommonDeviceController::class, 'update'])->name('devices.updates');
+    Route::resource('devices', BackendDeviceController::class);
+    Route::post('devices/{id}', [BackendDeviceController::class, 'update'])->name('devices.updates');
 
-    Route::resource('reports', CommonReportController::class);
-    Route::post('reports/{id}', [CommonReportController::class, 'update'])->name('reports.updates');
+    Route::resource('reports', BackendReportController::class);
+    Route::post('reports/{id}', [BackendReportController::class, 'update'])->name('reports.updates');
 });
