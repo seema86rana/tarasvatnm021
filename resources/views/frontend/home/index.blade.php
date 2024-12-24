@@ -33,7 +33,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <h2 class="h2-heading">Ioniq CRM application is packed with <span>awesome features</span></h2>
+                    <h2 class="h2-heading">Tarasvat ahevalnest is packed with <span>awesome features</span></h2>
                 </div> <!-- end of col -->
             </div> <!-- end of row -->
             <div class="row">
@@ -45,8 +45,8 @@
                             <span class="fas fa-headphones-alt"></span>
                         </div>
                         <div class="card-body">
-                            <h4 class="card-title">Customer Lists</h4>
-                            <p>Et blandit nisl libero at arcu. Donec ac lectus sed tellus mollis viverra. Nullam pharetra ante at nunc elementum</p>
+                            <h4 class="card-title">Real-Time Data Monitoring</h4>
+                            <p>Provides immediate updates on machine performance, production statistics, and any system malfunctions, enabling quick action</p>
                         </div>
                     </div>
                     <!-- end of card -->
@@ -57,8 +57,8 @@
                             <span class="far fa-clipboard"></span>
                         </div>
                         <div class="card-body">
-                            <h4 class="card-title">Sales Tracking</h4>
-                            <p>Vulputate nibh feugiat. Morbi pellent diam nec libero lacinia, sed ultrices velit scelerisque. Nunc placerat justo sem</p>
+                            <h4 class="card-title">Interactive Data Exploration</h4>
+                            <p>Allows users to drill down into specific datasets for a deeper understanding of machine performance, operational bottlenecks, or other critical aspects of production.</p>
                         </div>
                     </div>
                     <!-- end of card -->
@@ -69,8 +69,8 @@
                             <span class="far fa-comments"></span>
                         </div>
                         <div class="card-body">
-                            <h4 class="card-title">Reporting Tool</h4>
-                            <p>Ety suscipit metus sollicitudin euqu isq imperdiet nibh nec magna tincidunt, nec pala vehicula neque sodales verum</p>
+                            <h4 class="card-title">Automated Reporting</h4>
+                            <p>Automatically generates detailed reports on machine performance, production output, and quality control, saving time on manual data entry.</p>
                         </div>
                     </div>
                     <!-- end of card -->
