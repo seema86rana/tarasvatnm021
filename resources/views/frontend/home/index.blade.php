@@ -70,7 +70,7 @@
                         </div>
                         <div class="card-body">
                             <h4 class="card-title">Automated Reporting</h4>
-                            <p>Automated reports with bar charts for each machine, past performance comparisons, and instant delivery via email and WhatsApp.</p>
+                            <p>Automated bar chart reports with past comparisons, sent via email and WhatsApp.</p>
                         </div>
                     </div>
                     <!-- end of card -->
