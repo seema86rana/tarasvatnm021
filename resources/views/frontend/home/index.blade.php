@@ -165,20 +165,24 @@
                 </div> <!-- end of col -->
                 <div class="col-lg-6">
                     <div class="text-container">
-                        <h2>Anyone can start using the app with minimum skills</h2>
-                        <p>Velit dictum non proin egestas convallis nunc, eu auctor massa. Nam hendrerit, eros ut viverra lobortis, mauris nisi porta risus, placerat dignissim tellus auctor masse</p>
+                        <h2>Anyone can start using this site with minimum skills</h2>
+                        <p>Our system offers an exceptional user experience, with a birdview and a helpful section for easy understanding.</p>
                         <ul class="list-unstyled li-space-lg">
                             <li class="d-flex">
                                 <i class="fas fa-square"></i>
-                                <div class="flex-grow-1">Fusce ipsum augue, ultrices rutrum est accel, pulvin</div>
+                                <div class="flex-grow-1"><b>Sign up</b> with our system.</div>
                             </li>
                             <li class="d-flex">
                                 <i class="fas fa-square"></i>
-                                <div class="flex-grow-1">Fermentum elit. Vestibulum cursuso bibendum viverra</div>
+                                <div class="flex-grow-1"><b>Add device information</b> for seamless tracking.</div>
                             </li>
                             <li class="d-flex">
                                 <i class="fas fa-square"></i>
-                                <div class="flex-grow-1">Quisque blandit pulvinar metus, eu sta malesuada</div>
+                                <div class="flex-grow-1"><b>Enter shift</b> details for accurate reporting.</div>
+                            </li>
+                            <li class="d-flex">
+                                <i class="fas fa-square"></i>
+                                <div class="flex-grow-1"><b>Enjoy Birdview</b> to monitor machine status effortlessly, with a helpful guide.</div>
                             </li>
                         </ul>
                     </div> <!-- end of text-container -->
