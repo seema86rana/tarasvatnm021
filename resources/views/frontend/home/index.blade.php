@@ -304,8 +304,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <h4>Ioniq will change the way you think about CRM solutions due to it’s advanced tools and integrated functionalities</h4>
-                    <a class="btn-outline-lg page-scroll" href="sign-up.html">Sign up for free</a>
+                    <h4>Tarasvat will change the way you think about ahevalnest solutions due to it’s advanced tools and integrated functionalities</h4>
+                    <a class="btn-outline-lg page-scroll" href="{{ route('login') }}">Login In</a>
                 </div> <!-- end of col -->
             </div> <!-- end of row -->
         </div> <!-- end of container -->
