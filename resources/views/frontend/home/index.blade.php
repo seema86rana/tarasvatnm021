@@ -395,7 +395,7 @@
 
 
     <!-- Questions -->
-    <div class="accordion-1">
+    <div id="faq" class="accordion-1">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
