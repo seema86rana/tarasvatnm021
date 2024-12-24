@@ -194,7 +194,7 @@
 
 
     <!-- Testimonials -->
-    <div class="slider-1 bg-gray">
+  <?php /*  <div class="slider-1 bg-gray">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
@@ -296,7 +296,7 @@
             </div> <!-- end of row -->
         </div> <!-- end of container -->
     </div> <!-- end of slider-1 -->
-    <!-- end of testimonials -->
+    <!-- end of testimonials --> */ ?>
 
 
     <!-- Invitation -->
@@ -314,7 +314,7 @@
 
 
     <!-- Pricing -->
-    <div id="pricing" class="cards-2 bg-gray">
+ <?php /*   <div id="pricing" class="cards-2 bg-gray">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
@@ -391,7 +391,7 @@
             </div> <!-- end of row -->
         </div> <!-- end of container -->
     </div> <!-- end of cards-2 -->
-    <!-- end of pricing -->
+    <!-- end of pricing --> */ ?>
 
 
     <!-- Questions -->
