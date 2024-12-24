@@ -5,18 +5,15 @@
             <div class="col-lg-12">
                 <div class="footer-col first">
                     <h6>About Website</h6>
-                    <p class="p-small">Proin ut felis purus vestibulum in orci molestie, efficitur lacus ac pellentesque
-                        elit. Fusce mollis laoreet lobortis nulla ac efficitur lacus ac </p>
+                    <p class="p-small"> systems help businesses gain a deeper understanding of their operations, improve productivity, and reduce costs, ultimately leading to higher profitability and a competitive edge.</p>
                 </div> <!-- end of footer-col -->
                 <div class="footer-col second">
                     <h6>Links</h6>
                     <ul class="list-unstyled li-space-lg p-small">
-                        <li>Important: <a href="terms.html">Terms & Conditions</a>, <a href="privacy.html">Privacy
-                                Policy</a></li>
-                        <li>Useful: <a href="#">Colorpicker</a>, <a href="#">Icon Library</a>, <a
-                                href="#">Illustrations</a></li>
-                        <li>Menu: <a href="#header">Home</a>, <a href="#features">Features</a>, <a
-                                href="#details">Details</a>, <a href="#pricing">Pricing</a></li>
+                        <li><a href="#header">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#details">Details</a></li>
+                        <li><a href="#faq">FAQ</a></li>
                     </ul>
                 </div> <!-- end of footer-col -->
                 <div class="footer-col third">
@@ -44,8 +41,8 @@
                             <i class="fab fa-instagram fa-stack-1x"></i>
                         </a>
                     </span>
-                    <p class="p-small">Quam posuerei pellent esque vam <a
-                            href="mailto:contact@site.com"><strong>contact@site.com</strong></a></p>
+                    <p class="p-small">For any inquiries, please email us at <a
+                            href="mailto:tarasvat@gmail.com"><strong>tarasvat@gmail.com</strong></a></p>
                 </div> <!-- end of footer-col -->
             </div> <!-- end of col -->
         </div> <!-- end of row -->
@@ -58,12 +55,8 @@
 <div class="copyright">
     <div class="container">
         <div class="row">
-            <div class="col-lg-6">
-                <p class="p-small">Copyright © <a href="#your-link">Your name</a></p>
-            </div> <!-- end of col -->
-
-            <div class="col-lg-6">
-                <p class="p-small">Distributed By<a href="https://themewagon.com/"> Themewagon</a></p>
+            <div class="col-lg-12">
+                <p class="p-small">Copyright © <a target="_blank" href="https://tarasvat.co.in/">2024 Tarasvat Industrial Electronics</a></p>
             </div> <!-- end of col -->
         </div> <!-- enf of row -->
     </div> <!-- end of container -->
