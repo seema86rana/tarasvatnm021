@@ -89,8 +89,9 @@
                 <div class="col-lg-6 col-xl-5">
                     <div class="text-container">
                         <h2>Manage your customer’s expectations and get them to trust you</h2>
-                        <p>Vestibulum ullamcorper augue ex, imperdiet tincidunt tellus bibendum inconsectetur rutrum mauris orbi scelerisque cursus augue, ac suscipit sem mattis at ut suscipit</p>
-                        <a class="btn-solid-reg" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Modal</a>
+                        <p>Deliver consistent machine performance to satisfy customer needs and foster trust.</p>
+                        <p>Empower your customers to manage users with detailed machine reports, performance, and efficiency, driving more clients and boosting production.</p>
+                        <!-- <a class="btn-solid-reg" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Modal</a> -->
                     </div> <!-- end of text-container -->
                 </div> <!-- end of col -->
                 <div class="col-lg-6 col-xl-7">
