@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body {
+                width: 210mm;
+                /* A4 Width */
+                height: 297mm;
+                /* A4 Height */
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-wrap: wrap;
+                box-sizing: border-box;
+                font-family: Arial, sans-serif;
+            }
+
+            .chart-container {
+                width: 49%;
+                /* Two graphs per row */
+                height: 50%;
+                /* Two rows */
+                box-sizing: border-box;
+                padding: 10px;
+                border: 2px solid #000;
+                /* Border for separation */
+                margin: 3px;
+            }
+
+            .chart-container div {
+                height: 100%;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div style="width: 100%;">
+            <h2>Name: N2 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N2"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N2"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N2"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N2"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N3 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N3"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N3"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N3"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N3"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N4 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N4"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N4"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N4"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N4"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N5 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N5"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N5"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N5"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N5"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N6 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N6"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N6"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N6"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N6"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N7 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N7"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N7"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N7"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N7"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N8 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N8"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N8"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N8"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N8"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N9 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N9"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N9"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N9"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N9"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N10 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N10"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N10"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N10"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N10"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N11 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N11"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N11"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N11"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N11"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N12 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N12"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N12"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N12"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N12"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N13 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N13"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N13"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N13"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N13"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N14 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N14"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N14"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N14"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N14"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N15 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N15"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N15"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N15"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N15"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N16 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N16"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N16"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N16"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N16"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N17 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N17"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N17"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N17"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N17"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N18 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N18"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N18"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N18"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N18"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N19 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N19"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N19"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N19"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N19"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N20 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N20"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N20"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N20"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N20"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N21 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N21"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N21"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N21"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N21"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N22 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N22"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N22"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N22"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N22"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N23 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N23"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N23"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N23"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N23"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N24 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N24"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N24"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N24"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N24"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N25 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N25"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N25"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N25"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N25"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N26 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N26"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N26"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N26"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N26"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N27 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N27"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N27"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N27"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N27"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N28 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N28"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N28"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N28"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N28"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N29 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N29"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N29"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N29"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N29"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N30 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N30"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N30"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N30"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N30"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N31 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N31"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N31"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N31"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N31"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N32 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N32"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N32"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N32"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N32"></div>
+        </div>
+        <div style="width: 100%;">
+            <h2>Name: N1 (Daily)</h2>
+        </div>
+        <div class="chart-container">
+            <div id="speed_N1"></div>
+        </div>
+        <div class="chart-container">
+            <div id="efficiency_N1"></div>
+        </div>
+        <div class="chart-container">
+            <div id="no_of_stoppage_N1"></div>
+        </div>
+        <div class="chart-container">
+            <div id="shift_pick_N1"></div>
+        </div>
+
+        <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
+        <script>
+            window.onload = function () {
+                // Loop through each node and create a chart for each metric
+                createChart("speed_N2", "Speed Report", [
+                    { label: "N2:M1", previous: 305, current: 150 },
+                    { label: "N2:M2", previous: 640, current: 160 },
+                    { label: "N2:M3", previous: 517, current: 0 },
+                    { label: "N2:M4", previous: 540, current: 360 },
+                ]);
+                createChart("efficiency_N2", "Efficiency Report", [
+                    { label: "N2:M1", previous: 442.15, current: 102.39 },
+                    { label: "N2:M2", previous: 329.89, current: 64.4 },
+                    { label: "N2:M3", previous: 403.27, current: 97.79 },
+                    { label: "N2:M4", previous: 295.6, current: 82.81 },
+                ]);
+                createChart("no_of_stoppage_N2", "Stoppage Report", [
+                    { label: "N2:M1", previous: 5, current: 7 },
+                    { label: "N2:M2", previous: 5, current: 10 },
+                    { label: "N2:M3", previous: 4, current: 8 },
+                    { label: "N2:M4", previous: 4, current: 10 },
+                ]);
+                createChart("shift_pick_N2", "Total Pick Report", [
+                    { label: "N2:M1", previous: 1450, current: 2050 },
+                    { label: "N2:M2", previous: 950, current: 1150 },
+                    { label: "N2:M3", previous: 1450, current: 2000 },
+                    { label: "N2:M4", previous: 1300, current: 1600 },
+                ]);
+                createChart("speed_N3", "Speed Report", [
+                    { label: "N3:M1", previous: 600, current: 300 },
+                    { label: "N3:M2", previous: 640, current: 160 },
+                    { label: "N3:M3", previous: 510, current: 170 },
+                    { label: "N3:M4", previous: 720, current: 360 },
+                ]);
+                createChart("efficiency_N3", "Efficiency Report", [
+                    { label: "N3:M1", previous: 390.99, current: 87.42 },
+                    { label: "N3:M2", previous: 423.38, current: 102.39 },
+                    { label: "N3:M3", previous: 292.15, current: 82.81 },
+                    { label: "N3:M4", previous: 317.83, current: 82.81 },
+                ]);
+                createChart("no_of_stoppage_N3", "Stoppage Report", [
+                    { label: "N3:M1", previous: 6, current: 8 },
+                    { label: "N3:M2", previous: 2, current: 7 },
+                    { label: "N3:M3", previous: 6, current: 12 },
+                    { label: "N3:M4", previous: 7, current: 14 },
+                ]);
+                createChart("shift_pick_N3", "Total Pick Report", [
+                    { label: "N3:M1", previous: 1450, current: 1900 },
+                    { label: "N3:M2", previous: 1600, current: 2150 },
+                    { label: "N3:M3", previous: 1150, current: 1500 },
+                    { label: "N3:M4", previous: 1250, current: 1600 },
+                ]);
+                createChart("speed_N4", "Speed Report", [
+                    { label: "N4:M1", previous: 450, current: 0 },
+                    { label: "N4:M2", previous: 640, current: 320 },
+                    { label: "N4:M3", previous: 510, current: 170 },
+                    { label: "N4:M4", previous: 720, current: 0 },
+                ]);
+                createChart("efficiency_N4", "Efficiency Report", [
+                    { label: "N4:M1", previous: 370.88, current: 74.77 },
+                    { label: "N4:M2", previous: 328.93, current: 96.63 },
+                    { label: "N4:M3", previous: 418.78, current: 87.42 },
+                    { label: "N4:M4", previous: 336.6, current: 83.97 },
+                ]);
+                createChart("no_of_stoppage_N4", "Stoppage Report", [
+                    { label: "N4:M1", previous: 7, current: 10 },
+                    { label: "N4:M2", previous: 5, current: 8 },
+                    { label: "N4:M3", previous: 6, current: 6 },
+                    { label: "N4:M4", previous: 4, current: 8 },
+                ]);
+                createChart("shift_pick_N4", "Total Pick Report", [
+                    { label: "N4:M1", previous: 950, current: 1300 },
+                    { label: "N4:M2", previous: 1450, current: 1950 },
+                    { label: "N4:M3", previous: 1250, current: 1700 },
+                    { label: "N4:M4", previous: 1200, current: 1550 },
+                ]);
+                createChart("speed_N5", "Speed Report", [
+                    { label: "N5:M1", previous: 450, current: 150 },
+                    { label: "N5:M2", previous: 640, current: 320 },
+                    { label: "N5:M3", previous: 170, current: 0 },
+                    { label: "N5:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N5", "Efficiency Report", [
+                    { label: "N5:M1", previous: 292.15, current: 82.81 },
+                    { label: "N5:M2", previous: 424.33, current: 87.42 },
+                    { label: "N5:M3", previous: 209.77, current: 70.16 },
+                    { label: "N5:M4", previous: 228.93, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N5", "Stoppage Report", [
+                    { label: "N5:M1", previous: 7, current: 16 },
+                    { label: "N5:M2", previous: 5, current: 12 },
+                    { label: "N5:M3", previous: 5, current: 12 },
+                    { label: "N5:M4", previous: 5, current: 14 },
+                ]);
+                createChart("shift_pick_N5", "Total Pick Report", [
+                    { label: "N5:M1", previous: 1050, current: 1400 },
+                    { label: "N5:M2", previous: 1350, current: 1800 },
+                    { label: "N5:M3", previous: 850, current: 1150 },
+                    { label: "N5:M4", previous: 950, current: 1300 },
+                ]);
+                createChart("speed_N6", "Speed Report", [
+                    { label: "N6:M1", previous: 600, current: 0 },
+                    { label: "N6:M2", previous: 320, current: 320 },
+                    { label: "N6:M3", previous: 510, current: 0 },
+                    { label: "N6:M4", previous: 900, current: 360 },
+                ]);
+                createChart("efficiency_N6", "Efficiency Report", [
+                    { label: "N6:M1", previous: 352.11, current: 97.79 },
+                    { label: "N6:M2", previous: 281.04, current: 69.01 },
+                    { label: "N6:M3", previous: 424.33, current: 93.18 },
+                    { label: "N6:M4", previous: 362.27, current: 82.81 },
+                ]);
+                createChart("no_of_stoppage_N6", "Stoppage Report", [
+                    { label: "N6:M1", previous: 5, current: 8 },
+                    { label: "N6:M2", previous: 4, current: 8 },
+                    { label: "N6:M3", previous: 5, current: 8 },
+                    { label: "N6:M4", previous: 3, current: 10 },
+                ]);
+                createChart("shift_pick_N6", "Total Pick Report", [
+                    { label: "N6:M1", previous: 1450, current: 2050 },
+                    { label: "N6:M2", previous: 850, current: 1050 },
+                    { label: "N6:M3", previous: 1450, current: 2000 },
+                    { label: "N6:M4", previous: 1200, current: 1500 },
+                ]);
+                createChart("speed_N7", "Speed Report", [
+                    { label: "N7:M1", previous: 750, current: 300 },
+                    { label: "N7:M2", previous: 800, current: 0 },
+                    { label: "N7:M3", previous: 510, current: 170 },
+                    { label: "N7:M4", previous: 720, current: 360 },
+                ]);
+                createChart("efficiency_N7", "Efficiency Report", [
+                    { label: "N7:M1", previous: 434.49, current: 92.03 },
+                    { label: "N7:M2", previous: 412.27, current: 97.79 },
+                    { label: "N7:M3", previous: 263.22, current: 79.37 },
+                    { label: "N7:M4", previous: 358.82, current: 82.81 },
+                ]);
+                createChart("no_of_stoppage_N7", "Stoppage Report", [
+                    { label: "N7:M1", previous: 5, current: 6 },
+                    { label: "N7:M2", previous: 3, current: 8 },
+                    { label: "N7:M3", previous: 6, current: 13 },
+                    { label: "N7:M4", previous: 8, current: 14 },
+                ]);
+                createChart("shift_pick_N7", "Total Pick Report", [
+                    { label: "N7:M1", previous: 1350, current: 1800 },
+                    { label: "N7:M2", previous: 1500, current: 2000 },
+                    { label: "N7:M3", previous: 1150, current: 1550 },
+                    { label: "N7:M4", previous: 1300, current: 1600 },
+                ]);
+                createChart("speed_N8", "Speed Report", [
+                    { label: "N8:M1", previous: 100, current: 0 },
+                    { label: "N8:M2", previous: 960, current: 320 },
+                    { label: "N8:M3", previous: 510, current: 170 },
+                    { label: "N8:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N8", "Efficiency Report", [
+                    { label: "N8:M1", previous: 287.54, current: 74.77 },
+                    { label: "N8:M2", previous: 384.5, current: 96.63 },
+                    { label: "N8:M3", previous: 406.72, current: 88.58 },
+                    { label: "N8:M4", previous: 354.21, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N8", "Stoppage Report", [
+                    { label: "N8:M1", previous: 5, current: 8 },
+                    { label: "N8:M2", previous: 5, current: 8 },
+                    { label: "N8:M3", previous: 4, current: 5 },
+                    { label: "N8:M4", previous: 4, current: 8 },
+                ]);
+                createChart("shift_pick_N8", "Total Pick Report", [
+                    { label: "N8:M1", previous: 800, current: 1200 },
+                    { label: "N8:M2", previous: 1500, current: 1950 },
+                    { label: "N8:M3", previous: 1150, current: 1600 },
+                    { label: "N8:M4", previous: 1050, current: 1450 },
+                ]);
+                createChart("speed_N9", "Speed Report", [
+                    { label: "N9:M1", previous: 450, current: 150 },
+                    { label: "N9:M2", previous: 320, current: 160 },
+                    { label: "N9:M3", previous: 340, current: 0 },
+                    { label: "N9:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N9", "Efficiency Report", [
+                    { label: "N9:M1", previous: 279.89, current: 10.4 },
+                    { label: "N9:M2", previous: 292.15, current: 12.72 },
+                    { label: "N9:M3", previous: 279.89, current: 8.09 },
+                    { label: "N9:M4", previous: 281.05, current: 9.25 },
+                ]);
+                createChart("no_of_stoppage_N9", "Stoppage Report", [
+                    { label: "N9:M1", previous: 7, current: 8 },
+                    { label: "N9:M2", previous: 5, current: 5 },
+                    { label: "N9:M3", previous: 4, current: 5 },
+                    { label: "N9:M4", previous: 6, current: 7 },
+                ]);
+                createChart("shift_pick_N9", "Total Pick Report", [
+                    { label: "N9:M1", previous: 1050, current: 1450 },
+                    { label: "N9:M2", previous: 1250, current: 1700 },
+                    { label: "N9:M3", previous: 700, current: 1050 },
+                    { label: "N9:M4", previous: 1000, current: 1250 },
+                ]);
+                createChart("speed_N10", "Speed Report", [
+                    { label: "N10:M1", previous: 450, current: 0 },
+                    { label: "N10:M2", previous: 640, current: 160 },
+                    { label: "N10:M3", previous: 340, current: 0 },
+                    { label: "N10:M4", previous: 540, current: 180 },
+                ]);
+                createChart("efficiency_N10", "Efficiency Report", [
+                    { label: "N10:M1", previous: 340.05, current: 15.03 },
+                    { label: "N10:M2", previous: 235.44, current: 6.94 },
+                    { label: "N10:M3", previous: 331.04, current: 13.87 },
+                    { label: "N10:M4", previous: 319.93, current: 10.4 },
+                ]);
+                createChart("no_of_stoppage_N10", "Stoppage Report", [
+                    { label: "N10:M1", previous: 2, current: 3 },
+                    { label: "N10:M2", previous: 5, current: 4 },
+                    { label: "N10:M3", previous: 4, current: 3 },
+                    { label: "N10:M4", previous: 4, current: 5 },
+                ]);
+                createChart("shift_pick_N10", "Total Pick Report", [
+                    { label: "N10:M1", previous: 1350, current: 1900 },
+                    { label: "N10:M2", previous: 850, current: 1100 },
+                    { label: "N10:M3", previous: 1350, current: 1850 },
+                    { label: "N10:M4", previous: 1100, current: 1400 },
+                ]);
+                createChart("speed_N11", "Speed Report", [
+                    { label: "N11:M1", previous: 450, current: 150 },
+                    { label: "N11:M2", previous: 480, current: 0 },
+                    { label: "N11:M3", previous: 680, current: 0 },
+                    { label: "N11:M4", previous: 360, current: 180 },
+                ]);
+                createChart("efficiency_N11", "Efficiency Report", [
+                    { label: "N11:M1", previous: 301.16, current: 88.58 },
+                    { label: "N11:M2", previous: 381.04, current: 13.87 },
+                    { label: "N11:M3", previous: 295.6, current: 79.37 },
+                    { label: "N11:M4", previous: 370.87, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N11", "Stoppage Report", [
+                    { label: "N11:M1", previous: 4, current: 7 },
+                    { label: "N11:M2", previous: 4, current: 4 },
+                    { label: "N11:M3", previous: 4, current: 12 },
+                    { label: "N11:M4", previous: 7, current: 13 },
+                ]);
+                createChart("shift_pick_N11", "Total Pick Report", [
+                    { label: "N11:M1", previous: 1400, current: 1800 },
+                    { label: "N11:M2", previous: 1400, current: 1850 },
+                    { label: "N11:M3", previous: 1050, current: 1400 },
+                    { label: "N11:M4", previous: 1150, current: 1550 },
+                ]);
+                createChart("speed_N12", "Speed Report", [
+                    { label: "N12:M1", previous: 300, current: 0 },
+                    { label: "N12:M2", previous: 640, current: 160 },
+                    { label: "N12:M3", previous: 680, current: 0 },
+                    { label: "N12:M4", previous: 180, current: 0 },
+                ]);
+                createChart("efficiency_N12", "Efficiency Report", [
+                    { label: "N12:M1", previous: 226.44, current: 74.77 },
+                    { label: "N12:M2", previous: 401.16, current: 93.18 },
+                    { label: "N12:M3", previous: 251.16, current: 83.97 },
+                    { label: "N12:M4", previous: 259.76, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N12", "Stoppage Report", [
+                    { label: "N12:M1", previous: 4, current: 8 },
+                    { label: "N12:M2", previous: 4, current: 9 },
+                    { label: "N12:M3", previous: 3, current: 6 },
+                    { label: "N12:M4", previous: 3, current: 6 },
+                ]);
+                createChart("shift_pick_N12", "Total Pick Report", [
+                    { label: "N12:M1", previous: 800, current: 1200 },
+                    { label: "N12:M2", previous: 1400, current: 1850 },
+                    { label: "N12:M3", previous: 1200, current: 1550 },
+                    { label: "N12:M4", previous: 900, current: 1350 },
+                ]);
+                createChart("speed_N13", "Speed Report", [
+                    { label: "N13:M1", previous: 450, current: 0 },
+                    { label: "N13:M2", previous: 640, current: 0 },
+                    { label: "N13:M3", previous: 170, current: 0 },
+                    { label: "N13:M4", previous: 180, current: 0 },
+                ]);
+                createChart("efficiency_N13", "Efficiency Report", [
+                    { label: "N13:M1", previous: 228.93, current: 0 },
+                    { label: "N13:M2", previous: 396.55, current: 0 },
+                    { label: "N13:M3", previous: 197.71, current: 0 },
+                    { label: "N13:M4", previous: 196.55, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N13", "Stoppage Report", [
+                    { label: "N13:M1", previous: 5, current: 0 },
+                    { label: "N13:M2", previous: 6, current: 0 },
+                    { label: "N13:M3", previous: 5, current: 0 },
+                    { label: "N13:M4", previous: 6, current: 0 },
+                ]);
+                createChart("shift_pick_N13", "Total Pick Report", [
+                    { label: "N13:M1", previous: 950, current: 1300 },
+                    { label: "N13:M2", previous: 1250, current: 1700 },
+                    { label: "N13:M3", previous: 750, current: 1000 },
+                    { label: "N13:M4", previous: 850, current: 1150 },
+                ]);
+                createChart("speed_N14", "Speed Report", [
+                    { label: "N14:M1", previous: 600, current: 0 },
+                    { label: "N14:M2", previous: 480, current: 0 },
+                    { label: "N14:M3", previous: 510, current: 0 },
+                    { label: "N14:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N14", "Efficiency Report", [
+                    { label: "N14:M1", previous: 312.27, current: 0 },
+                    { label: "N14:M2", previous: 319.93, current: 0 },
+                    { label: "N14:M3", previous: 385.44, current: 0 },
+                    { label: "N14:M4", previous: 270.87, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N14", "Stoppage Report", [
+                    { label: "N14:M1", previous: 3, current: 0 },
+                    { label: "N14:M2", previous: 4, current: 0 },
+                    { label: "N14:M3", previous: 5, current: 0 },
+                    { label: "N14:M4", previous: 4, current: 0 },
+                ]);
+                createChart("shift_pick_N14", "Total Pick Report", [
+                    { label: "N14:M1", previous: 1400, current: 1850 },
+                    { label: "N14:M2", previous: 750, current: 950 },
+                    { label: "N14:M3", previous: 1350, current: 1850 },
+                    { label: "N14:M4", previous: 950, current: 1300 },
+                ]);
+                createChart("speed_N15", "Speed Report", [
+                    { label: "N15:M1", previous: 450, current: 150 },
+                    { label: "N15:M2", previous: 480, current: 0 },
+                    { label: "N15:M3", previous: 340, current: 0 },
+                    { label: "N15:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N15", "Efficiency Report", [
+                    { label: "N15:M1", previous: 331.05, current: 87.42 },
+                    { label: "N15:M2", previous: 352.11, current: 0 },
+                    { label: "N15:M3", previous: 247.71, current: 74.77 },
+                    { label: "N15:M4", previous: 274.32, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N15", "Stoppage Report", [
+                    { label: "N15:M1", previous: 4, current: 8 },
+                    { label: "N15:M2", previous: 5, current: 0 },
+                    { label: "N15:M3", previous: 5, current: 12 },
+                    { label: "N15:M4", previous: 4, current: 12 },
+                ]);
+                createChart("shift_pick_N15", "Total Pick Report", [
+                    { label: "N15:M1", previous: 1300, current: 1650 },
+                    { label: "N15:M2", previous: 1250, current: 1750 },
+                    { label: "N15:M3", previous: 1100, current: 1350 },
+                    { label: "N15:M4", previous: 1000, current: 1450 },
+                ]);
+                createChart("speed_N16", "Speed Report", [
+                    { label: "N16:M1", previous: 150, current: 0 },
+                    { label: "N16:M2", previous: 640, current: 0 },
+                    { label: "N16:M3", previous: 680, current: 0 },
+                    { label: "N16:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N16", "Efficiency Report", [
+                    { label: "N16:M1", previous: 259.77, current: 74.77 },
+                    { label: "N16:M2", previous: 301.16, current: 88.58 },
+                    { label: "N16:M3", previous: 273.38, current: 79.37 },
+                    { label: "N16:M4", previous: 318.78, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N16", "Stoppage Report", [
+                    { label: "N16:M1", previous: 3, current: 8 },
+                    { label: "N16:M2", previous: 4, current: 10 },
+                    { label: "N16:M3", previous: 3, current: 6 },
+                    { label: "N16:M4", previous: 3, current: 6 },
+                ]);
+                createChart("shift_pick_N16", "Total Pick Report", [
+                    { label: "N16:M1", previous: 800, current: 1200 },
+                    { label: "N16:M2", previous: 1300, current: 1700 },
+                    { label: "N16:M3", previous: 1100, current: 1400 },
+                    { label: "N16:M4", previous: 900, current: 1350 },
+                ]);
+                createChart("speed_N17", "Speed Report", [
+                    { label: "N17:M1", previous: 450, current: 0 },
+                    { label: "N17:M2", previous: 160, current: 0 },
+                    { label: "N17:M3", previous: 510, current: 0 },
+                    { label: "N17:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N17", "Efficiency Report", [
+                    { label: "N17:M1", previous: 231.05, current: 0 },
+                    { label: "N17:M2", previous: 264.37, current: 0 },
+                    { label: "N17:M3", previous: 185.44, current: 0 },
+                    { label: "N17:M4", previous: 253.27, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N17", "Stoppage Report", [
+                    { label: "N17:M1", previous: 4, current: 0 },
+                    { label: "N17:M2", previous: 5, current: 0 },
+                    { label: "N17:M3", previous: 4, current: 0 },
+                    { label: "N17:M4", previous: 5, current: 0 },
+                ]);
+                createChart("shift_pick_N17", "Total Pick Report", [
+                    { label: "N17:M1", previous: 1000, current: 1250 },
+                    { label: "N17:M2", previous: 1150, current: 1550 },
+                    { label: "N17:M3", previous: 750, current: 1000 },
+                    { label: "N17:M4", previous: 750, current: 1000 },
+                ]);
+                createChart("speed_N18", "Speed Report", [
+                    { label: "N18:M1", previous: 600, current: 0 },
+                    { label: "N18:M2", previous: 160, current: 0 },
+                    { label: "N18:M3", previous: 340, current: 0 },
+                    { label: "N18:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N18", "Efficiency Report", [
+                    { label: "N18:M1", previous: 334.49, current: 0 },
+                    { label: "N18:M2", previous: 170.87, current: 0 },
+                    { label: "N18:M3", previous: 356.71, current: 0 },
+                    { label: "N18:M4", previous: 207.66, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N18", "Stoppage Report", [
+                    { label: "N18:M1", previous: 2, current: 0 },
+                    { label: "N18:M2", previous: 5, current: 0 },
+                    { label: "N18:M3", previous: 3, current: 0 },
+                    { label: "N18:M4", previous: 2, current: 0 },
+                ]);
+                createChart("shift_pick_N18", "Total Pick Report", [
+                    { label: "N18:M1", previous: 1300, current: 1700 },
+                    { label: "N18:M2", previous: 750, current: 950 },
+                    { label: "N18:M3", previous: 1250, current: 1700 },
+                    { label: "N18:M4", previous: 800, current: 1200 },
+                ]);
+                createChart("speed_N19", "Speed Report", [
+                    { label: "N19:M1", previous: 300, current: 150 },
+                    { label: "N19:M2", previous: 480, current: 0 },
+                    { label: "N19:M3", previous: 340, current: 170 },
+                    { label: "N19:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N19", "Efficiency Report", [
+                    { label: "N19:M1", previous: 313.22, current: 83.97 },
+                    { label: "N19:M2", previous: 286.6, current: 0 },
+                    { label: "N19:M3", previous: 232.26, current: 116.98 },
+                    { label: "N19:M4", previous: 281.05, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N19", "Stoppage Report", [
+                    { label: "N19:M1", previous: 6, current: 9 },
+                    { label: "N19:M2", previous: 2, current: 0 },
+                    { label: "N19:M3", previous: 5, current: 12 },
+                    { label: "N19:M4", previous: 4, current: 12 },
+                ]);
+                createChart("shift_pick_N19", "Total Pick Report", [
+                    { label: "N19:M1", previous: 1150, current: 1600 },
+                    { label: "N19:M2", previous: 1150, current: 1600 },
+                    { label: "N19:M3", previous: 1000, current: 1350 },
+                    { label: "N19:M4", previous: 1050, current: 1400 },
+                ]);
+                createChart("speed_N20", "Speed Report", [
+                    { label: "N20:M1", previous: 300, current: 0 },
+                    { label: "N20:M2", previous: 640, current: 0 },
+                    { label: "N20:M3", previous: 510, current: 0 },
+                    { label: "N20:M4", previous: 180, current: 0 },
+                ]);
+                createChart("efficiency_N20", "Efficiency Report", [
+                    { label: "N20:M1", previous: 218.77, current: 74.77 },
+                    { label: "N20:M2", previous: 306.72, current: 83.97 },
+                    { label: "N20:M3", previous: 178.93, current: 74.77 },
+                    { label: "N20:M4", previous: 286.6, current: 79.37 },
+                ]);
+                createChart("no_of_stoppage_N20", "Stoppage Report", [
+                    { label: "N20:M1", previous: 4, current: 8 },
+                    { label: "N20:M2", previous: 3, current: 10 },
+                    { label: "N20:M3", previous: 3, current: 6 },
+                    { label: "N20:M4", previous: 4, current: 6 },
+                ]);
+                createChart("shift_pick_N20", "Total Pick Report", [
+                    { label: "N20:M1", previous: 800, current: 1200 },
+                    { label: "N20:M2", previous: 1200, current: 1550 },
+                    { label: "N20:M3", previous: 1000, current: 1250 },
+                    { label: "N20:M4", previous: 950, current: 1300 },
+                ]);
+                createChart("speed_N21", "Speed Report", [
+                    { label: "N21:M1", previous: 150, current: 150 },
+                    { label: "N21:M2", previous: 320, current: 0 },
+                    { label: "N21:M3", previous: 170, current: 0 },
+                    { label: "N21:M4", previous: 180, current: 0 },
+                ]);
+                createChart("efficiency_N21", "Efficiency Report", [
+                    { label: "N21:M1", previous: 221.14, current: 0 },
+                    { label: "N21:M2", previous: 315.33, current: 0 },
+                    { label: "N21:M3", previous: 153.26, current: 0 },
+                    { label: "N21:M4", previous: 174.32, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N21", "Stoppage Report", [
+                    { label: "N21:M1", previous: 6, current: 0 },
+                    { label: "N21:M2", previous: 6, current: 0 },
+                    { label: "N21:M3", previous: 4, current: 0 },
+                    { label: "N21:M4", previous: 6, current: 0 },
+                ]);
+                createChart("shift_pick_N21", "Total Pick Report", [
+                    { label: "N21:M1", previous: 900, current: 1250 },
+                    { label: "N21:M2", previous: 1150, current: 1550 },
+                    { label: "N21:M3", previous: 650, current: 850 },
+                    { label: "N21:M4", previous: 750, current: 1000 },
+                ]);
+                createChart("speed_N22", "Speed Report", [
+                    { label: "N22:M1", previous: 450, current: 0 },
+                    { label: "N22:M2", previous: 320, current: 0 },
+                    { label: "N22:M3", previous: 510, current: 170 },
+                    { label: "N22:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N22", "Efficiency Report", [
+                    { label: "N22:M1", previous: 290.05, current: 0 },
+                    { label: "N22:M2", previous: 226.44, current: 0 },
+                    { label: "N22:M3", previous: 323.38, current: 0 },
+                    { label: "N22:M4", previous: 242.15, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N22", "Stoppage Report", [
+                    { label: "N22:M1", previous: 3, current: 0 },
+                    { label: "N22:M2", previous: 3, current: 0 },
+                    { label: "N22:M3", previous: 3, current: 0 },
+                    { label: "N22:M4", previous: 3, current: 0 },
+                ]);
+                createChart("shift_pick_N22", "Total Pick Report", [
+                    { label: "N22:M1", previous: 1200, current: 1550 },
+                    { label: "N22:M2", previous: 600, current: 850 },
+                    { label: "N22:M3", previous: 1300, current: 1650 },
+                    { label: "N22:M4", previous: 850, current: 1150 },
+                ]);
+                createChart("speed_N23", "Speed Report", [
+                    { label: "N23:M1", previous: 600, current: 0 },
+                    { label: "N23:M2", previous: 320, current: 0 },
+                    { label: "N23:M3", previous: 510, current: 0 },
+                    { label: "N23:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N23", "Efficiency Report", [
+                    { label: "N23:M1", previous: 317.83, current: 83.97 },
+                    { label: "N23:M2", previous: 240.99, current: 0 },
+                    { label: "N23:M3", previous: 253.27, current: 70.16 },
+                    { label: "N23:M4", previous: 240.99, current: 74.77 },
+                ]);
+                createChart("no_of_stoppage_N23", "Stoppage Report", [
+                    { label: "N23:M1", previous: 4, current: 8 },
+                    { label: "N23:M2", previous: 3, current: 0 },
+                    { label: "N23:M3", previous: 6, current: 10 },
+                    { label: "N23:M4", previous: 5, current: 12 },
+                ]);
+                createChart("shift_pick_N23", "Total Pick Report", [
+                    { label: "N23:M1", previous: 1050, current: 1450 },
+                    { label: "N23:M2", previous: 1150, current: 1600 },
+                    { label: "N23:M3", previous: 950, current: 1200 },
+                    { label: "N23:M4", previous: 1050, current: 1400 },
+                ]);
+                createChart("speed_N24", "Speed Report", [
+                    { label: "N24:M1", previous: 450, current: 0 },
+                    { label: "N24:M2", previous: 320, current: 0 },
+                    { label: "N24:M3", previous: 680, current: 0 },
+                    { label: "N24:M4", previous: 180, current: 0 },
+                ]);
+                createChart("efficiency_N24", "Efficiency Report", [
+                    { label: "N24:M1", previous: 167.83, current: 74.77 },
+                    { label: "N24:M2", previous: 286.6, current: 79.37 },
+                    { label: "N24:M3", previous: 234.5, current: 70.16 },
+                    { label: "N24:M4", previous: 270.88, current: 74.77 },
+                ]);
+                createChart("no_of_stoppage_N24", "Stoppage Report", [
+                    { label: "N24:M1", previous: 3, current: 8 },
+                    { label: "N24:M2", previous: 5, current: 10 },
+                    { label: "N24:M3", previous: 3, current: 6 },
+                    { label: "N24:M4", previous: 5, current: 6 },
+                ]);
+                createChart("shift_pick_N24", "Total Pick Report", [
+                    { label: "N24:M1", previous: 850, current: 1150 },
+                    { label: "N24:M2", previous: 1100, current: 1400 },
+                    { label: "N24:M3", previous: 900, current: 1100 },
+                    { label: "N24:M4", previous: 950, current: 1300 },
+                ]);
+                createChart("speed_N25", "Speed Report", [
+                    { label: "N25:M1", previous: 600, current: 0 },
+                    { label: "N25:M2", previous: 320, current: 0 },
+                    { label: "N25:M3", previous: 340, current: 0 },
+                    { label: "N25:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N25", "Efficiency Report", [
+                    { label: "N25:M1", previous: 231.05, current: 0 },
+                    { label: "N25:M2", previous: 240.99, current: 0 },
+                    { label: "N25:M3", previous: 140.99, current: 0 },
+                    { label: "N25:M4", previous: 164.38, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N25", "Stoppage Report", [
+                    { label: "N25:M1", previous: 5, current: 0 },
+                    { label: "N25:M2", previous: 3, current: 0 },
+                    { label: "N25:M3", previous: 5, current: 0 },
+                    { label: "N25:M4", previous: 4, current: 0 },
+                ]);
+                createChart("shift_pick_N25", "Total Pick Report", [
+                    { label: "N25:M1", previous: 850, current: 1100 },
+                    { label: "N25:M2", previous: 1000, current: 1450 },
+                    { label: "N25:M3", previous: 650, current: 850 },
+                    { label: "N25:M4", previous: 650, current: 850 },
+                ]);
+                createChart("speed_N26", "Speed Report", [
+                    { label: "N26:M1", previous: 300, current: 0 },
+                    { label: "N26:M2", previous: 320, current: 0 },
+                    { label: "N26:M3", previous: 340, current: 0 },
+                    { label: "N26:M4", previous: 540, current: 0 },
+                ]);
+                createChart("efficiency_N26", "Efficiency Report", [
+                    { label: "N26:M1", previous: 186.6, current: 0 },
+                    { label: "N26:M2", previous: 259.77, current: 0 },
+                    { label: "N26:M3", previous: 301.16, current: 0 },
+                    { label: "N26:M4", previous: 263.22, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N26", "Stoppage Report", [
+                    { label: "N26:M1", previous: 3, current: 0 },
+                    { label: "N26:M2", previous: 2, current: 0 },
+                    { label: "N26:M3", previous: 3, current: 0 },
+                    { label: "N26:M4", previous: 4, current: 0 },
+                ]);
+                createChart("shift_pick_N26", "Total Pick Report", [
+                    { label: "N26:M1", previous: 1100, current: 1400 },
+                    { label: "N26:M2", previous: 600, current: 850 },
+                    { label: "N26:M3", previous: 1200, current: 1500 },
+                    { label: "N26:M4", previous: 850, current: 1150 },
+                ]);
+                createChart("speed_N27", "Speed Report", [
+                    { label: "N27:M1", previous: 600, current: 0 },
+                    { label: "N27:M2", previous: 480, current: 0 },
+                    { label: "N27:M3", previous: 340, current: 0 },
+                    { label: "N27:M4", previous: 540, current: 180 },
+                ]);
+                createChart("efficiency_N27", "Efficiency Report", [
+                    { label: "N27:M1", previous: 273.38, current: 79.37 },
+                    { label: "N27:M2", previous: 234.49, current: 0 },
+                    { label: "N27:M3", previous: 174.32, current: 65.56 },
+                    { label: "N27:M4", previous: 264.38, current: 74.77 },
+                ]);
+                createChart("no_of_stoppage_N27", "Stoppage Report", [
+                    { label: "N27:M1", previous: 3, current: 8 },
+                    { label: "N27:M2", previous: 2, current: 0 },
+                    { label: "N27:M3", previous: 5, current: 10 },
+                    { label: "N27:M4", previous: 4, current: 10 },
+                ]);
+                createChart("shift_pick_N27", "Total Pick Report", [
+                    { label: "N27:M1", previous: 1100, current: 1400 },
+                    { label: "N27:M2", previous: 1050, current: 1450 },
+                    { label: "N27:M3", previous: 950, current: 1200 },
+                    { label: "N27:M4", previous: 950, current: 1250 },
+                ]);
+                createChart("speed_N28", "Speed Report", [
+                    { label: "N28:M1", previous: 300, current: 0 },
+                    { label: "N28:M2", previous: 320, current: 0 },
+                    { label: "N28:M3", previous: 340, current: 0 },
+                    { label: "N28:M4", previous: 180, current: 0 },
+                ]);
+                createChart("efficiency_N28", "Efficiency Report", [
+                    { label: "N28:M1", previous: 167.83, current: 8.09 },
+                    { label: "N28:M2", previous: 259.77, current: 9.25 },
+                    { label: "N28:M3", previous: 201.16, current: 6.94 },
+                    { label: "N28:M4", previous: 274.33, current: 9.25 },
+                ]);
+                createChart("no_of_stoppage_N28", "Stoppage Report", [
+                    { label: "N28:M1", previous: 2, current: 4 },
+                    { label: "N28:M2", previous: 5, current: 5 },
+                    { label: "N28:M3", previous: 3, current: 3 },
+                    { label: "N28:M4", previous: 3, current: 2 },
+                ]);
+                createChart("shift_pick_N28", "Total Pick Report", [
+                    { label: "N28:M1", previous: 900, current: 1100 },
+                    { label: "N28:M2", previous: 950, current: 1300 },
+                    { label: "N28:M3", previous: 800, current: 950 },
+                    { label: "N28:M4", previous: 800, current: 1200 },
+                ]);
+                createChart("speed_N29", "Speed Report", [
+                    { label: "N29:M1", previous: 150, current: 0 },
+                    { label: "N29:M2", previous: 480, current: 160 },
+                    { label: "N29:M3", previous: 340, current: 0 },
+                    { label: "N29:M4", previous: 0, current: 0 },
+                ]);
+                createChart("efficiency_N29", "Efficiency Report", [
+                    { label: "N29:M1", previous: 140.99, current: 0 },
+                    { label: "N29:M2", previous: 167.83, current: 66.67 },
+                    { label: "N29:M3", previous: 145.6, current: 0 },
+                    { label: "N29:M4", previous: 137.54, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N29", "Stoppage Report", [
+                    { label: "N29:M1", previous: 5, current: 0 },
+                    { label: "N29:M2", previous: 2, current: 0 },
+                    { label: "N29:M3", previous: 3, current: 0 },
+                    { label: "N29:M4", previous: 5, current: 0 },
+                ]);
+                createChart("shift_pick_N29", "Total Pick Report", [
+                    { label: "N29:M1", previous: 850, current: 1100 },
+                    { label: "N29:M2", previous: 1050, current: 1400 },
+                    { label: "N29:M3", previous: 550, current: 700 },
+                    { label: "N29:M4", previous: 650, current: 850 },
+                ]);
+                createChart("speed_N30", "Speed Report", [
+                    { label: "N30:M1", previous: 150, current: 0 },
+                    { label: "N30:M2", previous: 160, current: 0 },
+                    { label: "N30:M3", previous: 340, current: 170 },
+                    { label: "N30:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N30", "Efficiency Report", [
+                    { label: "N30:M1", previous: 185.44, current: 0 },
+                    { label: "N30:M2", previous: 159.77, current: 0 },
+                    { label: "N30:M3", previous: 278.94, current: 0 },
+                    { label: "N30:M4", previous: 186.6, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N30", "Stoppage Report", [
+                    { label: "N30:M1", previous: 3, current: 0 },
+                    { label: "N30:M2", previous: 3, current: 0 },
+                    { label: "N30:M3", previous: 3, current: 0 },
+                    { label: "N30:M4", previous: 2, current: 0 },
+                ]);
+                createChart("shift_pick_N30", "Total Pick Report", [
+                    { label: "N30:M1", previous: 950, current: 1300 },
+                    { label: "N30:M2", previous: 600, current: 850 },
+                    { label: "N30:M3", previous: 1100, current: 1350 },
+                    { label: "N30:M4", previous: 750, current: 1000 },
+                ]);
+                createChart("speed_N31", "Speed Report", [
+                    { label: "N31:M1", previous: 300, current: 0 },
+                    { label: "N31:M2", previous: 320, current: 0 },
+                    { label: "N31:M3", previous: 340, current: 0 },
+                    { label: "N31:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N31", "Efficiency Report", [
+                    { label: "N31:M1", previous: 175.48, current: 9.25 },
+                    { label: "N31:M2", previous: 234.49, current: 0 },
+                    { label: "N31:M3", previous: 164.38, current: 6.94 },
+                    { label: "N31:M4", previous: 218.77, current: 41.42 },
+                ]);
+                createChart("no_of_stoppage_N31", "Stoppage Report", [
+                    { label: "N31:M1", previous: 4, current: 4 },
+                    { label: "N31:M2", previous: 2, current: 0 },
+                    { label: "N31:M3", previous: 3, current: 4 },
+                    { label: "N31:M4", previous: 4, current: 6 },
+                ]);
+                createChart("shift_pick_N31", "Total Pick Report", [
+                    { label: "N31:M1", previous: 1000, current: 1250 },
+                    { label: "N31:M2", previous: 1100, current: 1400 },
+                    { label: "N31:M3", previous: 850, current: 1050 },
+                    { label: "N31:M4", previous: 950, current: 1250 },
+                ]);
+                createChart("speed_N32", "Speed Report", [
+                    { label: "N32:M1", previous: 150, current: 0 },
+                    { label: "N32:M2", previous: 320, current: 0 },
+                    { label: "N32:M3", previous: 340, current: 0 },
+                    { label: "N32:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N32", "Efficiency Report", [
+                    { label: "N32:M1", previous: 142.15, current: 0 },
+                    { label: "N32:M2", previous: 218.77, current: 0 },
+                    { label: "N32:M3", previous: 186.6, current: 0 },
+                    { label: "N32:M4", previous: 278.94, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N32", "Stoppage Report", [
+                    { label: "N32:M1", previous: 3, current: 0 },
+                    { label: "N32:M2", previous: 2, current: 0 },
+                    { label: "N32:M3", previous: 3, current: 0 },
+                    { label: "N32:M4", previous: 3, current: 0 },
+                ]);
+                createChart("shift_pick_N32", "Total Pick Report", [
+                    { label: "N32:M1", previous: 800, current: 950 },
+                    { label: "N32:M2", previous: 800, current: 1200 },
+                    { label: "N32:M3", previous: 700, current: 800 },
+                    { label: "N32:M4", previous: 850, current: 1150 },
+                ]);
+                createChart("speed_N1", "Speed Report", [
+                    { label: "N1:M1", previous: 300, current: 0 },
+                    { label: "N1:M2", previous: 480, current: 0 },
+                    { label: "N1:M3", previous: 170, current: 0 },
+                    { label: "N1:M4", previous: 360, current: 0 },
+                ]);
+                createChart("efficiency_N1", "Efficiency Report", [
+                    { label: "N1:M1", previous: 246.55, current: 0 },
+                    { label: "N1:M2", previous: 247.71, current: 0 },
+                    { label: "N1:M3", previous: 181.04, current: 0 },
+                    { label: "N1:M4", previous: 246.55, current: 0 },
+                ]);
+                createChart("no_of_stoppage_N1", "Stoppage Report", [
+                    { label: "N1:M1", previous: 6, current: 0 },
+                    { label: "N1:M2", previous: 4, current: 0 },
+                    { label: "N1:M3", previous: 3, current: 0 },
+                    { label: "N1:M4", previous: 6, current: 0 },
+                ]);
+                createChart("shift_pick_N1", "Total Pick Report", [
+                    { label: "N1:M1", previous: 800, current: 0 },
+                    { label: "N1:M2", previous: 1000, current: 0 },
+                    { label: "N1:M3", previous: 650, current: 0 },
+                    { label: "N1:M4", previous: 700, current: 0 },
+                ]);
+            };
+
+            function createChart(containerId, title, data) {
+                const preName = "Yesterday 20 Dec 2024";
+                const curName = "Today 21 Dec 2024";
+                const lastWeekDataPoints = data.map((item) => ({ label: item.label, y: item.previous }));
+                const currentWeekDataPoints = data.map((item) => ({ label: item.label, y: item.current }));
+
+                var chart = new CanvasJS.Chart(containerId, {
+                    animationEnabled: true,
+                    title: {
+                        text: title,
+                    },
+                    axisY: {
+                        title: "",
+                        titleFontColor: "#4F81BC",
+                        lineColor: "#4F81BC",
+                        labelFontColor: "#4F81BC",
+                        tickColor: "#4F81BC",
+                    },
+                    toolTip: {
+                        shared: true,
+                    },
+                    legend: {
+                        cursor: "pointer",
+                        itemclick: toggleDataSeries,
+                    },
+                    data: [
+                        {
+                            type: "column",
+                            name: preName,
+                            legendText: preName,
+                            showInLegend: true,
+                            indexLabel: "{y}",
+                            dataPoints: lastWeekDataPoints,
+                        },
+                        {
+                            type: "column",
+                            name: curName,
+                            legendText: curName,
+                            showInLegend: true,
+                            indexLabel: "{y}",
+                            dataPoints: currentWeekDataPoints,
+                        },
+                    ],
+                });
+                chart.render();
+            }
+
+            function toggleDataSeries(e) {
+                if (typeof e.dataSeries.visible === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                e.chart.render();
+            }
+        </script>
+    </body>
+</html>
