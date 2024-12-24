@@ -46,7 +46,7 @@
                         </div>
                         <div class="card-body">
                             <h4 class="card-title">Real-Time Data Monitoring</h4>
-                            <p>Provides immediate updates on machine performance, production statistics, and any system malfunctions, enabling quick action</p>
+                            <p>Real-time data for smarter decisions: monitor machine performance, efficiency, and stoppages.</p>
                         </div>
                     </div>
                     <!-- end of card -->
@@ -57,8 +57,8 @@
                             <span class="far fa-clipboard"></span>
                         </div>
                         <div class="card-body">
-                            <h4 class="card-title">Interactive Data Exploration</h4>
-                            <p>Allows users to drill down into specific datasets for a deeper understanding of machine performance, operational bottlenecks, or other critical aspects of production.</p>
+                            <h4 class="card-title">Interactive Data Insights</h4>
+                            <p>Interactive data insights with color-coded machine start, stop, and efficiency for easy analysis.</p>
                         </div>
                     </div>
                     <!-- end of card -->
@@ -70,7 +70,7 @@
                         </div>
                         <div class="card-body">
                             <h4 class="card-title">Automated Reporting</h4>
-                            <p>Automatically generates detailed reports on machine performance, production output, and quality control, saving time on manual data entry.</p>
+                            <p>Automated reports with bar charts for each machine, past performance comparisons, and instant delivery via email and WhatsApp.</p>
                         </div>
                     </div>
                     <!-- end of card -->
