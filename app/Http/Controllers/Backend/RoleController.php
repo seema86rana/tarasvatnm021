@@ -93,7 +93,7 @@ class RoleController extends Controller
 
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.role.add_and_edit", compact('modal_title', 'menu'))->render(),
+            'html' => View::make("backend.role.add_and_edit", compact('modal_title', 'menu'))->render(),
         ]);
     }
 
@@ -215,7 +215,7 @@ class RoleController extends Controller
 
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.role.add_and_edit", compact('modal_title', 'menu', 'role'))->render(),
+            'html' => View::make("backend.role.add_and_edit", compact('modal_title', 'menu', 'role'))->render(),
         ]);
     }
 

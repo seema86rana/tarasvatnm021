@@ -105,7 +105,7 @@ class UserController extends Controller
         $role = Role::select('id', 'name')->where('status', 1)->orderBy('created_at','DESC')->get();
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.user.add_and_edit", compact('modal_title', 'role'))->render(),
+            'html' => View::make("backend.user.add_and_edit", compact('modal_title', 'role'))->render(),
         ]);
     }
 
@@ -236,7 +236,7 @@ class UserController extends Controller
 
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.user.add_and_edit", compact('modal_title', 'user', 'role'))->render(),
+            'html' => View::make("backend.user.add_and_edit", compact('modal_title', 'user', 'role'))->render(),
         ]);
     }
 

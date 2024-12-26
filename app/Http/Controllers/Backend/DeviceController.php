@@ -92,7 +92,7 @@ class DeviceController extends Controller
         $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.device.add_and_edit", compact('modal_title', 'user'))->render(),
+            'html' => View::make("backend.device.add_and_edit", compact('modal_title', 'user'))->render(),
         ]);
     }
 
@@ -221,7 +221,7 @@ class DeviceController extends Controller
 
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.device.add_and_edit", compact('modal_title', 'device', 'user'))->render(),
+            'html' => View::make("backend.device.add_and_edit", compact('modal_title', 'device', 'user'))->render(),
         ]);
     }
 

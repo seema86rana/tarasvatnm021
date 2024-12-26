@@ -154,7 +154,7 @@ class ReportController extends Controller
         
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("common.report.add_and_edit", compact('modal_title', 'user', 'device', 'nodeMaster', 'machineMaster', 'user_id', 'device_id', 'node_id', 'machine_id', 'date'))->render(),
+            'html' => View::make("backend.report.add_and_edit", compact('modal_title', 'user', 'device', 'nodeMaster', 'machineMaster', 'user_id', 'device_id', 'node_id', 'machine_id', 'date'))->render(),
         ]);
     }
 

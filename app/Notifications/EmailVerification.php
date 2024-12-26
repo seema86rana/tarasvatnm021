@@ -48,7 +48,7 @@ class EmailVerification extends VerifyEmailNotification
                     // ->line('The introduction to the notification.')
                     // ->action('Notification Action', url('/'))
                     // ->line('Thank you for using our application!')
-                    ->markdown('common.notification.email', [
+                    ->markdown('backend.notification.email', [
                         'introLines' => ['Please click the button below to verify your email address.'],
                         'actionText' => 'Verify your Email',
                         'actionUrl' => $verificationUrl,
