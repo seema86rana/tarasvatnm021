@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use Barryvdh\DomPDF\Facade\PDF;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -19,8 +18,11 @@ use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Jobs\ProcessPacket;
+use App\Jobs\SendReportMail;
 // use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReportMail;
 
 class ApiController extends Controller
 {
@@ -65,10 +67,12 @@ class ApiController extends Controller
 
     public function sendReport()
     {
-
+        $reportType = env('REPORT_TYPE', 'weekly');
+        SendReportMail::dispatch($reportType);
+        return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report sent to the user with details.'], 200);
     }
 
-    public function generateReport($filter, $userId)
+    public function generateReport($filter, $userId, $call = null)
     {
         $previousLabel = '';
         $currentLabel = '';
@@ -130,6 +134,9 @@ class ApiController extends Controller
         $current = $queryCurrent->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
 
         $totalLoop = max(count($previous->toArray()), count($current->toArray()));
+        if ($totalLoop <= 0) {
+            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
+        }
 
         $resultArray = [];
         for ($i = 0; $i < $totalLoop; $i++) {
@@ -169,11 +176,16 @@ class ApiController extends Controller
         }
 
         foreach ($resultArray as $key => $value) {
+            if ($call != null) {
+                $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
+                $fileName = time() . "-$filter-report-$userId.html";
+                $filePath = public_path("reports/html/$fileName");
+                file_put_contents($filePath, $htmlData);
+                return $fileName;
+                exit;
+            }
             return view('report.pdf', compact('value', 'previousLabel', 'currentLabel'));
-            $pdfData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
         }
-
-        return response()->json(['message' => 'PDF generated successfully', 'path' => $paths]);
     }
 
     private function getValue($data, $index, $key, $default = 0) {
@@ -267,11 +279,8 @@ class ApiController extends Controller
         }
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
+    /** ProcessPacket */
     public function index(Request $request)
     {
         try {
@@ -783,4 +792,66 @@ class ApiController extends Controller
             }
         }
     }
+
+    /** SendReportMail */
+    protected function sendReports(string $filter)
+    {
+        $query = MachineStatus::with('user');
+
+        switch ($filter) {
+            case 'daily':
+                // $query->whereDate('machine_status.created_at', '2024-12-11');
+                $query->whereDate('machine_status.created_at', Carbon::today());
+                break;
+            case 'weekly':
+                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                break;
+            case 'monthly':
+                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                break;
+            case 'yearly':
+                $query->whereYear('machine_status.created_at', Carbon::now()->year);
+                break;
+            default:
+                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                break;
+        }
+
+        $result = $query->distinct()->pluck('user_id');
+        $users = User::whereIn('id', $result)->get();
+
+        // echo "<pre>";
+        // print_r($users->toArray());
+        // die;
+
+        if ($users->isEmpty()) {
+            \Log::info("No data found for report type: {$filter}");
+            return;
+        }
+
+        foreach ($users as $key => $user) {
+            $fileName = $this->generateReport($filter, $user->id, 'direct');
+            $this->sendOnEmail($user, $filter, $fileName);
+            $this->sendOnWhatsApp($user, $filter, $fileName);
+        }
+    }
+
+    private function sendOnEmail(object $user, string $reportType, string $fileName)
+    {
+        $mailData = [
+            'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
+            'reportType' => ucfirst($reportType),
+            'reportDate' => now()->toDateString(),
+            'reportLink' => route('generate.report', [$reportType, $user->id]),
+            // 'reportLink' => asset('/') . "reports/html/$fileName",
+        ];
+
+        Mail::to($user->email)->send(new ReportMail($mailData, $fileName));
+    }
+
+    private function sendOnWhatsApp(object $user, string $reportType, string $fileName)
+    {
+        // Add WhatsApp sending logic here
+    }
+    /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
 }
