@@ -34,6 +34,10 @@ class MachineStatus extends Model
     
     public $timestamps = false;
     
+    public function user() {
+        return $this->hasOne(User::class, 'id', 'user_id');
+    }
+
     public function machineMaster() {
         return $this->hasOne(MachineMaster::class, 'id', 'machine_id');
     }

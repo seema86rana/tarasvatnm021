@@ -18,8 +18,11 @@ use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Jobs\ProcessPacket;
+use App\Jobs\SendReportMail;
 // use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReportMail;
 
 class ApiController extends Controller
 {
@@ -52,7 +55,6 @@ class ApiController extends Controller
                 return response()->json(["status" => false, "message" => "Device not found or not active!"], 404);
             }
 
-            // Dispatch the job to process the packet data asynchronously
             // ProcessPacket::dispatch($reqData)->delay(now()->addMinutes(2));
             ProcessPacket::dispatch($reqData);
 
@@ -61,6 +63,133 @@ class ApiController extends Controller
         } catch (Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function sendReport()
+    {
+        $reportType = env('REPORT_TYPE', 'weekly');
+        SendReportMail::dispatch($reportType);
+        return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report sent to the user with details.'], 200);
+    }
+
+    public function generateReport($filter, $userId, $call = null)
+    {
+        $previousLabel = '';
+        $currentLabel = '';
+        
+        $queryPrevious = MachineStatus::
+                selectRaw("node_master.name, machine_status.user_id, machine_master.machine_display_name, SUM(machine_status.speed) as speed, SUM(machine_status.efficiency) as efficiency, SUM(machine_status.no_of_stoppage) as no_of_stoppage, SUM(pick_calculations.shift_pick) as shift_pick")
+                ->leftJoin('node_master', 'machine_status.node_id', '=', 'node_master.id')
+                ->leftJoin('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
+                ->leftJoin('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
+                ->where('machine_status.user_id', $userId);
+
+        $queryCurrent = clone $queryPrevious;
+
+        switch ($filter) {
+            case 'daily':
+                // $queryPrevious->whereDate('machine_status.created_at', '2024-12-10');
+                // $queryCurrent->whereDate('machine_status.created_at', '2024-12-11');
+                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
+                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
+    
+                $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
+                $currentLabel = "Today " . Carbon::today()->format('d M Y');
+                break;
+    
+            case 'weekly':
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+    
+            case 'monthly':
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+    
+                $previousLabel = "Last Month " . Carbon::now()->subMonth()->format('M Y');
+                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
+                break;
+    
+            case 'yearly':
+                $queryPrevious->whereYear('machine_status.created_at', Carbon::now()->subYear()->year);
+                $queryCurrent->whereYear('machine_status.created_at', Carbon::now()->year);
+    
+                $previousLabel = "Last Year " . Carbon::now()->subYear()->year;
+                $currentLabel = "Current Year " . Carbon::now()->year;
+                break;
+    
+            default:
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+        }
+
+        $previous = $queryPrevious->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
+        $current = $queryCurrent->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
+
+        $totalLoop = max(count($previous->toArray()), count($current->toArray()));
+        if ($totalLoop <= 0) {
+            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
+        }
+
+        $resultArray = [];
+        for ($i = 0; $i < $totalLoop; $i++) {
+            
+            $user = $previous[$i]->user_id ?? $current[$i]->user_id;
+            $node = $previous[$i]->name ?? $current[$i]->name;
+            $machineDisplayName = $previous[$i]->machine_display_name ?? $current[$i]->machine_display_name;
+        
+            // Build metrics with previous and current values
+            $speed = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'speed'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'speed'), 2),
+            ];
+            $efficiency = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'efficiency'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'efficiency'), 2),
+            ];
+            $no_of_stoppage = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'no_of_stoppage'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'no_of_stoppage'), 2),
+            ];
+            $shift_pick = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'shift_pick'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'shift_pick'), 2),
+            ];
+        
+            // Organize the result array
+            $resultArray[$user][$node]['label'] = $node . ' (' . ucwords($filter) . ')';
+            $resultArray[$user][$node]['speed'][] = $speed;
+            $resultArray[$user][$node]['efficiency'][] = $efficiency;
+            $resultArray[$user][$node]['no_of_stoppage'][] = $no_of_stoppage;
+            $resultArray[$user][$node]['shift_pick'][] = $shift_pick;
+        }
+
+        foreach ($resultArray as $key => $value) {
+            if ($call != null) {
+                $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
+                $fileName = time() . "-$filter-report-$userId.html";
+                $filePath = public_path("reports/html/$fileName");
+                file_put_contents($filePath, $htmlData);
+                return $fileName;
+                exit;
+            }
+            return view('report.pdf', compact('value', 'previousLabel', 'currentLabel'));
+        }
+    }
+
+    private function getValue($data, $index, $key, $default = 0) {
+        return isset($data[$index]) ? $data[$index]->$key : $default;
     }
 
     /*
@@ -116,48 +245,42 @@ class ApiController extends Controller
     }
     */
 
-    public function runCommand($type, $mig = '')
+    public function runCommand()
     {
         try {
-            if($type == 13579) {
-                Artisan::call('view:cache');
-                Artisan::call('view:clear');
-                Artisan::call('route:cache');
-                Artisan::call('route:clear');
-                Artisan::call('config:cache');
-                Artisan::call('config:clear');
-                Artisan::call('optimize');
-                Artisan::call('optimize:clear');
+            Artisan::call('view:cache');
+            Artisan::call('view:clear');
+            Artisan::call('route:cache');
+            Artisan::call('route:clear');
+            Artisan::call('config:cache');
+            Artisan::call('config:clear');
+            Artisan::call('optimize');
+            Artisan::call('optimize:clear');
 
-                if($mig == 97531) {
-                    Artisan::call('migrate:refresh');
-                    Artisan::call('db:seed');
-                    
-                    return response()->json(['status' => true, 'message' => 'Artisan command executed (database).'], 200);
-                } 
-                else if($mig == 13579) {
-                    // Run the Artisan command 'queue:work'
-                    Artisan::call('queue:work', [
-                        '--stop-when-empty' => true,
-                    ]);
-                    
-                    return response()->json(['status' => true, 'message' => 'Artisan command executed (queue).'], 200);
-                }
+            /*
+            if($mig == 97531) {
+                Artisan::call('migrate:refresh');
+                Artisan::call('db:seed');
                 
-                return response()->json(['status' => true, 'message' => 'Artisan command executed.'], 200);
-            } else {
-                return response()->json(['status' => false, 'message' => 'Artisan command can\'t executed!'], 401);
+                return response()->json(['status' => true, 'message' => 'Artisan command executed (database).'], 200);
+            } 
+            else if($mig == 13579) {
+                Artisan::call('queue:work', [
+                    '--stop-when-empty' => true,
+                ]);
+                
+                return response()->json(['status' => true, 'message' => 'Artisan command executed (queue).'], 200);
             }
+            */
+            return response()->json(['status' => true, 'message' => 'Artisan command executed.'], 200);
+            
         } catch (Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
+    /** ProcessPacket */
     public function index(Request $request)
     {
         try {
@@ -203,72 +326,6 @@ class ApiController extends Controller
             ];
             return response()->json($returnData, 500);
         }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
     }
 
     protected function processData(array $reqData)
@@ -735,4 +792,66 @@ class ApiController extends Controller
             }
         }
     }
+
+    /** SendReportMail */
+    protected function sendReports(string $filter)
+    {
+        $query = MachineStatus::with('user');
+
+        switch ($filter) {
+            case 'daily':
+                // $query->whereDate('machine_status.created_at', '2024-12-11');
+                $query->whereDate('machine_status.created_at', Carbon::today());
+                break;
+            case 'weekly':
+                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                break;
+            case 'monthly':
+                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                break;
+            case 'yearly':
+                $query->whereYear('machine_status.created_at', Carbon::now()->year);
+                break;
+            default:
+                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                break;
+        }
+
+        $result = $query->distinct()->pluck('user_id');
+        $users = User::whereIn('id', $result)->get();
+
+        // echo "<pre>";
+        // print_r($users->toArray());
+        // die;
+
+        if ($users->isEmpty()) {
+            \Log::info("No data found for report type: {$filter}");
+            return;
+        }
+
+        foreach ($users as $key => $user) {
+            $fileName = $this->generateReport($filter, $user->id, 'direct');
+            $this->sendOnEmail($user, $filter, $fileName);
+            $this->sendOnWhatsApp($user, $filter, $fileName);
+        }
+    }
+
+    private function sendOnEmail(object $user, string $reportType, string $fileName)
+    {
+        $mailData = [
+            'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
+            'reportType' => ucfirst($reportType),
+            'reportDate' => now()->toDateString(),
+            'reportLink' => route('generate.report', [$reportType, $user->id]),
+            // 'reportLink' => asset('/') . "reports/html/$fileName",
+        ];
+
+        Mail::to($user->email)->send(new ReportMail($mailData, $fileName));
+    }
+
+    private function sendOnWhatsApp(object $user, string $reportType, string $fileName)
+    {
+        // Add WhatsApp sending logic here
+    }
+    /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
 }

@@ -24,6 +24,8 @@ class ProcessPacket implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $reqData;
+    public $timeout = 3600;
+    public $tries = 3;
 
     /**
      * Create a new job instance.
