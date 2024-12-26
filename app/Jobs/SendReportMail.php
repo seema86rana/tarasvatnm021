@@ -88,7 +88,8 @@ class SendReportMail implements ShouldQueue
         }
 
         foreach ($users as $key => $user) {
-            $fileName = $this->generateReport($filter, $user->id);
+            // $fileName = $this->generateReport($filter, $user->id);
+            $fileName = "";
             $this->sendOnEmail($user, $filter, $fileName);
             $this->sendOnWhatsApp($user, $filter, $fileName);
         }
@@ -103,7 +104,8 @@ class SendReportMail implements ShouldQueue
             'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
             'reportType' => ucfirst($reportType),
             'reportDate' => now()->toDateString(),
-            'reportLink' => route('generate.report', [$reportType, $user->id]),
+            'reportLink' => asset('/') . "api/generate-report/$reportType/$user->id",
+            // 'reportLink' => route('generate.report', [$reportType, $user->id]),
             // 'reportLink' => asset('/') . "reports/html/$fileName",
         ];
 
@@ -221,6 +223,7 @@ class SendReportMail implements ShouldQueue
             $resultArray[$user][$node]['shift_pick'][] = $shift_pick;
         }
 
+        $fileName = "";
         foreach ($resultArray as $key => $value) {
             $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
             $fileName = time() . "-$filter-report-$userId.html";
@@ -229,6 +232,8 @@ class SendReportMail implements ShouldQueue
             return $fileName;
             exit;
         }
+        return $fileName;
+        exit;
     }
 
     private function getValue($data, $index, $key, $default = 0) {
