@@ -38,8 +38,18 @@
                 </li> -->
             </ul>
             <span class="nav-item">
-                <a class="btn-outline-sm" href="{{ route('login') }}">Log in</a>
+                @auth
+                    <a class="btn-outline-sm" href="javascript:void(0);"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Log out</a>
+
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
+                @else
+                    <a class="btn-outline-sm" href="{{ route('login') }}">Log in</a>
+                @endauth
             </span>
+
         </div> <!-- end of navbar-collapse -->
     </div> <!-- end of container -->
 </nav> <!-- end of navbar -->

@@ -16,6 +16,7 @@
     <link href="{{ asset('/') }}assets/frontend/css/fontawesome-all.min.css" rel="stylesheet">
     <link href="{{ asset('/') }}assets/frontend/css/swiper.css" rel="stylesheet">
     <link href="{{ asset('/') }}assets/frontend/css/styles.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     @yield('css')
 </head>
 <body data-bs-spy="scroll" data-bs-target="#navbarExample">

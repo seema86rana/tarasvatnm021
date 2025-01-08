@@ -14,7 +14,15 @@
                     <div class="text-container">
                         <h1 class="h1-large">The ahevalnest for <span class="replace-me">real-time insights, streamlined report, insightful choices</span></h1>
                         <p class="p-large">Online reporting provides quick access to data, easy sharing, and secure, personalized reports for better decision-making.</p>
-                        <a class="btn-solid-lg" href="{{ route('login') }}">Log In</a>
+                        @auth
+                            <a class="btn-solid-lg" href="javascript:void(0);" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Log out</a>
+                            
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                @csrf
+                            </form>
+                        @else
+                            <a class="btn-solid-lg" href="{{ route('login') }}">Log In</a>
+                        @endauth
                     </div> <!-- end of text-container -->
                 </div> <!-- end of col -->
                 <div class="col-lg-6">
@@ -305,7 +313,16 @@
             <div class="row">
                 <div class="col-lg-12">
                     <h4>Tarasvat will change the way you think about ahevalnest solutions due to it’s advanced tools and integrated functionalities</h4>
-                    <a class="btn-outline-lg page-scroll" href="{{ route('login') }}">Log In</a>
+                    @auth
+                        <a class="btn-outline-lg page-scroll" href="javascript:void(0);"
+                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Log out</a>
+
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
+                    @else
+                        <a class="btn-outline-lg page-scroll" href="{{ route('login') }}">Log in</a>
+                    @endauth
                 </div> <!-- end of col -->
             </div> <!-- end of row -->
         </div> <!-- end of container -->
