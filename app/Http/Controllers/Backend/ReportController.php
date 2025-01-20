@@ -115,7 +115,12 @@ class ReportController extends Controller
 			'javascript: void(0)' => 'List',
 		];
 
-        return view('backend.report.index', compact('title', 'breadcrumbs'));
+        $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
+        $device = Device::where('status', 1)->get();
+        $nodeMaster = NodeMaster::where('status', 1)->get();
+        $machineMaster = MachineMaster::where('status', 1)->get();
+
+        return view('backend.report.index', compact('title', 'breadcrumbs', 'user', 'device', 'nodeMaster', 'machineMaster'));
     }
 
     /**

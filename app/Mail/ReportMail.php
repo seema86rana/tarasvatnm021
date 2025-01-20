@@ -13,17 +13,19 @@ class ReportMail extends Mailable
 
     public $mailData;
     public $filePath;
+    public $subject;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($mailData, $filePath)
+    public function __construct($mailData, $filePath, $subject)
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->mailData = $mailData;
         $this->filePath = $filePath;
+        $this->subject = $subject;
     }
 
     /**
@@ -33,11 +35,11 @@ class ReportMail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Your Report is Ready')
-                    ->view('emails.report');
-                    // ->attach($this->filePath, [
-                    //     'as' => 'report.html',
-                    //     'mime' => 'text/html',
-                    // ]);
+        return $this->subject($this->subject)
+                    ->view('emails.report')
+                    ->attach($this->filePath, [
+                        'as' => 'report.pdf',
+                        'mime' => 'application/pdf',
+                    ]);
     }
 }

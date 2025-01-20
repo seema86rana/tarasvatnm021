@@ -91,8 +91,6 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
         <script src="https://cdn.canvasjs.com/canvasjs.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
         <script>
             window.onload = function() {
                 // Loop through each node and create a chart for each metric
@@ -102,10 +100,6 @@
                     createChart("no_of_stoppage_{{ str_replace(' ', '', $node) }}", "Stoppage Report", @json($metrics['no_of_stoppage']));
                     createChart("shift_pick_{{ str_replace(' ', '', $node) }}", "Total Pick Report", @json($metrics['shift_pick']));
                 @endforeach
-
-                setTimeout(() => {
-                    // generatePDF();
-                }, 5000);
             };
 
             function createChart(containerId, title, data) {
@@ -167,27 +161,6 @@
                     e.dataSeries.visible = true;
                 }
                 e.chart.render();
-            }
-
-            function generatePDF() {
-                const element = document.body;
-                const options = {
-                    margin: [10, 10, 10, 10],
-                    filename: "chart-report.pdf",
-                    image: {
-                        type: "jpeg",
-                        quality: 0.98
-                    },
-                    html2canvas: {
-                        scale: 2
-                    },
-                    jsPDF: {
-                        unit: "mm",
-                        format: "a4",
-                        orientation: "portrait"
-                    },
-                };
-                html2pdf().set(options).from(element).save();
             }
 
             $(window).on('load', function () {

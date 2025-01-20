@@ -2,27 +2,28 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Device;
-use App\Models\NodeMaster;
-use App\Models\NodeErrorLogs;
-use App\Models\MachineMaster;
-use App\Models\MachineLogs;
-use App\Models\MachineStatus;
-use App\Models\TempMachineStatus;
-use App\Models\PickCalculation;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Exception;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
-use App\Jobs\ProcessPacket;
-use App\Jobs\SendReportMail;
-// use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\ReportMail;
+use App\Models\NodeMaster;
+use App\Jobs\ProcessPacket;
+use App\Models\MachineLogs;
+use App\Jobs\GenerateReport;
+use App\Jobs\SendReportMail;
+use Illuminate\Http\Request;
+use App\Models\MachineMaster;
+use App\Models\MachineStatus;
+use App\Models\NodeErrorLogs;
+use App\Models\PickCalculation;
+use App\Models\TempMachineStatus;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+// use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Exception;
+use Illuminate\Support\Facades\Validator;
 
 class ApiController extends Controller
 {
@@ -68,131 +69,14 @@ class ApiController extends Controller
     public function sendReport()
     {
         $reportType = env('REPORT_TYPE', 'weekly');
-        SendReportMail::dispatch($reportType);
+        GenerateReport::dispatch($reportType);
         return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report sent to the user with details.'], 200);
     }
 
-    public function generateReport($filter, $userId, $call = null)
+    public function generateReport($filter, $userId)
     {
-        $previousLabel = '';
-        $currentLabel = '';
-        
-        $queryPrevious = MachineStatus::
-                selectRaw("node_master.name, machine_status.user_id, machine_master.machine_display_name, SUM(machine_status.speed) as speed, SUM(machine_status.efficiency) as efficiency, SUM(machine_status.no_of_stoppage) as no_of_stoppage, SUM(pick_calculations.shift_pick) as shift_pick")
-                ->leftJoin('node_master', 'machine_status.node_id', '=', 'node_master.id')
-                ->leftJoin('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
-                ->leftJoin('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
-                ->where('machine_status.user_id', $userId);
-
-        $queryCurrent = clone $queryPrevious;
-
-        switch ($filter) {
-            case 'daily':
-                // $queryPrevious->whereDate('machine_status.created_at', '2024-12-10');
-                // $queryCurrent->whereDate('machine_status.created_at', '2024-12-11');
-                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
-                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
-    
-                $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
-                $currentLabel = "Today " . Carbon::today()->format('d M Y');
-                break;
-    
-            case 'weekly':
-                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
-                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-    
-                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
-                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
-                break;
-    
-            case 'monthly':
-                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
-                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-    
-                $previousLabel = "Last Month " . Carbon::now()->subMonth()->format('M Y');
-                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
-                break;
-    
-            case 'yearly':
-                $queryPrevious->whereYear('machine_status.created_at', Carbon::now()->subYear()->year);
-                $queryCurrent->whereYear('machine_status.created_at', Carbon::now()->year);
-    
-                $previousLabel = "Last Year " . Carbon::now()->subYear()->year;
-                $currentLabel = "Current Year " . Carbon::now()->year;
-                break;
-    
-            default:
-                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
-                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-    
-                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
-                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
-                break;
-        }
-
-        $previous = $queryPrevious->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
-        $current = $queryCurrent->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
-
-        $totalLoop = max(count($previous->toArray()), count($current->toArray()));
-        if ($totalLoop <= 0) {
-            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
-        }
-
-        $resultArray = [];
-        for ($i = 0; $i < $totalLoop; $i++) {
-            
-            $user = $previous[$i]->user_id ?? $current[$i]->user_id;
-            $node = $previous[$i]->name ?? $current[$i]->name;
-            $machineDisplayName = $previous[$i]->machine_display_name ?? $current[$i]->machine_display_name;
-        
-            // Build metrics with previous and current values
-            $speed = [
-                'label' => $machineDisplayName,
-                'previous' => round((float)$this->getValue($previous, $i, 'speed'), 2),
-                'current' => round((float)$this->getValue($current, $i, 'speed'), 2),
-            ];
-            $efficiency = [
-                'label' => $machineDisplayName,
-                'previous' => round((float)$this->getValue($previous, $i, 'efficiency'), 2),
-                'current' => round((float)$this->getValue($current, $i, 'efficiency'), 2),
-            ];
-            $no_of_stoppage = [
-                'label' => $machineDisplayName,
-                'previous' => round((float)$this->getValue($previous, $i, 'no_of_stoppage'), 2),
-                'current' => round((float)$this->getValue($current, $i, 'no_of_stoppage'), 2),
-            ];
-            $shift_pick = [
-                'label' => $machineDisplayName,
-                'previous' => round((float)$this->getValue($previous, $i, 'shift_pick'), 2),
-                'current' => round((float)$this->getValue($current, $i, 'shift_pick'), 2),
-            ];
-        
-            // Organize the result array
-            $resultArray[$user][$node]['label'] = $node . ' (' . ucwords($filter) . ')';
-            $resultArray[$user][$node]['speed'][] = $speed;
-            $resultArray[$user][$node]['efficiency'][] = $efficiency;
-            $resultArray[$user][$node]['no_of_stoppage'][] = $no_of_stoppage;
-            $resultArray[$user][$node]['shift_pick'][] = $shift_pick;
-        }
-
-        $fileName = "";
-        foreach ($resultArray as $key => $value) {
-            if ($call != null) {
-                $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
-                $fileName = time() . "-$filter-report-$userId.html";
-                $filePath = public_path("reports/html/$fileName");
-                file_put_contents($filePath, $htmlData);
-                return $fileName;
-                exit;
-            }
-            return view('report.pdf', compact('value', 'previousLabel', 'currentLabel'));
-        }
-        return $fileName;
-        exit;
-    }
-
-    private function getValue($data, $index, $key, $default = 0) {
-        return isset($data[$index]) ? $data[$index]->$key : $default;
+        SendReportMail::dispatch($filter, $userId);
+        return response()->json(['status' => true, 'message' => 'Generate report sent on user Email and Whatsapp.'], 200);
     }
 
     /*
@@ -797,14 +681,15 @@ class ApiController extends Controller
     }
 
     /** SendReportMail */
-    protected function sendReports(string $filter)
+    protected function sendReports()
     {
+        $filter = env('REPORT_TYPE', 'weekly');
         $query = MachineStatus::with('user');
 
         switch ($filter) {
             case 'daily':
-                // $query->whereDate('machine_status.created_at', '2024-12-11');
-                $query->whereDate('machine_status.created_at', Carbon::today());
+                $query->whereDate('machine_status.created_at', '2024-12-11');
+                // $query->whereDate('machine_status.created_at', Carbon::today());
                 break;
             case 'weekly':
                 $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);

@@ -110,6 +110,37 @@ $(document).ready(function () {
         setTimeout(() => {
             $(".modal").modal("hide");
             $reports_dt.ajax.reload();
+            thisMain.prop('disabled', false);
+        }, 250);
+
+        setTimeout(() => {
+            loaderToggle(0);
+        }, 1000);
+    });
+
+    $(document).on("click", "#clear-form-report", async function(e) {
+        e.preventDefault();
+
+        let thisMain = $(this);
+        thisMain.prop('disabled', true);
+        await loaderToggle(1);
+
+        user_id = "";
+        device_id = "";
+        node_id = "";
+        machine_id = "";
+        date = "";
+
+        $("#user_id").val('').trigger('change');
+        $("#device_id").val('').trigger('change');
+        $("#node_id").val('').trigger('change');
+        $("#machine_id").val('').trigger('change');
+        $("#date").val('');
+
+        setTimeout(() => {
+            $(".modal").modal("hide");
+            $reports_dt.ajax.reload();
+            thisMain.prop('disabled', false);
         }, 250);
 
         setTimeout(() => {

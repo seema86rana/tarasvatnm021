@@ -12,14 +12,23 @@
         </tr>
         <tr>
             <td style="padding: 20px; text-align: left;">
-                <h2>Hello,</h2>
+
+                <h2>Dear  {{ $mailData['userName'] }},</h2>
+                <p>I hope you are doing well.</p>
                 <p>Your <strong>{{ $mailData['reportType'] }}</strong> report is ready!</p>
-                <p><strong>Report Date:</strong> {{ $mailData['reportDate'] }}</p>
-                <p>Click the button below to view your report:</p>
-                <p style="text-align: center;">
-                    <a href="{{ $mailData['reportLink'] }}" style="background-color: #007bff; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Report</a>
-                </p>
+                <br>
+                <p>Attached is the {{ $mailData['subject'] }}. This report provides a detailed analysis comparing efficiency, speed, no of stoppage and pick for performance between {{ $mailData['previousDay'] }} and {{ $mailData['currentDay'] }}. The data highlights any significant changes and provides insights into sales, performance, market trends, etc.</p>
+                <br>
+                <p>Please feel free to reach out if you have any questions or need further clarification on any section of the report.</p>
+                <p>Looking forward to hearing your thoughts or feedback.</p>
+                <br>
+                <p><b>Best regards,</b></p>
+                <p>{{ $mailData['companyName'] }}</p>
+                <p>[Your Position]</p>
+                <p>[Your Contact Information]</p>
+                <br>
                 <p>Thank you for using {{ $mailData['companyName'] }}!</p>
+                
             </td>
         </tr>
         <tr style="background-color: #f4f4f4; text-align: center;">

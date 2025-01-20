@@ -2,30 +2,33 @@
 
 namespace App\Jobs;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Mail;
+use Exception;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Device;
-use App\Models\NodeMaster;
-use App\Models\NodeErrorLogs;
-use App\Models\MachineMaster;
-use App\Models\MachineLogs;
-use App\Models\MachineStatus;
-use App\Models\TempMachineStatus;
-use App\Models\PickCalculation;
 use App\Mail\ReportMail;
-use Carbon\Carbon;
-use Exception;
+use App\Models\NodeMaster;
+use App\Models\MachineLogs;
+use App\Models\MachineMaster;
+use App\Models\MachineStatus;
+use App\Models\NodeErrorLogs;
+use Illuminate\Bus\Queueable;
+use App\Models\PickCalculation;
+use App\Models\TempMachineStatus;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 class SendReportMail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $reportType;
+    protected $userId;
+
     public $timeout = 3600;
     public $tries = 3;
 
@@ -34,10 +37,11 @@ class SendReportMail implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(string $reportType)
+    public function __construct(string $reportType, $userId)
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->reportType = $reportType;
+        $this->userId = $userId;
     }
 
     /**
@@ -48,82 +52,23 @@ class SendReportMail implements ShouldQueue
     public function handle()
     {
         try {
-            $this->sendReports($this->reportType);
-            \Log::info("Report sent successfully for type: {$this->reportType}");
+            $this->generateReport($this->reportType, $this->userId);
+            Log::info("Report sent successfully for type: {$this->reportType}");
         } catch (Exception $e) {
             \Log::error("Report sending failed: {$e->getMessage()}");
             throw $e;
         }
     }
 
-    protected function sendReports(string $filter)
-    {
-        $query = MachineStatus::with('user');
-
-        switch ($filter) {
-            case 'daily':
-                // $query->whereDate('machine_status.created_at', '2024-12-11');
-                $query->whereDate('machine_status.created_at', Carbon::today());
-                break;
-            case 'weekly':
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                break;
-            case 'monthly':
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-                break;
-            case 'yearly':
-                $query->whereYear('machine_status.created_at', Carbon::now()->year);
-                break;
-            default:
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                break;
-        }
-
-        $result = $query->distinct()->pluck('user_id');
-        $users = User::whereIn('id', $result)->get();
-
-        if ($users->isEmpty()) {
-            \Log::info("No data found for report type: {$filter}");
-            return;
-        }
-
-        foreach ($users as $key => $user) {
-            // $fileName = $this->generateReport($filter, $user->id);
-            $fileName = "";
-            $this->sendOnEmail($user, $filter, $fileName);
-            $this->sendOnWhatsApp($user, $filter, $fileName);
-        }
-    }
-
-    /**
-     * Send report via email.
-     */
-    private function sendOnEmail(object $user, string $reportType, string $fileName)
-    {
-        $mailData = [
-            'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
-            'reportType' => ucfirst($reportType),
-            'reportDate' => now()->toDateString(),
-            'reportLink' => asset('/') . "api/generate-report/$reportType/$user->id",
-            // 'reportLink' => route('generate.report', [$reportType, $user->id]),
-            // 'reportLink' => asset('/') . "reports/html/$fileName",
-        ];
-
-        Mail::to($user->email)->send(new ReportMail($mailData, $fileName));
-    }
-
-    /**
-     * Placeholder for sending report via WhatsApp.
-     */
-    private function sendOnWhatsApp(object $user, string $reportType, string $fileName)
-    {
-        // Add WhatsApp sending logic here
-    }
-
-    private function generateReport($filter, $userId)
+    public function generateReport($filter, $userId)
     {
         $previousLabel = '';
         $currentLabel = '';
+        $emailSubjectLabel = '';
+        $previousDay = '';
+        $currentDay = '';
+
+        $userDetail = User::findOrFail($userId);
         
         $queryPrevious = MachineStatus::
                 selectRaw("node_master.name, machine_status.user_id, machine_master.machine_display_name, SUM(machine_status.speed) as speed, SUM(machine_status.efficiency) as efficiency, SUM(machine_status.no_of_stoppage) as no_of_stoppage, SUM(pick_calculations.shift_pick) as shift_pick")
@@ -136,13 +81,16 @@ class SendReportMail implements ShouldQueue
 
         switch ($filter) {
             case 'daily':
-                // $queryPrevious->whereDate('machine_status.created_at', '2024-12-10');
-                // $queryCurrent->whereDate('machine_status.created_at', '2024-12-11');
-                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
-                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
+                $queryPrevious->whereDate('machine_status.created_at', '2024-12-10');
+                $queryCurrent->whereDate('machine_status.created_at', '2024-12-11');
+                // $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
+                // $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
     
                 $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
                 $currentLabel = "Today " . Carbon::today()->format('d M Y');
+                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
+                $previousDay = Carbon::yesterday()->format('d M Y');
+                $currentDay = Carbon::today()->format('d M Y');
                 break;
     
             case 'weekly':
@@ -151,6 +99,9 @@ class SendReportMail implements ShouldQueue
     
                 $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
                 $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
                 break;
     
             case 'monthly':
@@ -159,6 +110,9 @@ class SendReportMail implements ShouldQueue
     
                 $previousLabel = "Last Month " . Carbon::now()->subMonth()->format('M Y');
                 $currentLabel = "Current Month " . Carbon::now()->format('M Y');
+                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $previousDay = Carbon::now()->subMonth()->format('M Y');
+                $currentDay = Carbon::now()->format('M Y');
                 break;
     
             case 'yearly':
@@ -167,6 +121,9 @@ class SendReportMail implements ShouldQueue
     
                 $previousLabel = "Last Year " . Carbon::now()->subYear()->year;
                 $currentLabel = "Current Year " . Carbon::now()->year;
+                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
+                $previousDay = Carbon::now()->subYear()->year;
+                $currentDay = Carbon::now()->year;
                 break;
     
             default:
@@ -175,6 +132,9 @@ class SendReportMail implements ShouldQueue
     
                 $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
                 $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
                 break;
         }
 
@@ -223,17 +183,146 @@ class SendReportMail implements ShouldQueue
             $resultArray[$user][$node]['shift_pick'][] = $shift_pick;
         }
 
-        $fileName = "";
         foreach ($resultArray as $key => $value) {
-            $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
-            $fileName = time() . "-$filter-report-$userId.html";
-            $filePath = public_path("reports/html/$fileName");
-            file_put_contents($filePath, $htmlData);
-            return $fileName;
-            exit;
+            try {
+                // Generate HTML content
+                $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
+                $fileName = time() . "-$filter-report-$userId.html";
+                $filePath = public_path("reports/html/$fileName");
+        
+                // Save HTML file locally
+                if (!file_put_contents($filePath, $htmlData)) {
+                    throw new Exception("Failed to save HTML file locally at $filePath.");
+                }
+        
+                // Generate HTML file URL
+                $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
+        
+                // Call the API to generate the PDF
+                $generatePdfApi = $this->genratePdfApi($htmlFileUrl);
+                $generatePdfApi = json_decode($generatePdfApi, true);
+        
+                Log::info("HTML File URL: {$htmlFileUrl}");
+                Log::info("PDF URL from API: " . ($generatePdfApi['pdfUrl'] ?? 'Not Found'));
+        
+                // Validate the PDF URL
+                if (empty($generatePdfApi['pdfUrl'])) {
+                    throw new Exception("PDF URL not found in the API response.");
+                }
+        
+                $pdfFileName = basename($generatePdfApi['pdfUrl']); // Get the last part of the URL
+                $pdfFilePath = public_path("reports/pdf/$pdfFileName");
+        
+                // Store the PDF file locally
+                if (!file_put_contents($pdfFilePath, file_get_contents($generatePdfApi['pdfUrl']))) {
+                    throw new Exception("Failed to store the generated PDF locally at $pdfFilePath.");
+                }
+        
+                // Delete the HTML file using the API
+                $deletePdfApi = $this->deletePdfApi($pdfFileName);
+                $deletePdfApi = json_decode($deletePdfApi, true);
+        
+                if ($deletePdfApi['status'] !== 'success' || !unlink($filePath)) {
+                    throw new Exception("Failed to delete the HTML file or associated resources.");
+                }
+        
+                // Send the PDF via email
+                if ($this->sendOnEmail($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay)) {
+                    unlink($pdfFilePath); // Remove PDF after successful email sending
+                } else {
+                    throw new Exception("Failed to send email with PDF attachment.");
+                }
+        
+                // Send the PDF via WhatsApp
+                $this->sendOnWhatsApp($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay);
+        
+            } catch (Exception $e) {
+                Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+                throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
+            }
         }
-        return $fileName;
-        exit;
+        return true;
+    }
+
+    protected function genratePdfApi($fileUrl)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => env('GENERATE_PDF_URL'),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode(["url" => $fileUrl]),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
+        ));
+        $response = curl_exec($curl);
+        curl_close($curl);
+        return $response;
+    }
+
+    protected function deletePdfApi($fileUrl)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => env('DELETE_PDF_URL'),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'DELETE',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_POSTFIELDS => json_encode(["filename" => $fileUrl]),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
+        ));
+        $response = curl_exec($curl);
+        curl_close($curl);
+        return $response;
+    }
+
+    /**
+     * Send report via email.
+     */
+    private function sendOnEmail(string $subject, object $user, string $reportType, string $filePath, $previousDay, $currentDay)
+    {
+        $mailData = [
+            'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
+            'reportType' => ucfirst($reportType),
+            'reportDate' => now()->toDateString(),
+            'userName' => $user->name,
+            'subject' => $subject,
+            'previousDay' => $previousDay,
+            'currentDay' => $currentDay,
+        ];
+        
+        try {
+            // Send the email
+            Mail::to($user->email)->send(new ReportMail($mailData, $filePath, $subject));
+            Log::info("Email sent successfully to {$user->email} with subject: {$subject}");
+            return true;
+        } catch (Exception $e) {
+            Log::error("Failed to send email to {$user->email}. Error: " . $e->getMessage());
+            throw new Exception("Email sending failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Placeholder for sending report via WhatsApp.
+     */
+    private function sendOnWhatsApp(string $subject, object $user, string $reportType, string $fileName, $previousDay, $currentDay)
+    {
+        // Add WhatsApp sending logic here
+        return true;
     }
 
     private function getValue($data, $index, $key, $default = 0) {
