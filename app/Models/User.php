@@ -44,7 +44,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'remember_token',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     /**
      * The attributes that should be cast.
@@ -60,7 +60,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     }
 
     public function createdBy() {
-        return $this->hasOne(User::class, 'id', 'created_by'); 
+        return $this->belongsTo(User::class, 'created_by', 'id'); 
     }
 
     public function device() {

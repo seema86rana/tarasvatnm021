@@ -85,12 +85,12 @@
                         @foreach ($machineMaster as $value)
                             @if(isset($machine_id))
                                 @if ($machine_id == $value->id)
-                                    <option value="{{$value->id }}" selected>{{ $value->machine_display_name }}</option>
+                                    <option value="{{$value->id }}" selected>{{ $value->n }}</option>
                                 @else
-                                    <option value="{{ $value->id }}">{{ $value->machine_display_name }}</option>
+                                    <option value="{{ $value->id }}">{{ $value->name }}</option>
                                 @endif
                             @else
-                                <option value="{{$value->id}}">{{ $value->machine_display_name }}</option>
+                                <option value="{{$value->id}}">{{ $value->name }}</option>
                             @endif
                         @endforeach
                     </select>

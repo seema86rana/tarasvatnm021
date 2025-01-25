@@ -18,10 +18,12 @@ class PickCalculation extends Model
         'total_pick',
         'new_pick',
         'difference_pick',
-        'status',
-        'created_by',
-        'updated_by',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
+
+    public function machine_status()
+    {
+        return $this->belongsTo(MachineStatus::class, 'machine_status_id', 'id');
+    }
 }

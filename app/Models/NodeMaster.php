@@ -12,14 +12,20 @@ class NodeMaster extends Model
     protected $table = "node_master";
 
     protected $fillable = [
-        'name',
-        'user_id',
         'device_id',
-        'no_of_nodes',
+        'name',
         'status',
-        'created_by',
-        'updated_by',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
+
+    public function device()
+    {
+        return $this->belongsTo(Device::class, 'device_id', 'id');
+    }
+
+    public function machines()
+    {
+        return $this->hasMany(MachineMaster::class, 'node_id', 'id');
+    }
 }

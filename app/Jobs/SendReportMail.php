@@ -5,16 +5,9 @@ namespace App\Jobs;
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
-use App\Models\Device;
 use App\Mail\ReportMail;
-use App\Models\NodeMaster;
-use App\Models\MachineLogs;
-use App\Models\MachineMaster;
 use App\Models\MachineStatus;
-use App\Models\NodeErrorLogs;
 use Illuminate\Bus\Queueable;
-use App\Models\PickCalculation;
-use App\Models\TempMachineStatus;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Queue\SerializesModels;
@@ -55,7 +48,7 @@ class SendReportMail implements ShouldQueue
             $this->generateReport($this->reportType, $this->userId);
             Log::info("Report sent successfully for type: {$this->reportType}");
         } catch (Exception $e) {
-            \Log::error("Report sending failed: {$e->getMessage()}");
+            Log::error("Report sending failed: {$e->getMessage()}");
             throw $e;
         }
     }
@@ -71,9 +64,9 @@ class SendReportMail implements ShouldQueue
         $userDetail = User::findOrFail($userId);
         
         $queryPrevious = MachineStatus::
-                selectRaw("node_master.name, machine_status.user_id, machine_master.machine_display_name, SUM(machine_status.speed) as speed, SUM(machine_status.efficiency) as efficiency, SUM(machine_status.no_of_stoppage) as no_of_stoppage, SUM(pick_calculations.shift_pick) as shift_pick")
-                ->leftJoin('node_master', 'machine_status.node_id', '=', 'node_master.id')
+                selectRaw("node_master.name, machine_status.user_id, machine_master.name, SUM(machine_status.speed) as speed, SUM(machine_status.efficiency) as efficiency, SUM(machine_status.no_of_stoppage) as no_of_stoppage, SUM(pick_calculations.shift_pick) as shift_pick")
                 ->leftJoin('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
+                ->leftJoin('node_master', 'machine_master.node_id', '=', 'node_master.id')
                 ->leftJoin('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
                 ->where('machine_status.user_id', $userId);
 
@@ -138,8 +131,8 @@ class SendReportMail implements ShouldQueue
                 break;
         }
 
-        $previous = $queryPrevious->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
-        $current = $queryCurrent->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.machine_display_name')->get();
+        $previous = $queryPrevious->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.name')->get();
+        $current = $queryCurrent->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.name')->get();
 
         $totalLoop = max(count($previous->toArray()), count($current->toArray()));
         if ($totalLoop <= 0) {
@@ -151,7 +144,7 @@ class SendReportMail implements ShouldQueue
             
             $user = $previous[$i]->user_id ?? $current[$i]->user_id;
             $node = $previous[$i]->name ?? $current[$i]->name;
-            $machineDisplayName = $previous[$i]->machine_display_name ?? $current[$i]->machine_display_name;
+            $machineDisplayName = $previous[$i]->name ?? $current[$i]->n;
         
             // Build metrics with previous and current values
             $speed = [

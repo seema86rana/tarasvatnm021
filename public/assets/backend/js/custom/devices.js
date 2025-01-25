@@ -277,12 +277,12 @@ $(document).ready(function () {
         html += '<input type="text" value="shift" name="shift_name[]" class="form-control shift_name" id="shift_name" placeholder="Enter shift name" required readonly />';
         html += '</div>';
         html += '<div class="col-md-3">';
-        html += '<label class="col-form-label label_text text-lg-right" for="shift_start">Shift Start <small class="req text-danger">*</small></label>';
-        html += '<input type="text" name="shift_start[]" class="form-control shift_start timepicker" id="shift_start" placeholder="Enter shift_start" required />';
+        html += '<label class="col-form-label label_text text-lg-right" for="shift_start_time">Shift Start <small class="req text-danger">*</small></label>';
+        html += '<input type="text" name="shift_start_time[]" class="form-control shift_start_time timepicker" id="shift_start_time" placeholder="Enter shift_start_time" required />';
         html += '</div>';
         html += '<div class="col-md-3">';
-        html += '<label class="col-form-label label_text text-lg-right" for="shift_end">Shift End <small class="req text-danger">*</small></label>';
-        html += '<input type="text" name="shift_end[]" class="form-control shift_end timepicker" id="shift_end" placeholder="Enter shift_end" required />';
+        html += '<label class="col-form-label label_text text-lg-right" for="shift_end_time">Shift End <small class="req text-danger">*</small></label>';
+        html += '<input type="text" name="shift_end_time[]" class="form-control shift_end_time timepicker" id="shift_end_time" placeholder="Enter shift_end_time" required />';
         html += '</div>';
         html += '<div class="col-md-2">';
         html += '<p style="margin-bottom: 5px;">&nbsp;</p>';
@@ -343,9 +343,9 @@ $(document).ready(function () {
                 html += '<p>';
                 html += '<b>Shift Name: </b>'+v.shift_name;
                 html += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                html += '<b>Shift Start: </b>'+v.shift_start;
+                html += '<b>Shift Start: </b>'+v.shift_start_time;
                 html += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                html += '<b>Shift End: </b>'+v.shift_end;
+                html += '<b>Shift End: </b>'+v.shift_end_time;
                 html += '</p>';
             });
             html += '</div>';

@@ -81,12 +81,12 @@
                             <input type="text" value="{{ $value->shift_name }}" name="shift_name[]" class="form-control shift_name" id="shift_name" placeholder="Enter shift name" required readonly />
                         </div>
                         <div class="col-md-3">
-                            <label class="col-form-label label_text text-lg-right" for="shift_start">Shift Start <small class="req text-danger">*</small></label>
-                            <input type="text" value="{{ $value->shift_start }}" name="shift_start[]" class="form-control shift_start timepicker" id="shift_start" placeholder="Enter shift_start" required />
+                            <label class="col-form-label label_text text-lg-right" for="shift_start_time">Shift Start <small class="req text-danger">*</small></label>
+                            <input type="text" value="{{ $value->shift_start_time }}" name="shift_start_time[]" class="form-control shift_start_time timepicker" id="shift_start_time" placeholder="Enter shift_start_time" required />
                         </div>
                         <div class="col-md-3">
-                            <label class="col-form-label label_text text-lg-right" for="shift_end">Shift End <small class="req text-danger">*</small></label>
-                            <input type="text" value="{{ $value->shift_end }}" name="shift_end[]" class="form-control shift_end timepicker" id="shift_end" placeholder="Enter shift_end" required />
+                            <label class="col-form-label label_text text-lg-right" for="shift_end_time">Shift End <small class="req text-danger">*</small></label>
+                            <input type="text" value="{{ $value->shift_end_time }}" name="shift_end_time[]" class="form-control shift_end_time timepicker" id="shift_end_time" placeholder="Enter shift_end_time" required />
                         </div>
                         <div class="col-md-2">
                             <p style="margin-bottom: 5px;">&nbsp;</p>
@@ -111,12 +111,12 @@
                         <input type="text" value="shift 1" name="shift_name[]" class="form-control shift_name" id="shift_name" placeholder="Enter shift name" required readonly />
                     </div>
                     <div class="col-md-3">
-                        <label class="col-form-label label_text text-lg-right" for="shift_start">Shift Start <small class="req text-danger">*</small></label>
-                        <input type="shift_start" name="shift_start[]" class="form-control shift_start timepicker" id="shift_start" placeholder="Enter shift_start" required />
+                        <label class="col-form-label label_text text-lg-right" for="shift_start_time">Shift Start <small class="req text-danger">*</small></label>
+                        <input type="shift_start_time" name="shift_start_time[]" class="form-control shift_start_time timepicker" id="shift_start_time" placeholder="Enter shift_start_time" required />
                     </div>
                     <div class="col-md-3">
-                        <label class="col-form-label label_text text-lg-right" for="shift_end">Shift End <small class="req text-danger">*</small></label>
-                        <input type="shift_end" name="shift_end[]" class="form-control shift_end timepicker" id="shift_end" placeholder="Enter shift_end" required />
+                        <label class="col-form-label label_text text-lg-right" for="shift_end_time">Shift End <small class="req text-danger">*</small></label>
+                        <input type="shift_end_time" name="shift_end_time[]" class="form-control shift_end_time timepicker" id="shift_end_time" placeholder="Enter shift_end_time" required />
                     </div>
                     <div class="col-md-2">
                         <p style="margin-bottom: 5px;">&nbsp;</p>

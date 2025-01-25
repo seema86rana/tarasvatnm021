@@ -21,12 +21,7 @@ class CreatePickCalculationsTable extends Migration
             $table->unsignedBigInteger('total_pick')->nullable();
             $table->unsignedBigInteger('new_pick')->nullable();
             $table->unsignedBigInteger('difference_pick')->nullable();
-            $table->integer('status')->comment('1->Active, 0->Inactive')->nullable();
-            $table->integer('created_by')->nullable();
-            $table->integer('updated_by')->nullable();
-            // $table->timestamps();
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
         });
     }
 

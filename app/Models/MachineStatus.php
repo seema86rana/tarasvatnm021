@@ -12,37 +12,31 @@ class MachineStatus extends Model
     protected $table = "machine_status";
 
     protected $fillable = [
-        'user_id',
-        'device_id',
-        'node_id',
         'machine_id',
+        'active_machine',
         'speed',
+        'status',
         'no_of_stoppage',
         'last_stop',
         'last_running',
         'total_running',
         'total_time',
         'efficiency',
+        'device_datetime',
+        'machine_datetime',
+        'shift_date',
         'shift_name',
         'shift_start_datetime',
         'shift_end_datetime',
-        'machine_date',
-        'status',
-        'created_by',
-        'updated_by',
     ];
     
-    public $timestamps = false;
+    public $timestamps = true;
     
-    public function user() {
-        return $this->hasOne(User::class, 'id', 'user_id');
+    public function machine() {
+        return $this->belongsTo(MachineMaster::class, 'machine_id', 'id');
     }
 
-    public function machineMaster() {
-        return $this->hasOne(MachineMaster::class, 'id', 'machine_id');
-    }
-
-    public function pickCalculation() {
-        return $this->hasOne(PickCalculation::class, 'machine_status_id', 'id');
+    public function pickCal() {
+        return $this->belongsTo(PickCalculation::class, 'id', 'machine_status_id');
     }
 }

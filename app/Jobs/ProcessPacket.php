@@ -2,22 +2,21 @@
 
 namespace App\Jobs;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use App\Models\User;
+use Carbon\Carbon;
 use App\Models\Device;
 use App\Models\NodeMaster;
-use App\Models\NodeErrorLogs;
+use App\Models\MachineLog;
 use App\Models\MachineMaster;
-use App\Models\MachineLogs;
 use App\Models\MachineStatus;
-use App\Models\TempMachineStatus;
+use Illuminate\Bus\Queueable;
 use App\Models\PickCalculation;
-use Carbon\Carbon;
+use App\Models\TempMachineStatus;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Exception;
 
 class ProcessPacket implements ShouldQueue
 {
@@ -49,399 +48,328 @@ class ProcessPacket implements ShouldQueue
             // Example of business logic processing directly in the job
             if ($this->reqData['Did'] && $this->reqData['Tnd']) {
                 $this->processData($this->reqData);
-                \Log::info("Packet processed successfully: " . json_encode($this->reqData));
+                Log::info("Packet processed successfully: " . json_encode($this->reqData));
             } else {
-                \Log::warning('Invalid data in request: ' . json_encode($this->reqData));
+                Log::warning('Invalid data in request: ' . json_encode($this->reqData));
             }
         } catch (Exception $e) {
-            \Log::error('Packet processing failed: ' . $e->getMessage());
+            Log::error('Packet processing failed: ' . $e->getMessage());
             throw $e;
         }
     }
 
     protected function processData(array $reqData)
     {
-        // Example of processing device (Did), node (Tnd), etc.
-        $deviceId = $reqData['Did'];
-        $totalNode = $reqData['Tnd'];
-        $currentDatetime = date('Y-m-d H:i:s');
+        $totalNode  = $reqData['Tnd'];
+        $staticTime = "07:59:59";
 
+        $shiftDate          = '';
+        $shiftName          = '';
+        $shiftStartDatetime = "";
+        $shiftEndDatetime   = "";
+        $shiftDateType1     = "";
+        $shiftDateType2     = "";
+        
         $utcDeviceDatetime = Carbon::createFromFormat('Ymd H:i:s', $reqData['Ddt'], env('DEVICE_TIMEZONE', 'UTC'));
-        $deviceDatetime = $utcDeviceDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'));
-        $deviceDatetime = $deviceDatetime->format('Y-m-d H:i:s');
+        $deviceDatetime = $utcDeviceDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'))->format('Y-m-d H:i:s');
+        $deviceDate = date('Y-m-d', strtotime($deviceDatetime));
 
-        $device = Device::where('name', $deviceId)->where('status', 1)->first();
-        $nodeErrorLogsArray = [];
-        $machineLogsArray = [];
+        if (strtotime("{$deviceDate} {$staticTime}") < strtotime($deviceDatetime)) {
+            $shiftDateType1 = $deviceDate;
+            $shiftDateType2 = date('Y-m-d', strtotime('+1 day', strtotime($deviceDate)));
+        } else {
+            $shiftDateType2 = $deviceDate;
+            $shiftDateType1 = date('Y-m-d', strtotime('-1 day', strtotime($deviceDate)));
+        }
 
-        for ($i = 0; $i < $totalNode; $i++) {
-            if (isset($reqData['Nd'][$i])) {
-                $nodeData = $reqData['Nd'][$i];
-                $nodeName = 'N' . ($nodeData['Nid'] ?? md5(time().rand(11111, 99999)));
+        $device = Device::where('name', $reqData['Did'])->where('status', 1)->first();
+        $shifts = json_decode($device->shift, true);
 
-                $nodeMasterTable = NodeMaster::where('device_id', $device->id)->where('name', $nodeName)->first();
-                if ($nodeMasterTable) {
-                    $nodeErrorLogsData = [
-                        'user_id' => $device->user_id,
-                        'device_id' => $device->id,
-                        'node_id' => $nodeMasterTable->id,
-                        'status' => 2,
-                    ];
-                    $nodeErrorLogsArray[] = $nodeErrorLogsData;
+        foreach ($shifts as $shift) {
+            $shiftStart = date('Y-m-d H:i:s', strtotime(($shift['shift_start_day'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_start_time']}"));
+            $shiftEnd = date('Y-m-d H:i:s', strtotime(($shift['shift_end_day'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_end_time']}"));
+        
+            if (strtotime($deviceDatetime) >= strtotime($shiftStart) && strtotime($deviceDatetime) < strtotime($shiftEnd)) {
+                $shiftDate = $shiftDateType1;
+                $shiftName = $shift['shift_name'];
+                $shiftStartDatetime = $shiftStart;
+                $shiftEndDatetime = $shiftEnd;
+                break;
+            }
+        }
+
+        if (empty($shiftStartDatetime) || empty($shiftEndDatetime)) {
+            Log::error("Error: Shift Start Date and Shift End Date are empty");
+            throw new Exception("Shift Start Date and Shift End Date are empty");
+        }
+
+        $machineStatusId = MachineStatus::whereDate('shift_date', $shiftDate)
+                            ->where('shift_start_datetime', $shiftStartDatetime)
+                            ->where('shift_end_datetime', $shiftEndDatetime)
+                            ->pluck('id');
+        
+        MachineStatus::whereIn('id', $machineStatusId)->update([
+            'active_machine' => 0,
+        ]);
+
+        if (isset($reqData['Nd']) && is_array($reqData['Nd']) && count($reqData['Nd']) > 0) {
+
+            foreach ($reqData['Nd'] as $node) {
+                if (empty($node['Nid'])) {
+                    continue;
                 }
-                else {
+                $nodeName = 'N' . $node['Nid'];
+                $nodeMasterTable = NodeMaster::where('device_id', $device->id)->where('name', $nodeName)->first();
+                if (!$nodeMasterTable) {
                     $nodeMasterData = [
-                        'name' => $nodeName,
-                        'user_id' => $device->user_id,
                         'device_id' => $device->id,
-                        'no_of_nodes' => $totalNode,
-                        'status' => 1,
+                        'name' => $nodeName,
                     ];
                     $nodeMasterTable = NodeMaster::create($nodeMasterData);
                 }
+        
+                if (isset($node['Md']) && is_array($node['Md']) && count($node['Md']) > 0) {
 
-                if (isset($nodeData['Md']) && is_array($nodeData['Md']) && count($nodeData['Md']) > 0) {
-                    $machineData = $nodeData['Md'];
-                    foreach ($machineData as $mKey => $mValue) {
-                        if (!empty($mValue['Mid']) && isset($mValue['St']) && !empty($mValue['Mdt'])) {
-                            $machineName = $nodeName . '-M' . $mValue['Mid'];
-                            $machineDisplayName = $nodeName . ':M' . $mValue['Mid'];
+                    foreach ($node['Md'] as $machine) {
+                        if (empty($machine['Mid']) || empty($machine['Mdt'])) {
+                            continue;
+                        }
+                        $utcMachineDatetime = Carbon::createFromFormat('Ymd H:i:s', $machine['Mdt'], env('DEVICE_TIMEZONE', 'UTC'));
+                        $machineDatetime = $utcMachineDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'))->format('Y-m-d H:i:s');
+                        $machineDate = date('Y-m-d', strtotime($machineDatetime));
 
-                            $utcMachineDatetime = Carbon::createFromFormat('Ymd H:i:s', $mValue['Mdt'], env('DEVICE_TIMEZONE', 'UTC'));
-                            $machineDatetime = $utcMachineDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'));
-                            $machineDatetime = $machineDatetime->format('Y-m-d H:i:s');
+                        $machineName = "{$nodeName}:M{$machine['Mid']}";
+                        $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('name', $machineName)->first();
+                        if (!$machineMasterTable) {
+                            $machineMasterData = [
+                                'node_id' => $nodeMasterTable->id,
+                                'name' => $machineName,
+                            ];
+                            $machineMasterTable = MachineMaster::create($machineMasterData);
+                        }
 
-                            $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('machine_name', $machineName)->first();
-                            if (!$machineMasterTable) {
-                                $machineMasterData = [
-                                    'user_id' => $device->user_id,
-                                    'device_id' => $device->id,
-                                    'node_id' => $nodeMasterTable->id,
-                                    'machine_name' => $machineName,
-                                    'machine_display_name' => $machineDisplayName,
-                                    'device_datetime' => $deviceDatetime,
-                                ];
-                                $machineMasterTable = MachineMaster::create($machineMasterData);
+                        $machineLogData = [
+                            'machine_id' => $machineMasterTable->id,
+                            'speed' => $machine['Spd'] ?? '',
+                            'mode' => $machine['St'] ?? 0,
+                            'pick' => $machine['Tp'] ?? '',
+                            'machine_datetime' => $machineDatetime,
+                        ];
+                        $machineLogTable = MachineLog::create($machineLogData);
+
+                        $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
+                                            ->whereDate('shift_date', $shiftDate)
+                                            ->where('shift_start_datetime', $shiftStartDatetime)
+                                            ->where('shift_end_datetime', $shiftEndDatetime)
+                                            ->first();
+
+                        $diffMinLastStop     = 0;
+                        $diffMinLastRunning  = 0;
+                        $diffMinTotalRunning = 0;
+                        $pickResponse        = [];
+                        $deviceTime          = Carbon::parse($deviceDatetime);
+                        $machineTime         = Carbon::parse($machineDatetime);
+                        $shiftStartTime      = Carbon::parse($shiftStartDatetime);
+                        
+                        $machineStatusData = [
+                            'machine_id' => $machineMasterTable->id,
+                            'active_machine' => 1,
+                            'speed' => (int)$machine['Spd'],
+                            'status' => (int)$machine['St'] ?? 0,
+                            'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
+                            'device_datetime' => $deviceDatetime,
+                            'machine_datetime' => $machineDatetime,
+                            'shift_date' => $shiftDate,
+                            'shift_name' => $shiftName,
+                            'shift_start_datetime' => $shiftStartDatetime,
+                            'shift_end_datetime' => $shiftEndDatetime,
+                        ];
+
+                        if ($machineStatusTable) {
+
+                            $lastRecTime = Carbon::parse($machineStatusTable->device_datetime);
+                            $pickResponse = $this->pickCalculation((int)$machine['Tp'], $machineStatusTable->id, 'update');
+
+                            $diffMinLastStop = $machineStatusTable->last_stop ?? 0;
+                            $diffMinLastRunning = $machineStatusTable->last_running ?? 0;
+                            $diffMinTotalRunning = $machineStatusTable->total_running ?? 0;
+
+                            if ($machine['St'] == 1 && $machineStatusTable->status == 1) {
+                                $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
+                                $diffMinLastStop = $diffMinLastStop;
+                                $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
+                                $diffMinTotalRunning += $lastRecTime->diffInMinutes($deviceTime);
+                            }
+                            else if ($machine['St'] == 1 && $machineStatusTable->status == 0) {
+                                $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
+                                $diffMinLastStop += $lastRecTime->diffInMinutes($machineTime);
+                                $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
+                                $diffMinTotalRunning += $machineTime->diffInMinutes($deviceTime);
+                            }
+                            else if ($machine['St'] == 0 && $machineStatusTable->status == 1) {
+                                $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
+                                $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
+                                $diffMinLastRunning += $lastRecTime->diffInMinutes($machineTime);
+                                $diffMinTotalRunning += $lastRecTime->diffInMinutes($machineTime);
+                            }
+                            else if ($machine['St'] == 0 && $machineStatusTable->status == 0) {
+                                $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
+                                $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
+                                $diffMinLastRunning = $diffMinLastRunning;
+                                $diffMinTotalRunning = $diffMinTotalRunning;
                             }
                             else {
-                                $machineMasterData = [
-                                    'device_datetime' => $deviceDatetime,
-                                ];
-                                MachineMaster::where('id', $machineMasterTable->id)->update($machineMasterData);
+                                $machineStatusData['no_of_stoppage'] = 0;
+                                $diffMinLastStop = 0;
+                                $diffMinLastRunning = 0;
+                                $diffMinTotalRunning = 0;
                             }
+                        } 
+                        else {
+                            $machineStatusTableOld = MachineStatus::where('machine_id', $machineMasterTable->id)
+                                                    ->whereDate('shift_date', $shiftDate)
+                                                    ->where('shift_start_datetime', $shiftStartDatetime)
+                                                    ->where('shift_end_datetime', $shiftEndDatetime)
+                                                    ->orderBy('id', 'desc')->first();
 
-                            $machineLogsData = [
-                                'user_id' => $machineMasterTable->user_id,
-                                'device_id' => $device->id,
-                                'node_id' => $nodeMasterTable->id,
-                                'machine_id' => $machineMasterTable->id,
-                                'machine_datetime' => $machineDatetime,
-                                'device_datetime' => $deviceDatetime,
-                                'current_datetime' => $currentDatetime,
-                                'mode' => $mValue['St'] ?? 0,
-                                'speed' => $mValue['Spd'] ?? '',
-                                'pick' => $mValue['Tp'] ?? '',
-                            ];
-                            $machineLogsArray[] = $machineLogsData;
+                            if ($machineStatusTableOld) {
 
-                            $deviceShift = json_decode($device->shift, true);
-                            $machineDate = date('Y-m-d', strtotime($machineDatetime));
-                            $deviceDate = date('Y-m-d', strtotime($deviceDatetime));
-                            $currentDate = date('Y-m-d', strtotime($currentDatetime));
-                            $shiftName = '';
-                            $shiftStart = '';
-                            $shiftEnd = '';
-                            foreach ($deviceShift as $dsKey => $dsValue) {
-                                $shiftStart = date("Y-m-d H:i:s", strtotime(($deviceDate . " " . $dsValue['shift_start'])));
-                                $shiftEnd = date("Y-m-d H:i:s", strtotime(($deviceDate . " " . $dsValue['shift_end'])));
-                                if (strtotime($deviceDatetime) >= strtotime($shiftStart) && strtotime($deviceDatetime) < strtotime($shiftEnd)) {
-                                    $shiftName = $dsValue['shift_name'];
-                                    break;
-                                }
-                            }
+                                $pickResponse = $this->pickCalculation((int)$machine['Tp'], $machineStatusTableOld->id, 'insert');
 
-                            if(empty($shiftName) || empty($shiftStart) || empty($shiftEnd)) {
-                                continue;
-                            }
+                                $diffMinLastStop = $machineStatusTableOld->last_stop ?? 0;
+                                $diffMinLastRunning = $machineStatusTableOld->last_running ?? 0;
 
-                            $machineLogsTable = MachineLogs::where('machine_id', $machineMasterTable->id)
-                                                            ->where('device_id', $device->id)
-                                                            ->where('user_id', $device->user_id)
-                                                            ->where('node_id', $nodeMasterTable->id)
-                                                            ->whereDate('machine_datetime', $machineDate)
-                                                            ->orderBy('id', 'DESC')->first();
-
-                            $lastRecDatetime = $deviceDatetime;
-                            if($machineLogsTable) {
-                                $lastRecDatetime = $machineLogsTable->device_datetime;
-                            }
-
-                            $deviceTime = Carbon::parse($deviceDatetime);
-                            $lastRecTime = Carbon::parse($lastRecDatetime);
-                            $shiftStartTime = Carbon::parse($shiftStart);
-                            $machineTime = Carbon::parse($machineDatetime);
-
-                            $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
-                                                ->where('device_id', $device->id)
-                                                ->where('user_id', $device->user_id)
-                                                ->where('node_id', $nodeMasterTable->id)
-                                                ->whereDate('machine_date', $machineDate)
-                                                ->where('shift_start_datetime', $shiftStart)
-                                                ->where('shift_end_datetime', $shiftEnd)
-                                                ->first();
-
-                            $diffMinLastStop = 0;
-                            $diffMinLastRunning = 0;
-                            $diffMinTotalRunning = 0;
-
-                            $machineStatusData = [
-                                'user_id' => $device->user_id,
-                                'device_id' => $device->id,
-                                'node_id' => $nodeMasterTable->id,
-                                'machine_id' => $machineMasterTable->id,
-                                'speed' => (int)$mValue['Spd'],
-                                'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
-                                'shift_name' => $shiftName,
-                                'shift_start_datetime' => $shiftStart,
-                                'shift_end_datetime' => $shiftEnd,
-                                'machine_date' => $machineDate,
-                                'status' => $mValue['St'] ?? 0,
-                            ];
-
-                            $pickResponse = [];
-
-                            if ($machineStatusTable) {
-                                $pickResponse = $this->pickCalculation((int)$mValue['Tp'], $machineStatusTable->id, 'update');
-
-                                $diffMinLastStop = $machineStatusTable->last_stop ?? 0;
-                                $diffMinLastRunning = $machineStatusTable->last_running ?? 0;
-                                $diffMinTotalRunning = $machineStatusTable->total_running ?? 0;
-
-                                if ($mValue['St'] == 1 && $machineStatusTable->status == 1) {
-                                    $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
+                                if ($machine['St'] == 1 && $machineStatusTableOld->status == 1) {
+                                    $machineStatusData['no_of_stoppage'] = 0;
                                     $diffMinLastStop = $diffMinLastStop;
                                     $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                                    $diffMinTotalRunning += $lastRecTime->diffInMinutes($deviceTime);
                                 }
-                                else if ($mValue['St'] == 1 && $machineStatusTable->status == 0) {
-                                    $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                                    $diffMinLastStop += $lastRecTime->diffInMinutes($machineTime);
+                                else if ($machine['St'] == 1 && $machineStatusTableOld->status == 0) {
+                                    $machineStatusData['no_of_stoppage'] = 0;
+                                    $diffMinLastStop += $shiftStartTime->diffInMinutes($machineTime);
                                     $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                                    $diffMinTotalRunning += $machineTime->diffInMinutes($deviceTime);
                                 }
-                                else if ($mValue['St'] == 0 && $machineStatusTable->status == 1) {
-                                    $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
+                                else if ($machine['St'] == 0 && $machineStatusTableOld->status == 1) {
+                                    $machineStatusData['no_of_stoppage'] = 1;
                                     $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                                    $diffMinLastRunning += $lastRecTime->diffInMinutes($machineTime);
-                                    $diffMinTotalRunning += $lastRecTime->diffInMinutes($machineTime);
+                                    $diffMinLastRunning += $shiftStartTime->diffInMinutes($machineTime);
                                 }
-                                else if ($mValue['St'] == 0 && $machineStatusTable->status == 0) {
-                                    $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
+                                else if ($machine['St'] == 0 && $machineStatusTableOld->status == 0) {
+                                    $machineStatusData['no_of_stoppage'] = 0;
                                     $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
                                     $diffMinLastRunning = $diffMinLastRunning;
-                                    $diffMinTotalRunning = $diffMinTotalRunning;
                                 }
                                 else {
                                     $machineStatusData['no_of_stoppage'] = 0;
                                     $diffMinLastStop = 0;
                                     $diffMinLastRunning = 0;
-                                    $diffMinTotalRunning = 0;
                                 }
-                            } 
-                            else {
-                                $machineStatusTableOld = MachineStatus::where('machine_id', $machineMasterTable->id)
-                                                    ->where('device_id', $device->id)
-                                                    ->where('user_id', $device->user_id)
-                                                    ->where('node_id', $nodeMasterTable->id)
-                                                    ->whereDate('machine_date', $machineDate)
-                                                    ->orderBy('id', 'desc')->first();
 
-                                if ($machineStatusTableOld) {
-                                    $pickResponse = $this->pickCalculation((int)$mValue['Tp'], $machineStatusTableOld->id, 'insert');
-
-                                    $diffMinLastStop = $machineStatusTableOld->last_stop ?? 0;
-                                    $diffMinLastRunning = $machineStatusTableOld->last_running ?? 0;
-
-                                    if ($mValue['St'] == 1 && $machineStatusTableOld->status == 1) {
-                                        $machineStatusData['no_of_stoppage'] = 0;
-                                        $diffMinLastStop = $diffMinLastStop;
-                                        $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                                    }
-                                    else if ($mValue['St'] == 1 && $machineStatusTableOld->status == 0) {
-                                        $machineStatusData['no_of_stoppage'] = 0;
-                                        $diffMinLastStop += $shiftStartTime->diffInMinutes($machineTime);
-                                        $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                                    }
-                                    else if ($mValue['St'] == 0 && $machineStatusTableOld->status == 1) {
-                                        $machineStatusData['no_of_stoppage'] = 1;
-                                        $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                                        $diffMinLastRunning += $shiftStartTime->diffInMinutes($machineTime);
-                                    }
-                                    else if ($mValue['St'] == 0 && $machineStatusTableOld->status == 0) {
-                                        $machineStatusData['no_of_stoppage'] = 0;
-                                        $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                                        $diffMinLastRunning = $diffMinLastRunning;
-                                    }
-                                    else {
-                                        $machineStatusData['no_of_stoppage'] = 0;
-                                        $diffMinLastStop = 0;
-                                        $diffMinLastRunning = 0;
-                                    }
-
-                                    if ($mValue['St'] == 1) {
-                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
-                                    }
-                                    else if ($mValue['St'] == 0) {
-                                        $diff = $shiftStartTime->diff($machineTime);
-                                        $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
-                                    }
-                                    else {
-                                        $diffMinTotalRunning = 0;
-                                    }
+                                if ($machine['St'] == 1) {
+                                    $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
+                                }
+                                else if ($machine['St'] == 0) {
+                                    $diff = $shiftStartTime->diff($machineTime);
+                                    $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
                                 }
                                 else {
-                                    $machineStatusTablePrevious = MachineStatus::where('machine_id', $machineMasterTable->id)
-                                                            ->where('device_id', $device->id)
-                                                            ->where('user_id', $device->user_id)
-                                                            ->where('node_id', $nodeMasterTable->id)
-                                                            ->orderBy('id', 'desc')->first();
-
-                                    if ($machineStatusTablePrevious) {
-                                        $pickResponse = $this->pickCalculation((int)$mValue['Tp'],$machineStatusTablePrevious->id, 'insert');
-                                    } else {
-                                        $pickResponse = $this->pickCalculation((int)$mValue['Tp'], NULL, 'insert');
-                                    } 
-
-                                    if ($mValue['St'] == 1) {
-                                        $machineStatusData['no_of_stoppage'] = 0;
-                                        $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
-                                        $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                                    }
-                                    else if ($mValue['St'] == 0) {
-                                        $machineStatusData['no_of_stoppage'] = 1;
-                                        $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                                        $diffMinLastRunning = $shiftStartTime->diffInMinutes($machineTime);
-                                    }
-                                    else {
-                                        $machineStatusData['no_of_stoppage'] = 0;
-                                        $diffMinLastStop = 0;
-                                        $diffMinLastRunning = 0;
-                                    }
-
-                                    if ($mValue['St'] == 1) {
-                                        $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
-                                    }
-                                    else if ($mValue['St'] == 0) {
-                                        $diff = $shiftStartTime->diff($machineTime);
-                                        $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
-                                    }
-                                    else {
-                                        $diffMinTotalRunning = 0;
-                                    }
-
-                                    if($diffMinLastStop > 0) {
-                                        $machineStatusData['no_of_stoppage'] = 1;
-                                    }
+                                    $diffMinTotalRunning = 0;
                                 }
                             }
+                            else {
+                                $machineStatusTablePrevious = MachineStatus::where('machine_id', $machineMasterTable->id)->orderBy('id', 'desc')->first();
 
-                            $machineStatusData['last_stop'] = $diffMinLastStop;
-                            $machineStatusData['last_running'] = $diffMinLastRunning;
-                            $machineStatusData['total_running'] = $diffMinTotalRunning;
-
-                            if($machineStatusData['total_running'] != 0 && $machineStatusData['total_time'] != 0) {
-                                $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
-                            } else {
-                                $machineStatusData['efficiency'] = 0;
-                            }
-
-                            if ($machineStatusTable) {
-                                // echo "<pre>";
-                                // print_r($pickResponse);
-                                // die;
-                                $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
-
-                                if($pickResponse['status']) {
-                                    if ($pickResponse['isUpdate'] && $pickResponse['id']) {
-                                        $pickData = [
-                                            'machine_status_id' => $machineStatusTable->id,
-                                            'status' => 1,
-                                        ];
-                                        PickCalculation::where('id', $pickResponse['id'])->update($pickData);
-                                    }
+                                if ($machineStatusTablePrevious) {
+                                    $pickResponse = $this->pickCalculation((int)$machine['Tp'], $machineStatusTablePrevious->id, 'insert');
                                 } else {
-                                    // die('Something went wrong!');
-                                }
-                                
-                                //-----------------------------------------------------------------
-                                $machineStatusData['machine_status_id'] = $machineStatusTable->id;
-                                $machineStatusData['machine_log'] = json_encode($machineLogsData);
-                                TempMachineStatus::insert($machineStatusData);
-                                //-----------------------------------------------------------------
-                            } else {
-                                // echo "<pre>";
-                                // print_r($pickResponse);
-                                // die;
-                                $insertMachineStatus = MachineStatus::create($machineStatusData);
+                                    $pickResponse = $this->pickCalculation((int)$machine['Tp'], NULL, 'insert');
+                                } 
 
-                                if($pickResponse['status']) {
-                                    if ($pickResponse['isUpdate'] && $pickResponse['id']) {
-                                        $pickData = [
-                                            'machine_status_id' => $insertMachineStatus->id,
-                                            'status' => 1,
-                                        ];
-                                        PickCalculation::where('id', $pickResponse['id'])->update($pickData);
-                                    }
-                                } else {
-                                    die('Something went wrong!');
+                                if ($machine['St'] == 1) {
+                                    $machineStatusData['no_of_stoppage'] = 0;
+                                    $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
+                                    $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
+                                }
+                                else if ($machine['St'] == 0) {
+                                    $machineStatusData['no_of_stoppage'] = 1;
+                                    $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
+                                    $diffMinLastRunning = $shiftStartTime->diffInMinutes($machineTime);
+                                }
+                                else {
+                                    $machineStatusData['no_of_stoppage'] = 0;
+                                    $diffMinLastStop = 0;
+                                    $diffMinLastRunning = 0;
                                 }
 
-                                //-----------------------------------------------------------------
-                                $machineStatusData['machine_status_id'] = $insertMachineStatus->id;
-                                $machineStatusData['machine_log'] = json_encode($machineLogsData);
-                                TempMachineStatus::insert($machineStatusData);
-                                //-----------------------------------------------------------------
+                                if ($machine['St'] == 1) {
+                                    $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
+                                }
+                                else if ($machine['St'] == 0) {
+                                    $diff = $shiftStartTime->diff($machineTime);
+                                    $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
+                                }
+                                else {
+                                    $diffMinTotalRunning = 0;
+                                }
+
+                                if($diffMinLastStop > 0) {
+                                    $machineStatusData['no_of_stoppage'] = 1;
+                                }
                             }
+                        }
+
+                        $machineStatusData['efficiency']    = 0;
+                        $machineStatusData['last_stop']     = $diffMinLastStop;
+                        $machineStatusData['last_running']  = $diffMinLastRunning;
+                        $machineStatusData['total_running'] = $diffMinTotalRunning;
+
+                        if($machineStatusData['total_running'] != 0 && $machineStatusData['total_time'] != 0) {
+                            $machineStatusData['efficiency'] = round((($machineStatusData['total_running'] / $machineStatusData['total_time']) * 100), 2);
+                        }
+
+                        if ($machineStatusTable) {
+                            $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
+
+                            if($pickResponse['status']) {
+                                if ($pickResponse['isUpdate'] && $pickResponse['id']) {
+                                    $pickData = [
+                                        'machine_status_id' => $machineStatusTable->id,
+                                    ];
+                                    PickCalculation::where('id', $pickResponse['id'])->update($pickData);
+                                }
+                            }
+                            
+                            //-----------------------------------------------------------------
+                            $machineStatusData['machine_status_id'] = $machineStatusTable->id;
+                            $machineStatusData['machine_log_id'] = $machineLogTable->id;
+                            TempMachineStatus::create($machineStatusData);
+                            //-----------------------------------------------------------------
+                        } 
+                        else {
+                            $insertMachineStatus = MachineStatus::create($machineStatusData);
+
+                            if($pickResponse['status']) {
+                                if ($pickResponse['isUpdate'] && $pickResponse['id']) {
+                                    $pickData = [
+                                        'machine_status_id' => $insertMachineStatus->id,
+                                    ];
+                                    PickCalculation::where('id', $pickResponse['id'])->update($pickData);
+                                }
+                            }
+
+                            //-----------------------------------------------------------------
+                            $machineStatusData['machine_status_id'] = $insertMachineStatus->id;
+                            $machineStatusData['machine_log_id'] = $machineLogTable->id;
+                            TempMachineStatus::create($machineStatusData);
+                            //-----------------------------------------------------------------
                         }
                     }
                 }
             }
-            else {
-                $totalNodeMaster = NodeMaster::where('device_id', $device->id)->count();
-                if ($totalNodeMaster == $totalNode) {
-                    continue;
-                }
-                else {
-                    $nodeName = 'N' . md5(time().rand(11111, 99999));
-                    
-                    $nodeMasterData = [
-                        'name' => $nodeName,
-                        'user_id' => $device->user_id,
-                        'device_id' => $device->id,
-                        'no_of_nodes' => $totalNode,
-                        'status' => 1,
-                    ];
-                    $nodeMasterTable = NodeMaster::create($nodeMasterData);
-
-                    $nodeErrorLogsData = [
-                        'user_id' => $device->user_id,
-                        'device_id' => $device->id,
-                        'node_id' => $nodeMasterTable->id,
-                        'status' => 1,
-                    ];
-                    $nodeErrorLogsArray[] = $nodeErrorLogsData;
-                }
-            }
-        }
-
-        if(count($nodeErrorLogsArray) > 0) {
-            $insertNodeErrorLogs = NodeErrorLogs::insert($nodeErrorLogsArray);
-        }
-        if(count($machineLogsArray) > 0) {
-            $insertMachineLogs = MachineLogs::insert($machineLogsArray);
         }
         
-        \Log::info("Processing data for Device ID: {$deviceId}, Node Data: " . json_encode($nodeData));
+        Log::info("Processing data Total Node -> {$totalNode} ::: " . json_encode($reqData));
+        return true;
     }
 
     protected function pickCalculation(int $pick, int $id = NULL, string $type = 'update')
@@ -449,8 +377,7 @@ class ProcessPacket implements ShouldQueue
         if ($id != NULL) {
             $pickTable = PickCalculation::where('machine_status_id', $id)->first();
             if(!$pickTable) {
-                throw new pickCalculationException("Error Processing Request", 1);
-                die;
+                throw new Exception("Error Processing Request", 1);
             }
 
             $difference_pick = 0;
@@ -496,7 +423,6 @@ class ProcessPacket implements ShouldQueue
                     'total_pick' => $total_pick,
                     'new_pick' => $new_pick,
                     'difference_pick' => $difference_pick,
-                    'status' => 0,
                 ];
                 $insertPick = PickCalculation::create($pickData);
                 if($insertPick) {
@@ -513,7 +439,6 @@ class ProcessPacket implements ShouldQueue
                 'total_pick' => $pick,
                 'new_pick' => 0,
                 'difference_pick' => 0,
-                'status' => 0,
             ];
             $insertPick = PickCalculation::create($pickData);
             if($insertPick) {

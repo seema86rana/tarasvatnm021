@@ -18,17 +18,15 @@ class Menu extends Model
         'icon',
         'position',
         'status',
-        'created_by',
-        'updated_by',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     public function subMenu() {
         return $this->hasMany(Menu::class, 'parent_id', 'id');
     }
 
     public function createdBy() {
-        return $this->hasOne(User::class, 'id', 'created_by'); 
+        return $this->belongsTo(User::class, 'created_by', 'id'); 
     }
 }

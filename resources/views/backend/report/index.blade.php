@@ -82,7 +82,7 @@
                             <option value="">Select a machine</option>
                             @foreach ($machineMaster as $value)
                                 <option value="{{ $value->id }}" {{ isset($machine_id) && $machine_id == $value->id ? 'selected' : '' }}>
-                                    {{ $value->machine_display_name }}
+                                    {{ $value->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -133,7 +133,7 @@
                     <th>Device</th>
                     <th>Node</th>
                     <th>Machine</th>
-                    <th>Shift</th>
+                    <th>Shift Detail</th>
                     <th>Machine Datetime</th>
                     <th>Device Datetime</th>
                     <th>Mode</th>

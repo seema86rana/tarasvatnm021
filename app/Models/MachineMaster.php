@@ -12,16 +12,25 @@ class MachineMaster extends Model
     protected $table = "machine_master";
 
     protected $fillable = [
-        'user_id',
-        'device_id',
         'node_id',
-        'machine_name',
-        'machine_display_name',
-        'device_datetime',
+        'name',
         'status',
-        'created_by',
-        'updated_by',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
+
+    public function node()
+    {
+        return $this->belongsTo(NodeMaster::class, 'node_id', 'id');
+    }
+
+    public function machineLogs()
+    {
+        return $this->hasMany(MachineLog::class, 'machine_id', 'id');
+    }
+
+    public function machineStatuses()
+    {
+        return $this->hasMany(MachineStatus::class, 'machine_id', 'id');
+    }
 }

@@ -5,18 +5,9 @@ namespace App\Jobs;
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
-use App\Models\Device;
-use App\Mail\ReportMail;
-use App\Models\NodeMaster;
-use App\Models\MachineLogs;
-use App\Models\MachineMaster;
 use App\Models\MachineStatus;
-use App\Models\NodeErrorLogs;
 use Illuminate\Bus\Queueable;
-use App\Models\PickCalculation;
-use App\Models\TempMachineStatus;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -50,9 +41,9 @@ class GenerateReport implements ShouldQueue
     {
         try {
             $this->sendReports($this->reportType);
-            \Log::info("Report sent successfully for type: {$this->reportType}");
+            Log::info("Report sent successfully for type: {$this->reportType}");
         } catch (Exception $e) {
-            \Log::error("Report sending failed: {$e->getMessage()}");
+            Log::error("Report sending failed: {$e->getMessage()}");
             throw $e;
         }
     }
@@ -84,7 +75,7 @@ class GenerateReport implements ShouldQueue
         $users = User::whereIn('id', $result)->get();
 
         if ($users->isEmpty()) {
-            \Log::info("No data found for report type: {$filter}");
+            Log::info("No data found for report type: {$filter}");
             return;
         }
 

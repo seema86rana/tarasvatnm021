@@ -25,13 +25,18 @@ class Device extends Model
         'updated_by',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     public function user() {
-        return $this->hasOne(User::class, 'id', 'user_id'); 
+        return $this->belongsTo(User::class, 'user_id', 'id'); 
     }
 
     public function createdBy() {
-        return $this->hasOne(User::class, 'id', 'created_by'); 
+        return $this->belongsTo(User::class, 'created_by', 'id'); 
+    }
+
+    public function nodes()
+    {
+        return $this->hasMany(NodeMaster::class, 'device_id', 'id');
     }
 }

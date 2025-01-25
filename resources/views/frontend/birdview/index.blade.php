@@ -4,6 +4,11 @@
 
 @section('css')
     <link rel="stylesheet" href="{{ asset('/') }}assets/frontend/css/bird_view.css">
+    <style>
+        .dull-preview {
+            background: rgba(0,0,0,0.6) !important;
+        }
+    </style>
 @endsection
 
 @section('content')

@@ -37,9 +37,11 @@ Route::get('/dashboard', function () {
 Auth::routes(['verify' => true]);
 
 // profile
-Route::resource('profile', BackendProfileController::class);
-Route::post('profile/{id}', [BackendProfileController::class, 'update'])->name('profile.updates');
-Route::post('profile/password/{id}', [BackendProfileController::class, 'password'])->name('profile.password');
+Route::group(['middleware' => ['auth']], function () {
+    Route::resource('profile', BackendProfileController::class);
+    Route::post('profile/{id}', [BackendProfileController::class, 'update'])->name('profile.updates');
+    Route::post('profile/password/{id}', [BackendProfileController::class, 'password'])->name('profile.password');
+});
 
 // birdview
 Route::resource('birdview', FrontEndBirdViewController::class);

@@ -26,12 +26,10 @@ class CreateUsersTable extends Migration
             $table->string('company_name')->nullable();
             $table->string('gst_number')->unique()->nullable();
             $table->text('address')->nullable();
-            $table->integer('status')->default(2)->comment('1->Active, 2->Pending, 3->Inactive');
+            $table->integer('status')->default(2)->comment('1->Active, 2->Pending, 0->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
-            // $table->timestamps();
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->timestamps();
         });
     }
 

@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Http\Controllers\Controller;
+use DataTables;
 use App\Models\User;
 use App\Models\Device;
 use App\Models\NodeMaster;
-use App\Models\MachineMaster;
-use App\Models\MachineLogs;
 use Illuminate\Http\Request;
+use App\Models\MachineMaster;
+use App\Models\TempMachineStatus;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
-use Illuminate\Support\Facades\Auth;
-use DataTables;
 
 class ReportController extends Controller
 {
@@ -45,25 +43,33 @@ class ReportController extends Controller
             $start = $request->start;
             $length = $request->length;
 
-            $query = MachineLogs::with('user', 'device', 'node', 'machine')
+            $query = TempMachineStatus::with([])
                 ->when(!empty($user_id), function ($query) use ($user_id) {
-                    return $query->where('user_id', $user_id);
+                    return $query->whereHas('machine.node.device.user', function($q) use ($user_id) {
+                        $q->where('user_id', $user_id);
+                    });
                 })
                 ->when(!empty($device_id), function ($query) use ($device_id) {
-                    return $query->where('device_id', $device_id);
+                    return $query->whereHas('machine.node.device', function($q) use ($device_id) {
+                        $q->where('device_id', $device_id);
+                    });
                 })
                 ->when(!empty($node_id), function ($query) use ($node_id) {
-                    return $query->where('node_id', $node_id);
+                    return $query->whereHas('machine.node', function($q) use ($node_id) {
+                        $q->where('node_id', $node_id);
+                    });
                 })
                 ->when(!empty($machine_id), function ($query) use ($machine_id) {
-                    return $query->where('machine_id', $machine_id);
+                    return $query->whereHas('machine', function($q) use ($machine_id) {
+                        $q->where('machine_id', $machine_id);
+                    });
                 })
                 ->when(!empty($date), function ($query) use ($date) {
-                    return $query->whereDate('device_datetime', date('Y-m-d', strtotime($date)));
+                    return $query->whereDate('created_at', date('Y-m-d', strtotime($date)));
                 });
                 
-                $totalRecord = $query->count();
-                $data = $query->orderBy('id','ASC');
+            $totalRecord = $query->count();
+            $data = $query->orderBy('id','ASC');
 
             $i = $start;
             return Datatables::of($data)
@@ -73,39 +79,29 @@ class ReportController extends Controller
                     return $i += 1;
                 })
                 ->addColumn('user', function ($row) {
-                    return !empty($row->user->name) ? $row->user->name : '--------';
+                    return !empty($row->machine->node->device->user->name) ? $row->machine->node->device->user->name : '--------';
                 })
                 ->addColumn('device', function ($row) {
-                    return !empty($row->device->name) ? $row->device->name : '--------';
+                    return !empty($row->machine->node->device->name) ? $row->machine->node->device->name : '--------';
                 })
                 ->addColumn('node', function ($row) {
-                    return !empty($row->node->name) ? $row->node->name : '--------';
+                    return !empty($row->machine->node->name) ? $row->machine->node->name : '--------';
                 })
                 ->addColumn('machine', function ($row) {
-                    return !empty($row->machine->machine_display_name) ? $row->machine->machine_display_name : '--------';
+                    return !empty($row->machine->name) ? $row->machine->name : '--------';
                 })
                 ->addColumn('shift', function ($row) {
-
-                    $shiftName = 'Shift D';
-                    $shiftStart = '00:00 AM';
-                    $shiftEnd = '00:00 PM';
-                    $deviceShift = json_decode($row->device->shift, true);
-
-                    foreach ($deviceShift as $dsKey => $dsValue) {
-                        $date = date('Y-m-d', strtotime($row->device_datetime));
-                        $getShiftStart = date("Y-m-d H:i:s", strtotime(($date . " " . $dsValue['shift_start'])));
-                        $getShiftEnd = date("Y-m-d H:i:s", strtotime(($date . " " . $dsValue['shift_end'])));
-                        if (strtotime($row->device_datetime) >= strtotime($getShiftStart) && strtotime($row->device_datetime) < strtotime($getShiftEnd)) {
-                            $shiftName = $dsValue['shift_name'];
-                            $shiftStart = date('h:i A', strtotime($getShiftStart));
-                            $shiftEnd = date('h:i A', strtotime($getShiftEnd));
-                            break;
-                        }
-                    }
-
-                    return "$shiftName ($shiftStart - $shiftEnd)";
+                    $shiftStart = date('Y-m-d h:i A', strtotime($row->shift_start_datetime));
+                    $shiftEnd = date('Y-m-d h:i A', strtotime($row->shift_end_datetime));
+                    return "{$row->shift_name} ({$shiftStart} - {$shiftEnd})";
                 })
-                ->rawColumns(['serial_no', 'user', 'device', 'node', 'machine', 'shift'])
+                ->addColumn('mode', function ($row) {
+                    return !empty($row->status) ? $row->status : 0;
+                })
+                ->addColumn('pick', function ($row) {
+                    return !empty($row->machine_log->pick) ? $row->machine_log->pick : 0;
+                })
+                ->rawColumns(['serial_no', 'user', 'device', 'node', 'machine', 'shift', 'mode', 'pick'])
                 ->make(true);
         }
 
@@ -143,17 +139,11 @@ class ReportController extends Controller
             return $query->where('user_id', $user_id);
         })->where('status', 1)->get();
 
-        $nodeMaster = NodeMaster::when(!empty($user_id), function ($query) use ($user_id) {
-            return $query->where('user_id', $user_id);
-        })->when(!empty($device_id), function ($query) use ($device_id) {
+        $nodeMaster = NodeMaster::when(!empty($device_id), function ($query) use ($device_id) {
             return $query->where('device_id', $device_id);
         })->where('status', 1)->get();
 
-        $machineMaster = MachineMaster::when(!empty($user_id), function ($query) use ($user_id) {
-            return $query->where('user_id', $user_id);
-        })->when(!empty($device_id), function ($query) use ($device_id) {
-            return $query->where('device_id', $device_id);
-        })->when(!empty($node_id), function ($query) use ($node_id) {
+        $machineMaster = MachineMaster::when(!empty($node_id), function ($query) use ($node_id) {
             return $query->where('node_id', $node_id);
         })->where('status', 1)->get();
         
@@ -184,17 +174,11 @@ class ReportController extends Controller
                 return $query->where('user_id', $user_id);
             })->where('status', 1)->get();
 
-            $nodeMaster = NodeMaster::when(!empty($user_id), function ($query) use ($user_id) {
-                return $query->where('user_id', $user_id);
-            })->when(!empty($device_id), function ($query) use ($device_id) {
+            $nodeMaster = NodeMaster::when(!empty($device_id), function ($query) use ($device_id) {
                 return $query->where('device_id', $device_id);
             })->where('status', 1)->get();
 
-            $machineMaster = MachineMaster::when(!empty($user_id), function ($query) use ($user_id) {
-                return $query->where('user_id', $user_id);
-            })->when(!empty($device_id), function ($query) use ($device_id) {
-                return $query->where('device_id', $device_id);
-            })->when(!empty($node_id), function ($query) use ($node_id) {
+            $machineMaster = MachineMaster::when(!empty($node_id), function ($query) use ($node_id) {
                 return $query->where('node_id', $node_id);
             })->where('status', 1)->get();
 

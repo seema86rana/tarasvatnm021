@@ -121,12 +121,74 @@ class DeviceController extends Controller
 
             $shiftLength = count($request->shift_name);
             $shiftArray = [];
-            for ($i=0; $i < $shiftLength; $i++) { 
-                $shiftArray[] = [
-                    'shift_name' => $request->shift_name[$i],
-                    'shift_start' => $request->shift_start[$i],
-                    'shift_end' => $request->shift_end[$i],
-                ];
+            $shiftType = 0; // Tracks shifts spanning multiple days
+
+            for ($i = 0; $i < $shiftLength; $i++) {
+                $shiftStart = strtotime($request->shift_start_time[$i]);
+                $shiftEnd = strtotime($request->shift_end_time[$i]);
+
+                // Validate shift times
+                if ($shiftStart > $shiftEnd && $i == 0) {
+                    return response()->json([
+                        'statusCode' => 0,
+                        'message' => "Shift start time should not be greater than shift end time for Shift $i",
+                        'position_start' => $i,
+                        'position_end' => $i,
+                    ]);
+                } elseif ($i > 0 && strtotime($request->shift_end_time[$i - 1]) > $shiftStart) {
+                    return response()->json([
+                        'statusCode' => 0,
+                        'message' => "Shift start time for Shift $i overlaps with the previous shift",
+                        'position_start' => $i,
+                        'position_end' => $i - 1,
+                    ]);
+                } elseif ($shiftType != 0) {
+                    $shiftEndDateTime = date('Y-m-d H:i:s', strtotime("2025-01-26 {$request->shift_end_time[$i]}"));
+                
+                    // Get the first shift's start datetime
+                    $firstShiftStartDateTime = date('Y-m-d H:i:s', strtotime("2025-01-25 {$request->shift_start_time[0]}"));
+                
+                    // Calculate the time difference in minutes
+                    $timeDifferenceInMinutes = (strtotime($shiftEndDateTime) - strtotime($firstShiftStartDateTime)) / 60;
+                
+                    if ($timeDifferenceInMinutes > 1440) { // 24 hours = 1440 minutes
+                        return response()->json([
+                            'statusCode' => 0,
+                            'message' => "Shift end time for Shift $i exceeds 24 hours from the first shift's start time",
+                            'position_start' => 0,
+                            'position_end' => $i, // Highlight the first shift and the current shift
+                        ]);
+                    }
+                }
+
+                // Determine shift start and end days
+                if ($shiftStart < strtotime($request->shift_start_time[0])) {
+                    $shiftType++;
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_day' => 2,
+                        'shift_start_time' => $request->shift_start_time[$i],
+                        'shift_end_day' => 2,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+                } elseif ($shiftStart > $shiftEnd) {
+                    $shiftType++;
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_day' => 1,
+                        'shift_start_time' => $request->shift_start_time[$i],
+                        'shift_end_day' => 2,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+                } else {
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_day' => 1,
+                        'shift_start_time' => $request->shift_start_time[$i],
+                        'shift_end_day' => 1,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+                }
             }
     
             $data = $validator->validated();
@@ -147,7 +209,7 @@ class DeviceController extends Controller
                 'message' => "Device created successfully!",
             );
             return response()->json($response);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),
@@ -255,12 +317,74 @@ class DeviceController extends Controller
 
             $shiftLength = count($request->shift_name);
             $shiftArray = [];
-            for ($i=0; $i < $shiftLength; $i++) { 
-                $shiftArray[] = [
-                    'shift_name' => $request->shift_name[$i],
-                    'shift_start' => $request->shift_start[$i],
-                    'shift_end' => $request->shift_end[$i],
-                ];
+            $shiftType = 0; // Tracks shifts spanning multiple days
+
+            for ($i = 0; $i < $shiftLength; $i++) {
+                $shiftStart = strtotime($request->shift_start_time[$i]);
+                $shiftEnd = strtotime($request->shift_end_time[$i]);
+
+                // Validate shift times
+                if ($shiftStart > $shiftEnd && $i == 0) {
+                    return response()->json([
+                        'statusCode' => 0,
+                        'message' => "Shift start time should not be greater than shift end time for Shift $i",
+                        'position_start' => $i,
+                        'position_end' => $i,
+                    ]);
+                } elseif ($i > 0 && strtotime($request->shift_end_time[$i - 1]) > $shiftStart) {
+                    return response()->json([
+                        'statusCode' => 0,
+                        'message' => "Shift start time for Shift $i overlaps with the previous shift",
+                        'position_start' => $i,
+                        'position_end' => $i - 1,
+                    ]);
+                } elseif ($shiftType != 0) {
+                    $shiftEndDateTime = date('Y-m-d H:i:s', strtotime("2025-01-26 {$request->shift_end_time[$i]}"));
+                
+                    // Get the first shift's start datetime
+                    $firstShiftStartDateTime = date('Y-m-d H:i:s', strtotime("2025-01-25 {$request->shift_start_time[0]}"));
+                
+                    // Calculate the time difference in minutes
+                    $timeDifferenceInMinutes = (strtotime($shiftEndDateTime) - strtotime($firstShiftStartDateTime)) / 60;
+                
+                    if ($timeDifferenceInMinutes > 1440) { // 24 hours = 1440 minutes
+                        return response()->json([
+                            'statusCode' => 0,
+                            'message' => "Shift end time for Shift $i exceeds 24 hours from the first shift's start time",
+                            'position_start' => 0,
+                            'position_end' => $i, // Highlight the first shift and the current shift
+                        ]);
+                    }
+                }
+
+                // Determine shift start and end days
+                if ($shiftStart < strtotime($request->shift_start_time[0])) {
+                    $shiftType++;
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_day' => 2,
+                        'shift_start_time' => $request->shift_start_time[$i],
+                        'shift_end_day' => 2,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+                } elseif ($shiftStart > $shiftEnd) {
+                    $shiftType++;
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_day' => 1,
+                        'shift_start_time' => $request->shift_start_time[$i],
+                        'shift_end_day' => 2,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+                } else {
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_day' => 1,
+                        'shift_start_time' => $request->shift_start_time[$i],
+                        'shift_end_day' => 1,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+                }
             }
 
             $data = $validator->validated();
@@ -273,7 +397,7 @@ class DeviceController extends Controller
                 'statusCode' => 1,
                 'message' => 'Device updated successfully!',
             ]);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),

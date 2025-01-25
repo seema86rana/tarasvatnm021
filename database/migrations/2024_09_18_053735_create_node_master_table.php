@@ -15,16 +15,10 @@ class CreateNodeMasterTable extends Migration
     {
         Schema::create('node_master', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('device_id');
-            $table->integer('no_of_nodes');
-            $table->integer('status')->default(1)->comment('1->Active, 2->Inactive');
-            $table->integer('created_by')->nullable();
-            $table->integer('updated_by')->nullable();
-            // $table->timestamps();
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->string('name');
+            $table->integer('status')->default(1)->comment('1->Active, 0->Inactive');
+            $table->timestamps();
         });
     }
 

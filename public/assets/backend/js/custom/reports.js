@@ -231,10 +231,7 @@ function populateSelect2(selector, items, type, value) {
 
         if (item.name) {
             title = item.name;
-        } 
-        else if(item.machine_display_name) {
-            title = item.machine_display_name;
-        } 
+        }
         else {
             title = item.id;
         }

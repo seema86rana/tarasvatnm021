@@ -3,13 +3,9 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Device;
-use App\Models\MachineMaster;
 use App\Models\MachineStatus;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
@@ -64,74 +60,68 @@ class BirdViewController extends Controller
         try {
             $authId = Auth::user()->id;
             if (!$authId) {
-                return response()->json(['status' => false, 'message' => 'Something went wrong!'], 201);
+                return response()->json(['status' => false, 'message' => 'Something went wrong!'], 200);
             }
             
-            $deviceData = Device::where('user_id', $authId)->where('status', 1)->get();
+            $deviceData = Device::with([])->where('user_id', $authId)->where('status', 1)->get();
             if (!$deviceData) {
-                return response()->json(['status' => false, 'message' => 'Device not found!'], 201);
+                return response()->json(['status' => false, 'message' => 'Device not found!'], 200);
             }
-            $shiftName = 'Shift D';
-            $shiftStart = '00:00 AM';
-            $shiftEnd = '00:00 PM';
-            $getShiftStart = $datetime;
-            $getShiftEnd = $datetime;
-            $getShiftStartArray = [];
-            $getShiftEndArray = [];
-            $dId = [];
-            foreach ($deviceData as $dKey => $dValue) {
-                $deviceShift = json_decode($dValue->shift, true);
-                foreach ($deviceShift as $dsKey => $dsValue) {
-                    $getShiftStart = date("Y-m-d H:i:s", strtotime(($date . " " . $dsValue['shift_start'])));
-                    $getShiftEnd = date("Y-m-d H:i:s", strtotime(($date . " " . $dsValue['shift_end'])));
-                    if (strtotime($datetime) >= strtotime($getShiftStart) && strtotime($datetime) < strtotime($getShiftEnd)) {
-                        $shiftName = $dsValue['shift_name'];
-                        $shiftStart = date('h:i A', strtotime($getShiftStart));
-                        $shiftEnd = date('h:i A', strtotime($getShiftEnd));
-                        $dId[] = $dValue->id;
-                        $getShiftStartArray[] = $getShiftStart;
-                        $getShiftEndArray[] = $getShiftEnd;
-                        break;
+
+            $machineId = [];
+
+            foreach ($deviceData as $device) {
+                if($device->nodes) {
+                    foreach($device->nodes as $node) {
+                        if($node->status == 1 && $node->machines) {
+                            foreach($node->machines as $machine) {
+                                if($machine->status == 1) {
+                                    $machineId[] = $machine->id;
+                                }
+                            }
+                        }
                     }
+                    break;
                 }
             }
-            
-            $machineData = MachineStatus::with('machineMaster', 'pickCalculation')
-                            ->whereIn('device_id', $dId)
-                            ->whereDate('machine_date', date('Y-m-d'))
-                            ->whereIn('shift_start_datetime', $getShiftStartArray)
-                            ->whereIn('shift_end_datetime', $getShiftEndArray)
-                            ->where('user_id', $authId)->get();
-
-            if(count($machineData->toArray()) <= 0) {
-                $machineSingleData = MachineStatus::with('machineMaster', 'pickCalculation')
-                                ->where('user_id', $authId)->orderBy('id', 'DESC')->first();
-
-                if($machineSingleData) {
-                    $machineData = MachineStatus::with('machineMaster', 'pickCalculation')
-                                ->where('device_id', $machineSingleData->device_id)
-                                ->where('machine_date', $machineSingleData->machine_date)
-                                ->where('shift_name', $machineSingleData->shift_name)
-                                ->where('shift_start_datetime', $machineSingleData->shift_start_datetime)
-                                ->where('shift_end_datetime', $machineSingleData->shift_end_datetime)
-                                ->where('user_id', $authId)->get();
-                }
+            if(count($machineId) <= 0) {
+                return response()->json(['status' => false, 'message' => 'Machine not found!'], 200);
             }
+
+            $machineStatus = MachineStatus::whereIn('id', $machineId)->whereDate('shift_date', $date)->orderBy('id', 'desc')->first();
+            if (!$machineStatus) {
+                $machineStatus = MachineStatus::whereIn('id', $machineId)->orderBy('id', 'desc')->first();
+            }
+            if(!$machineStatus) {
+                return response()->json(['status' => false, 'message' => 'Machine status not found'], 200);
+            }
+
+            $machineData = MachineStatus::with('machine', 'pickCal')
+                            ->whereIn('machine_id', $machineId) 
+                            ->whereDate('shift_date', $machineStatus->shift_date)
+                            ->where('shift_start_datetime', $machineStatus->shift_start_datetime)
+                            ->where('shift_end_datetime', $machineStatus->shift_end_datetime)
+                            ->get();
+
+            $shiftName = $machineStatus->shift_name;
+            $shiftStart = $machineStatus->shift_start_datetime;
+            $shiftEnd = $machineStatus->shift_end_datetime;
 
             // echo "<pre>";
             // print_r($machineData->toArray());
+            // echo "</pre>";
             // die;
 
             return response()->json([
                 'status' => true,
                 'shiftName' => $shiftName,
-                'shiftStart' => $shiftStart,
-                'shiftEnd' => $shiftEnd,
-                'shiftStartEnd' => $shiftStart . ' - ' . $shiftEnd,
+                'shiftStart' => date('h:i A', strtotime($shiftStart)),
+                'shiftEnd' => date('h:i A', strtotime($shiftEnd)),
+                'shiftStartEnd' => date('h:i A', strtotime($shiftStart)) . " " . date('h:i A', strtotime($shiftEnd)),
                 'html' => View::make('frontend.birdview.bird', compact('machineData'))->render(),
             ]);
 
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }

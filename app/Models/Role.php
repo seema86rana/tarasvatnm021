@@ -19,13 +19,13 @@ class Role extends Model
         'updated_by',
     ];
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     public function users() {
         return $this->hasMany(User::class, 'id', 'role_id');
     }
 
     public function createdBy() {
-        return $this->hasOne(User::class, 'id', 'created_by'); 
+        return $this->belongsTo(User::class, 'created_by', 'id'); 
     }
 }
