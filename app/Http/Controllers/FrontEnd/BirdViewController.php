@@ -81,9 +81,12 @@ class BirdViewController extends Controller
                             }
                         }
                     }
-                    break;
+                    if(count($machineId) > 0) {
+                        break;
+                    }
                 }
             }
+
             if(count($machineId) <= 0) {
                 return response()->json(['status' => false, 'message' => 'Machine not found!'], 200);
             }
