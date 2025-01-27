@@ -127,6 +127,7 @@ class DeviceController extends Controller
                 $shiftStart = strtotime($request->shift_start_time[$i]);
                 $shiftEnd = strtotime($request->shift_end_time[$i]);
 
+                /*
                 // Validate shift times
                 if ($shiftStart > $shiftEnd && $i == 0) {
                     return response()->json([
@@ -160,6 +161,7 @@ class DeviceController extends Controller
                         ]);
                     }
                 }
+                */
 
                 // Determine shift start and end days
                 if ($shiftStart < strtotime($request->shift_start_time[0])) {
@@ -323,6 +325,7 @@ class DeviceController extends Controller
                 $shiftStart = strtotime($request->shift_start_time[$i]);
                 $shiftEnd = strtotime($request->shift_end_time[$i]);
 
+                /*
                 // Validate shift times
                 if ($shiftStart > $shiftEnd && $i == 0) {
                     return response()->json([
@@ -356,6 +359,7 @@ class DeviceController extends Controller
                         ]);
                     }
                 }
+                */
 
                 // Determine shift start and end days
                 if ($shiftStart < strtotime($request->shift_start_time[0])) {
