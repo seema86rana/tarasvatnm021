@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::get('/', [FrontEndHomeController::class, 'index'])->name('home');
 
-Route::get('/bird', [FrontEndBirdViewController::class, 'index'])->name('bird.view');
+Route::get('/birdviews', [FrontEndBirdViewController::class, 'index'])->name('bird.view');
 // Route::get('/', function () {
 //     return redirect()->route('dashboard.index');
 // });

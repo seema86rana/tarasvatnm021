@@ -91,9 +91,9 @@ class BirdViewController extends Controller
                 return response()->json(['status' => false, 'message' => 'Machine not found!'], 200);
             }
 
-            $machineStatus = MachineStatus::whereIn('id', $machineId)->whereDate('shift_date', $date)->orderBy('id', 'desc')->first();
+            $machineStatus = MachineStatus::whereIn('machine_id', $machineId)->whereDate('shift_date', $date)->orderBy('id', 'desc')->first();
             if (!$machineStatus) {
-                $machineStatus = MachineStatus::whereIn('id', $machineId)->orderBy('id', 'desc')->first();
+                $machineStatus = MachineStatus::whereIn('machine_id', $machineId)->orderBy('id', 'desc')->first();
             }
             if(!$machineStatus) {
                 return response()->json(['status' => false, 'message' => 'Machine status not found'], 200);
