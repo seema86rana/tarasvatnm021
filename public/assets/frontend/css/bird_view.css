@@ -18,6 +18,7 @@
     --darkBlue: #03557F;
     --blue: #017CBA;
     --lightBlue: #9DD5F1;
+    --noColor: transparent;
 }
 
 body{
@@ -95,9 +96,11 @@ ul{
 
 
 .shift_wrapper{
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute;
+    /* align-items: center; */
+    /* justify-content: center; */
+    top: 50%;
+    transform: translateY(-50%);
    
 }
 .logo img{
@@ -112,7 +115,7 @@ ul{
 .shift_wrapper h4 span{
     font-size: 1.1vw;
     line-height: 1;
-    background: #fff;
+    background:  var(--noColor);
     display: inline-block;
     padding: 0.8vh 1vw;
     border-radius: 0.2vw;
@@ -170,8 +173,10 @@ ul{
     color: var(--green);
 }
 .rs_wrapper ul li.t_box{
-    border-color: transparent;
+    border-color: var(--noColor);
     color: #206b91;
+    background: #fff;
+    padding: 1.2vh 1vw;
 }
 .rs_wrapper ul li.s_box{
     border-color: var(--red);
