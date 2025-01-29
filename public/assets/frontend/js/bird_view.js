@@ -34,8 +34,8 @@ function fetchData() {
         success: function (response) {
             // console.log(response);
             if(response.status) {
-                $("#shift_name").html(response.shiftName);
-                $("#shift_start_end_time").html(response.shiftStartEnd);
+                // $("#shift_name").html(response.shiftName);
+                $("#shift_start_end_time").html("Shift: "+response.shiftStartEnd);
                 $("#machine_data").html(response.html);
 
                 setTimeout(() => {
