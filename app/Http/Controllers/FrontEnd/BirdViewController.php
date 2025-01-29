@@ -120,7 +120,7 @@ class BirdViewController extends Controller
                 'shiftName' => $shiftName,
                 'shiftStart' => date('h:i A', strtotime($shiftStart)),
                 'shiftEnd' => date('h:i A', strtotime($shiftEnd)),
-                'shiftStartEnd' => date('h:i A', strtotime($shiftStart)) . " " . date('h:i A', strtotime($shiftEnd)),
+                'shiftStartEnd' => date('h:i A', strtotime($shiftStart)) . " - " . date('h:i A', strtotime($shiftEnd)),
                 'html' => View::make('frontend.birdview.bird', compact('machineData'))->render(),
             ]);
 
