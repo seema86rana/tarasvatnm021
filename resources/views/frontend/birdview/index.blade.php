@@ -33,13 +33,13 @@
                         
                         <div class="user_dropdownn">
                             <div class="dropdown">
+                                <div class="shift_wrapper">
+                                    <h4>
+                                        <!-- <span id="shift_name">Shift D</span> --> 
+                                        <span id="shift_start_end_time">Shift: 00:00 AM - 00:00 PM</span>
+                                    </h4>
+                                </div>
                                 <button class="dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <div class="shift_wrapper">
-                                        <h4>
-                                            <!-- <span id="shift_name">Shift D</span> --> 
-                                            <span id="shift_start_end_time">Shift: 00:00 AM - 00:00 PM</span>
-                                        </h4>
-                                    </div>
                                     @if(!empty(Auth::user()->profile_image))
                                         <img src="{{ url('/assets/profile_image').'/'.Auth::user()->profile_image }}" alt="{{ Auth::user()->name ?? 'System User'}}"> 
                                     @else
@@ -47,7 +47,8 @@
                                     @endif
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-                                    <li>{{ Auth::user()->name ?? 'System User'}}</li>
+                                    <li><h6 class="dropdown-header">{{ Auth::user()->name ?? 'System User'}}</h6></li>
+                                    <li><hr class="dropdown-divider"></li>
                                 <!-- <li><a class="dropdown-item" href="#">My Profile</a></li> -->
                                 <li>
                                     <a class="dropdown-item" href="javascript: void(0)" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
