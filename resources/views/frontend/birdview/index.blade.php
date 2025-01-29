@@ -22,16 +22,24 @@
                         </div>
                     </div>
                     <div class="col-md-6 order-3 order-md-2">
-                        <div class="t_box" id="deviceTime">00:00 AM</div>
+                        <div class="rs_wrapper">
+                            <ul>
+                                <li class="t_box" id="deviceTime">00:00 AM</li>
+                            </ul>
+                        </div>
                         
                     </div>
                     <div class="col-6 col-md-3 order-2 order-md-3">
-                        <div class="shift_wrapper">
-                            <h4><span id="shift_name">Shift D</span> <span id="shift_start_end_time">00:00 AM - 00:00 PM</span></h4>
-                        </div>
+                        
                         <div class="user_dropdownn">
                             <div class="dropdown">
                                 <button class="dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="shift_wrapper">
+                                        <h4>
+                                            <!-- <span id="shift_name">Shift D</span> --> 
+                                            <span id="shift_start_end_time">Shift: 00:00 AM - 00:00 PM</span>
+                                        </h4>
+                                    </div>
                                     @if(!empty(Auth::user()->profile_image))
                                         <img src="{{ url('/assets/profile_image').'/'.Auth::user()->profile_image }}" alt="{{ Auth::user()->name ?? 'System User'}}"> 
                                     @else
