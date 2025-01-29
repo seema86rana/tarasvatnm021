@@ -170,8 +170,8 @@ ul{
     color: var(--green);
 }
 .rs_wrapper ul li.t_box{
-    border-color: var(--dark);
-    color: var(--blue);
+    border-color: transparent;
+    color: #206b91;
 }
 .rs_wrapper ul li.s_box{
     border-color: var(--red);
