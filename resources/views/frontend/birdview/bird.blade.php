@@ -93,7 +93,7 @@
         @foreach($machineData as $mKey => $mValue)
             @php 
                 $birdHeaderData['totalMachineEfficiency'] = round($birdHeaderData['totalMachineEfficiency'] + (float)$mValue->efficiency, 2);
-                $birdHeaderData['deviceTime'] = date('h:i A', strtotime($mValue->device_datetime ?? date('Y-m-d H:i:s')));
+                $birdHeaderData['deviceTime'] = date('d/m/Y h:i A', strtotime($mValue->device_datetime ?? ' '));
                 if($mValue->status == 1) {
                     $birdHeaderData['totalMachineSpeed'] += (float)$mValue->speed;
                     $countActive += 1; 
