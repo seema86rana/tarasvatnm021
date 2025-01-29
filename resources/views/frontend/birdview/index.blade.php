@@ -17,9 +17,9 @@
             <div class="container-fluid">
                 <div class="row align-items-center">
                     <div class="col-6 col-md-3 order-1 order-md-1">
-                        <div class="logo">
+                        <a class="logo" href="{{ route('home') }}">
                             <img src="{{ asset('/') }}assets/logo.svg" alt="">
-                        </div>
+                        </a>
                     </div>
                     <div class="col-md-6 order-3 order-md-2">
                         <div class="rs_wrapper">
