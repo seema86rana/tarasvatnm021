@@ -50,7 +50,7 @@
                                     <li><h6 class="dropdown-header">{{ Auth::user()->name ?? 'System User'}}</h6></li>
                                     <li><hr class="dropdown-divider"></li>
                                 <!-- <li><a class="dropdown-item" href="#">My Profile</a></li> -->
-                                    <li><a class="dropdown-item" href="{{ route('/') }}">Home</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('home') }}">Home</a></li>
                                 <li>
                                     <a class="dropdown-item" href="javascript: void(0)" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
                                     <form method="POST" id="logout-form" action="{{ route('logout') }}">
