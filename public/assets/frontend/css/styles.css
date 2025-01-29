@@ -350,8 +350,8 @@ a:hover {
 }
 
 .navbar .logo-image img {
-    width: 132px;
-	height: 30px;
+    width: 14vw;
+	/* height: 30px; */
 }
 
 .navbar .logo-text {
