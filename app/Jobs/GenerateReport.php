@@ -106,6 +106,8 @@ class GenerateReport implements ShouldQueue
 
         $response = curl_exec($curl);
         curl_close($curl);
+        Log::info("generateReportApi URL: " . env('GENERATE_REPORT_BASE_URL') . "{$filter}/{$format}/{$userId}");
+        Log::info("generateReportApi Response: {$response}");
         return $response;
     }
 }
