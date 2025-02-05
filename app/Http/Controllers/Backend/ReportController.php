@@ -91,9 +91,16 @@ class ReportController extends Controller
                     return !empty($row->machine->name) ? $row->machine->name : '--------';
                 })
                 ->addColumn('shift', function ($row) {
-                    $shiftStart = date('Y-m-d h:i A', strtotime($row->shift_start_datetime));
-                    $shiftEnd = date('Y-m-d h:i A', strtotime($row->shift_end_datetime));
-                    return "{$row->shift_name} ({$shiftStart} - {$shiftEnd})";
+                    $shiftStart = date('d/m/Y h:i A', strtotime($row->shift_start_datetime));
+                    $shiftEnd = date('d/m/Y h:i A', strtotime($row->shift_end_datetime));
+                    $shiftName = 'Shift';
+                    return "{$shiftName} ({$shiftStart} - {$shiftEnd})";
+                })
+                ->addColumn('deviceDatetime', function ($row) {
+                    return date('d/m/Y H:i:s', strtotime($row->device_datetime));
+                })
+                ->addColumn('machineDatetime', function ($row) {
+                    return date('d/m/Y H:i:s', strtotime($row->machine_datetime));
                 })
                 ->addColumn('mode', function ($row) {
                     return !empty($row->status) ? $row->status : 0;
@@ -101,7 +108,7 @@ class ReportController extends Controller
                 ->addColumn('pick', function ($row) {
                     return !empty($row->machine_log->pick) ? $row->machine_log->pick : 0;
                 })
-                ->rawColumns(['serial_no', 'user', 'device', 'node', 'machine', 'shift', 'mode', 'pick'])
+                ->rawColumns(['serial_no', 'user', 'device', 'node', 'machine', 'shift', 'deviceDatetime', 'machineDatetime', 'mode', 'pick'])
                 ->make(true);
         }
 

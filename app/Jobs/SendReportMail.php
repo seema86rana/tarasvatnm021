@@ -14,12 +14,14 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SendReportMail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $reportType;
+    protected $reportFormat;
     protected $userId;
 
     public $timeout = 3600;
@@ -30,10 +32,11 @@ class SendReportMail implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(string $reportType, $userId)
+    public function __construct(string $reportType, string $reportFormat, int $userId)
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->reportType = $reportType;
+        $this->reportFormat = $reportFormat;
         $this->userId = $userId;
     }
 
@@ -45,15 +48,15 @@ class SendReportMail implements ShouldQueue
     public function handle()
     {
         try {
-            $this->generateReport($this->reportType, $this->userId);
+            $this->generateReport($this->reportType, $this->reportFormat, $this->userId);
             Log::info("Report sent successfully for type: {$this->reportType}");
         } catch (Exception $e) {
             Log::error("Report sending failed: {$e->getMessage()}");
-            throw $e;
+            throw new Exception($e->getMessage());
         }
     }
 
-    public function generateReport($filter, $userId)
+    public function generateReport($filter, $format, $userId)
     {
         $previousLabel = '';
         $currentLabel = '';
@@ -63,21 +66,33 @@ class SendReportMail implements ShouldQueue
 
         $userDetail = User::findOrFail($userId);
         
-        $queryPrevious = MachineStatus::
-                selectRaw("node_master.name, machine_status.user_id, machine_master.name, SUM(machine_status.speed) as speed, SUM(machine_status.efficiency) as efficiency, SUM(machine_status.no_of_stoppage) as no_of_stoppage, SUM(pick_calculations.shift_pick) as shift_pick")
-                ->leftJoin('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
-                ->leftJoin('node_master', 'machine_master.node_id', '=', 'node_master.id')
-                ->leftJoin('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
-                ->where('machine_status.user_id', $userId);
+        $queryPrevious = MachineStatus::query()
+            ->selectRaw("
+                users.id AS user_id, devices.name AS device_name, node_master.name AS node_name, machine_master.name AS machine_name, machine_status.shift_name AS shift_name,
+                DATE_FORMAT(MIN(machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
+                DATE_FORMAT(MAX(machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
+                SUM(machine_status.speed) AS speed,
+                SUM(machine_status.efficiency) AS efficiency,
+                SUM(machine_status.no_of_stoppage) AS stoppage,
+                SUM(pick_calculations.shift_pick) AS pick,
+                COUNT(users.id) AS total_record
+            ")
+            ->join('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
+            ->join('node_master', 'machine_master.node_id', '=', 'node_master.id')
+            ->join('devices', 'node_master.device_id', '=', 'devices.id')
+            ->join('users', 'devices.user_id', '=', 'users.id')
+            ->join('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
+            ->where('users.id', $userId)
+            ->groupBy('users.id', 'devices.name', 'node_master.name', 'machine_master.name', 'machine_status.machine_id', 'machine_status.shift_name');
 
         $queryCurrent = clone $queryPrevious;
 
         switch ($filter) {
             case 'daily':
-                $queryPrevious->whereDate('machine_status.created_at', '2024-12-10');
-                $queryCurrent->whereDate('machine_status.created_at', '2024-12-11');
-                // $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
-                // $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
+                // $queryPrevious->whereDate('machine_status.created_at', '2025-01-27');
+                // $queryCurrent->whereDate('machine_status.created_at', '2025-01-28');
+                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
+                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
     
                 $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
                 $currentLabel = "Today " . Carbon::today()->format('d M Y');
@@ -131,20 +146,106 @@ class SendReportMail implements ShouldQueue
                 break;
         }
 
-        $previous = $queryPrevious->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.name')->get();
-        $current = $queryCurrent->groupBy('machine_status.machine_id', 'node_master.name', 'machine_status.user_id', 'machine_master.name')->get();
+        $previous = $queryPrevious->get();
+        $current = $queryCurrent->get();
 
-        $totalLoop = max(count($previous->toArray()), count($current->toArray()));
+        $firstRec = $queryPrevious->first();
+        if (!$firstRec) {
+            $firstRec = $queryCurrent->first();
+        }
+
+        $totalLoop = max(count($previous), count($current));
         if ($totalLoop <= 0) {
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
 
-        $resultArray = [];
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            $reportData = $this->generateReportTable($previous, $current, $totalLoop);
+            $htmlFile = view('report.table', compact('reportData', 'filter', 'userDetail', 'firstRec'))->render();
+        }
+        else {
+            $reportData = $this->generateReportChart($filter, $previous, $current, $totalLoop);
+            $htmlFile = view('report.chart', compact('reportData', 'previousLabel', 'currentLabel'))->render();
+        }
+
+        try {
+            // Generate HTML content
+            $fileName = time() . "-{$filter}-{$format}-report-$userId.html";
+            $filePath = public_path("reports/html/$fileName");
+    
+            // Save HTML file locally
+            if (!file_put_contents($filePath, $htmlFile)) {
+                throw new Exception("Failed to save HTML file locally at $filePath.");
+            }
+
+            // Generate HTML file URL
+            $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
+
+            if ($format == env('REPORT_FORMAT', 'table')) {
+                $pdfFilePath = $this->generateTablePdf($filePath);
+            }
+            else {
+                $pdfFilePath = $this->generateChartPdf($filePath, $htmlFileUrl);
+            }
+    
+            Log::info("HTML File URL: {$htmlFileUrl}");
+            Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
+    
+            // Send the PDF via email
+            if ($this->sendOnEmail($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay)) {
+                unlink($pdfFilePath); // Remove PDF after successful email sending
+            } else {
+                throw new Exception("Failed to send email with PDF attachment.");
+            }
+    
+            // Send the PDF via WhatsApp
+            $this->sendOnWhatsApp($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay);
+    
+        } catch (Exception $e) {
+            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
+        }
+
+        return true;
+    }
+
+    public function generateReportTable($previous, $current, $totalLoop)
+    {
+        $groupedData = [];
+        for ($i = 0; $i < $totalLoop; $i++) {
+
+            $nodeName = ($previous[$i]->node_name ?? $current[$i]->node_name);
+            $shiftName = str_replace(" ", '', ($previous[$i]->shift_name ?? $current[$i]->shift_name));
+            $preMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Last)';
+            $curMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Current)';
+
+            $groupedData[$nodeName]['total_record'][$shiftName] = ($previous[$i]->total_record ?? $current[$i]->total_record);
+            $groupedData[$nodeName][$shiftName] = ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end);
+            
+            $groupedData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2)) . '%';
+            $groupedData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2)) . '%';
+
+            $groupedData[$nodeName]['speed'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'speed'), 2));
+            $groupedData[$nodeName]['speed'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'speed'), 2));
+            
+            $groupedData[$nodeName]['pick'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'pick'), 2));
+            $groupedData[$nodeName]['pick'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'pick'), 2));
+            
+            $groupedData[$nodeName]['stoppage'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'stoppage'), 2));
+            $groupedData[$nodeName]['stoppage'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'stoppage'), 2));
+        }
+
+        return $groupedData;        
+    }
+
+    public function generateReportChart($filter, $previous, $current, $totalLoop)
+    {
+        $groupedData = [];
         for ($i = 0; $i < $totalLoop; $i++) {
             
-            $user = $previous[$i]->user_id ?? $current[$i]->user_id;
-            $node = $previous[$i]->name ?? $current[$i]->name;
-            $machineDisplayName = $previous[$i]->name ?? $current[$i]->n;
+            $node = $previous[$i]->node_name ?? $current[$i]->node_name;
+            $machineDisplayName = $previous[$i]->machine_name ?? $current[$i]->machine_name;
+            $shiftName = str_replace(" ", '', ($previous[$i]->shift_name ?? $current[$i]->shift_name));
         
             // Build metrics with previous and current values
             $speed = [
@@ -169,75 +270,67 @@ class SendReportMail implements ShouldQueue
             ];
         
             // Organize the result array
-            $resultArray[$user][$node]['label'] = $node . ' (' . ucwords($filter) . ')';
-            $resultArray[$user][$node]['speed'][] = $speed;
-            $resultArray[$user][$node]['efficiency'][] = $efficiency;
-            $resultArray[$user][$node]['no_of_stoppage'][] = $no_of_stoppage;
-            $resultArray[$user][$node]['shift_pick'][] = $shift_pick;
+            $groupedData[$node][$shiftName]['label'] = $node . ' (' . ucwords($filter) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
+            $groupedData[$node][$shiftName]['speed'][] = $speed;
+            $groupedData[$node][$shiftName]['efficiency'][] = $efficiency;
+            $groupedData[$node][$shiftName]['no_of_stoppage'][] = $no_of_stoppage;
+            $groupedData[$node][$shiftName]['shift_pick'][] = $shift_pick;
         }
 
-        foreach ($resultArray as $key => $value) {
-            try {
-                // Generate HTML content
-                $htmlData = view('report.pdf', compact('value', 'previousLabel', 'currentLabel'))->render();
-                $fileName = time() . "-$filter-report-$userId.html";
-                $filePath = public_path("reports/html/$fileName");
-        
-                // Save HTML file locally
-                if (!file_put_contents($filePath, $htmlData)) {
-                    throw new Exception("Failed to save HTML file locally at $filePath.");
-                }
-        
-                // Generate HTML file URL
-                $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
-        
-                // Call the API to generate the PDF
-                $generatePdfApi = $this->genratePdfApi($htmlFileUrl);
-                $generatePdfApi = json_decode($generatePdfApi, true);
-        
-                Log::info("HTML File URL: {$htmlFileUrl}");
-                Log::info("PDF URL from API: " . ($generatePdfApi['pdfUrl'] ?? 'Not Found'));
-        
-                // Validate the PDF URL
-                if (empty($generatePdfApi['pdfUrl'])) {
-                    throw new Exception("PDF URL not found in the API response.");
-                }
-        
-                $pdfFileName = basename($generatePdfApi['pdfUrl']); // Get the last part of the URL
-                $pdfFilePath = public_path("reports/pdf/$pdfFileName");
-        
-                // Store the PDF file locally
-                if (!file_put_contents($pdfFilePath, file_get_contents($generatePdfApi['pdfUrl']))) {
-                    throw new Exception("Failed to store the generated PDF locally at $pdfFilePath.");
-                }
-        
-                // Delete the HTML file using the API
-                $deletePdfApi = $this->deletePdfApi($pdfFileName);
-                $deletePdfApi = json_decode($deletePdfApi, true);
-        
-                if ($deletePdfApi['status'] !== 'success' || !unlink($filePath)) {
-                    throw new Exception("Failed to delete the HTML file or associated resources.");
-                }
-        
-                // Send the PDF via email
-                if ($this->sendOnEmail($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay)) {
-                    unlink($pdfFilePath); // Remove PDF after successful email sending
-                } else {
-                    throw new Exception("Failed to send email with PDF attachment.");
-                }
-        
-                // Send the PDF via WhatsApp
-                $this->sendOnWhatsApp($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay);
-        
-            } catch (Exception $e) {
-                Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
-                throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
-            }
-        }
-        return true;
+        return $groupedData;
     }
 
-    protected function genratePdfApi($fileUrl)
+    public function generateTablePdf($filePath)
+    {
+        // Load the HTML file from the 'public' directory
+        $htmlContent = file_get_contents($filePath);
+
+        // Generate PDF
+        $pdf = Pdf::loadHTML($htmlContent)
+            ->setPaper('a4', 'landscape'); // Set to A4 landscape
+
+        // Define the storage path
+        $pdfFileName = "reports/pdf/" . uniqid() . ".pdf";
+        $pdfPath = public_path($pdfFileName);
+
+        // Store PDF in public directory
+        $pdf->save($pdfPath);
+
+        unlink($filePath);
+
+        return $pdfPath;
+    }
+
+    public function generateChartPdf($filePath, $fileUrl)
+    {
+        $generatePdfApi = $this->genrateChartPdfApi($fileUrl);
+        $generatePdfApi = json_decode($generatePdfApi, true);
+
+        // Validate the PDF URL
+        if (empty($generatePdfApi['pdfUrl'])) {
+            throw new Exception("PDF URL not found in the API response.");
+        }
+
+        $pdfFileName = basename($generatePdfApi['pdfUrl']); // Get the last part of the URL
+        $pdfFilePath = public_path("reports/pdf/$pdfFileName");
+
+        // Store the PDF file locally
+        if (!file_put_contents($pdfFilePath, file_get_contents($generatePdfApi['pdfUrl']))) {
+            throw new Exception("Failed to store the generated PDF locally at $pdfFilePath.");
+        }
+
+        // Delete the HTML file using the API
+        $deletePdfApi = $this->deleteChartPdfApi($pdfFileName);
+        $deletePdfApi = json_decode($deletePdfApi, true);
+
+        if ($deletePdfApi['status'] !== 'success' || !unlink($filePath)) {
+            throw new Exception("Failed to delete the HTML file or associated resources.");
+        }
+
+        return $pdfFilePath;
+    }
+
+    protected function genrateChartPdfApi($fileUrl)
     {
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -260,7 +353,7 @@ class SendReportMail implements ShouldQueue
         return $response;
     }
 
-    protected function deletePdfApi($fileUrl)
+    protected function deleteChartPdfApi($fileUrl)
     {
         $curl = curl_init();
         curl_setopt_array($curl, array(

@@ -134,8 +134,8 @@
                     <th>Node</th>
                     <th>Machine</th>
                     <th>Shift Detail</th>
-                    <th>Machine Datetime</th>
                     <th>Device Datetime</th>
+                    <th>Machine Datetime</th>
                     <th>Mode</th>
                     <th>Speed</th>
                     <th>Pick</th>

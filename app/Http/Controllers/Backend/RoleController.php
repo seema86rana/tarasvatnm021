@@ -52,7 +52,7 @@ class RoleController extends Controller
                             </select>';
                 })
                 ->addColumn('created_at', function ($row) {
-                    return date('dS F Y', strtotime($row->created_at));
+                    return date('d/m/Y', strtotime($row->created_at));
                 })
                 ->addColumn('created_by', function ($row) {
                     return !empty($row->createdBy->name) ? $row->createdBy->name : '--------';

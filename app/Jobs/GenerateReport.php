@@ -18,6 +18,7 @@ class GenerateReport implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $reportType;
+    protected $reportFormat;
     public $timeout = 3600;
     public $tries = 3;
 
@@ -26,10 +27,11 @@ class GenerateReport implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(string $reportType)
+    public function __construct(string $reportType, string $reportFormat)
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->reportType = $reportType;
+        $this->reportFormat = $reportFormat;
     }
 
     /**
@@ -40,22 +42,22 @@ class GenerateReport implements ShouldQueue
     public function handle()
     {
         try {
-            $this->sendReports($this->reportType);
+            $this->sendReports($this->reportType, $this->reportFormat);
             Log::info("Report sent successfully for type: {$this->reportType}");
         } catch (Exception $e) {
             Log::error("Report sending failed: {$e->getMessage()}");
-            throw $e;
+            throw new Exception($e->getMessage());
         }
     }
 
-    protected function sendReports(string $filter)
+    protected function sendReports(string $filter, string $format)
     {
-        $query = MachineStatus::with('user');
+        $query = MachineStatus::with('machine.node.device.user');
 
         switch ($filter) {
             case 'daily':
-                $query->whereDate('machine_status.created_at', '2024-12-11');
-                // $query->whereDate('machine_status.created_at', Carbon::today());
+                // $query->whereDate('machine_status.created_at', '2025-01-28');
+                $query->whereDate('machine_status.created_at', Carbon::today());
                 break;
             case 'weekly':
                 $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
@@ -71,8 +73,8 @@ class GenerateReport implements ShouldQueue
                 break;
         }
 
-        $result = $query->distinct()->pluck('user_id');
-        $users = User::whereIn('id', $result)->get();
+        $userIds = $query->get()->pluck('machine.node.device.user.id')->unique();
+        $users = User::whereIn('id', $userIds)->get();
 
         if ($users->isEmpty()) {
             Log::info("No data found for report type: {$filter}");
@@ -81,17 +83,17 @@ class GenerateReport implements ShouldQueue
 
         Log::info("users: {$users}");
 
-        foreach ($users as $key => $user) {
+        foreach ($users as $user) {
             $userId = $user->id;
-            $this->generateReportApi($filter, $userId);
+            $this->generateReportApi($filter, $format, $userId);
         }
     }
 
-    protected function generateReportApi($filter, $userId)
+    protected function generateReportApi($filter, $format, $userId)
     {
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => env('GENERATE_REPORT_BASE_URL') . "$filter/$userId",
+            CURLOPT_URL => env('GENERATE_REPORT_BASE_URL') . "{$filter}/{$format}/{$userId}",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,

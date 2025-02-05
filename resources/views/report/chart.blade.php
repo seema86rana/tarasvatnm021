@@ -72,17 +72,19 @@
 
     <body>
         <div class="container justify-content-center" style="display: grid;">
-            @foreach($value as $node => $metrics)
-                <div class="page">
-                    <div class="title">{{ $metrics['label'] }}</div>
-                    <div class="charts-wrapper">
-                        <!-- Chart 1 and 2 are overridden by chart 3 and 4 -->
-                        <div class="chart-container" id="speed_{{ str_replace(' ', '', $node) }}"></div>
-                        <div class="chart-container" id="efficiency_{{ str_replace(' ', '', $node) }}"></div>
-                        <div class="chart-container" id="no_of_stoppage_{{ str_replace(' ', '', $node) }}"></div>
-                        <div class="chart-container" id="shift_pick_{{ str_replace(' ', '', $node) }}"></div>
+            @foreach($reportData as $node => $shift)
+                @foreach($shift as $metrics)
+                    <div class="page">
+                        <div class="title">{{ $metrics['label'] }}</div>
+                        <div class="charts-wrapper">
+                            <!-- Chart 1 and 2 are overridden by chart 3 and 4 -->
+                            <div class="chart-container" id="speed_{{ str_replace(' ', '', $node) }}"></div>
+                            <div class="chart-container" id="efficiency_{{ str_replace(' ', '', $node) }}"></div>
+                            <div class="chart-container" id="no_of_stoppage_{{ str_replace(' ', '', $node) }}"></div>
+                            <div class="chart-container" id="shift_pick_{{ str_replace(' ', '', $node) }}"></div>
+                        </div>
                     </div>
-                </div>
+                @endforeach
             @endforeach
         </div>
 
@@ -94,11 +96,13 @@
         <script>
             window.onload = function() {
                 // Loop through each node and create a chart for each metric
-                @foreach($value as $node => $metrics)
-                    createChart("speed_{{ str_replace(' ', '', $node) }}", "Speed Report", @json($metrics['speed']));
-                    createChart("efficiency_{{ str_replace(' ', '', $node) }}", "Efficiency Report", @json($metrics['efficiency']));
-                    createChart("no_of_stoppage_{{ str_replace(' ', '', $node) }}", "Stoppage Report", @json($metrics['no_of_stoppage']));
-                    createChart("shift_pick_{{ str_replace(' ', '', $node) }}", "Total Pick Report", @json($metrics['shift_pick']));
+                @foreach($reportData as $node => $shift)
+                    @foreach($shift as $metrics)
+                        createChart("speed_{{ str_replace(' ', '', $node) }}", "Speed Report", @json($metrics['speed']));
+                        createChart("efficiency_{{ str_replace(' ', '', $node) }}", "Efficiency Report", @json($metrics['efficiency']));
+                        createChart("no_of_stoppage_{{ str_replace(' ', '', $node) }}", "Stoppage Report", @json($metrics['no_of_stoppage']));
+                        createChart("shift_pick_{{ str_replace(' ', '', $node) }}", "Total Pick Report", @json($metrics['shift_pick']));
+                    @endforeach
                 @endforeach
             };
 

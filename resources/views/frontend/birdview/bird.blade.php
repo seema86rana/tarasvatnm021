@@ -7,7 +7,7 @@
         'totalRedEfficiency' => 0,
         'totalDarkEfficiency' => 0,
         'totalMachineRunning' => 0,
-        'deviceTime' => date('h:i A'),
+        'deviceTime' => date('d/m/Y h:i A'),
         'totalMachineStop' => 0,
         'totalMachineMaintainance' => 0,
         'totalMachineEfficiency' => 0,

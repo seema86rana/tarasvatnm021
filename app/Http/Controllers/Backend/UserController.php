@@ -60,13 +60,13 @@ class UserController extends Controller
                             </select>';
                 })
                 ->addColumn('created_at', function ($row) {
-                    return date('dS F Y', strtotime($row->created_at));
+                    return date('d/m/Y', strtotime($row->created_at));
                 })
                 ->addColumn('created_by', function ($row) {
                     return !empty($row->createdBy->name) ? $row->createdBy->name : '--------';
                 })
                 ->addColumn('verified_at', function ($row) {
-                    return $row->email_verified_at ? date('dS M Y', strtotime($row->email_verified_at)) : '--------';
+                    return $row->email_verified_at ? date('d/m/Y', strtotime($row->email_verified_at)) : '--------';
                 })
                 ->addColumn('action', function ($row) {
                     return '<div style="display: flex;"><button class="text-primary btn btn-outline-secondary show-device" data-id="' . $row->id . '" title="Show device" style="text-align: center;display: block;">

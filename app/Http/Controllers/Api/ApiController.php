@@ -66,68 +66,17 @@ class ApiController extends Controller
     public function sendReport()
     {
         $reportType = env('REPORT_TYPE', 'weekly');
-        GenerateReport::dispatch($reportType);
+        $reportFormat = env('REPORT_FORMAT', 'table');
+
+        GenerateReport::dispatch($reportType, $reportFormat);
         return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report sent to the user with details.'], 200);
     }
 
-    public function generateReport($filter, $userId)
+    public function generateReport($filter, $format, $userId)
     {
-        SendReportMail::dispatch($filter, $userId);
+        SendReportMail::dispatch($filter, $format, $userId);
         return response()->json(['status' => true, 'message' => 'Generate report sent on user Email and Whatsapp.'], 200);
     }
-
-    /*
-    private function logRequest($reqData)
-    {
-        $path = public_path("assets/packet") . "/" . time() . "-" . date("d_F_Y-H_i_s_A") . ".json";
-        file_put_contents($path, json_encode($reqData, JSON_PRETTY_PRINT));
-    }
-
-    public function packetTest(Request $request) 
-    {
-        $folderPath = public_path("assets/packet");
-        $jsonFiles = File::files($folderPath);
-        $returnData = [];
-        foreach ($jsonFiles as $file) {
-            if ($file->getExtension() === 'json') {
-                $content = File::get($file->getRealPath());
-                $jsonData = json_decode($content, true);
-                // echo "<pre>";
-                // print_r($content);
-                // die;
-                $returnData[] = $this->callAPI($content);
-                echo "<pre>";
-                print_r($returnData);
-                die;
-            }
-        }
-        return response()->json($returnData, 200);
-    }
-
-    private function callAPI($data) 
-    {
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-          CURLOPT_URL => 'http://127.0.0.1:7008/api/packet',
-          CURLOPT_RETURNTRANSFER => true,
-          CURLOPT_ENCODING => '',
-          CURLOPT_MAXREDIRS => 10,
-          CURLOPT_TIMEOUT => 0,
-          CURLOPT_FOLLOWLOCATION => true,
-          CURLOPT_SSL_VERIFYPEER => false,
-          CURLOPT_SSL_VERIFYHOST => false,
-          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-          CURLOPT_CUSTOMREQUEST => 'POST',
-          CURLOPT_POSTFIELDS => "'".$data."'",
-          CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json'
-          ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-        return $response;
-    }
-    */
 
     public function runCommand()
     {
@@ -607,12 +556,12 @@ class ApiController extends Controller
     protected function sendReports()
     {
         $filter = env('REPORT_TYPE', 'weekly');
-        $query = MachineStatus::with('user');
+        $query = MachineStatus::with('machine.node.device.user');
 
         switch ($filter) {
             case 'daily':
-                $query->whereDate('machine_status.created_at', '2024-12-11');
-                // $query->whereDate('machine_status.created_at', Carbon::today());
+                // $query->whereDate('machine_status.created_at', '2025-01-28');
+                $query->whereDate('machine_status.created_at', Carbon::today());
                 break;
             case 'weekly':
                 $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
@@ -628,43 +577,204 @@ class ApiController extends Controller
                 break;
         }
 
-        $result = $query->distinct()->pluck('user_id');
-        $users = User::whereIn('id', $result)->get();
+        // Fetch unique user IDs through relationship
+        $userIds = $query->get()->pluck('machine.node.device.user.id')->unique();
+        $users = User::whereIn('id', $userIds)->get();
 
-        // echo "<pre>";
-        // print_r($users->toArray());
-        // die;
+        echo "<pre>";
+        print_r($users->toArray());
+        die;
 
         if ($users->isEmpty()) {
             Log::info("No data found for report type: {$filter}");
             return;
         }
+    }
 
-        foreach ($users as $key => $user) {
-            // $fileName = $this->generateReport($filter, $user->id, 'direct');
-            $fileName = "";
-            $this->sendOnEmail($user, $filter, $fileName);
-            $this->sendOnWhatsApp($user, $filter, $fileName);
+    public function generateReports($filter, $format, $userId)
+    {
+        $previousLabel = '';
+        $currentLabel = '';
+        $emailSubjectLabel = '';
+        $previousDay = '';
+        $currentDay = '';
+
+        $userDetail = User::findOrFail($userId);
+        
+        $queryPrevious = MachineStatus::query()
+            ->selectRaw("
+                users.id AS user_id, devices.name AS device_name, node_master.name AS node_name, machine_master.name AS machine_name, machine_status.shift_name AS shift_name,
+                DATE_FORMAT(MIN(machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
+                DATE_FORMAT(MAX(machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
+                SUM(machine_status.speed) AS speed,
+                SUM(machine_status.efficiency) AS efficiency,
+                SUM(machine_status.no_of_stoppage) AS stoppage,
+                SUM(pick_calculations.shift_pick) AS pick,
+                COUNT(users.id) AS total_record
+            ")
+            ->join('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
+            ->join('node_master', 'machine_master.node_id', '=', 'node_master.id')
+            ->join('devices', 'node_master.device_id', '=', 'devices.id')
+            ->join('users', 'devices.user_id', '=', 'users.id')
+            ->join('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
+            ->where('users.id', $userId)
+            ->groupBy('users.id', 'devices.name', 'node_master.name', 'machine_master.name', 'machine_status.machine_id', 'machine_status.shift_name');
+
+        $queryCurrent = clone $queryPrevious;
+
+        switch ($filter) {
+            case 'daily':
+                // $queryPrevious->whereDate('machine_status.created_at', '2025-01-27');
+                // $queryCurrent->whereDate('machine_status.created_at', '2025-01-28');
+                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
+                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
+    
+                $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
+                $currentLabel = "Today " . Carbon::today()->format('d M Y');
+                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
+                $previousDay = Carbon::yesterday()->format('d M Y');
+                $currentDay = Carbon::today()->format('d M Y');
+                break;
+    
+            case 'weekly':
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+    
+            case 'monthly':
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+    
+                $previousLabel = "Last Month " . Carbon::now()->subMonth()->format('M Y');
+                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
+                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $previousDay = Carbon::now()->subMonth()->format('M Y');
+                $currentDay = Carbon::now()->format('M Y');
+                break;
+    
+            case 'yearly':
+                $queryPrevious->whereYear('machine_status.created_at', Carbon::now()->subYear()->year);
+                $queryCurrent->whereYear('machine_status.created_at', Carbon::now()->year);
+    
+                $previousLabel = "Last Year " . Carbon::now()->subYear()->year;
+                $currentLabel = "Current Year " . Carbon::now()->year;
+                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
+                $previousDay = Carbon::now()->subYear()->year;
+                $currentDay = Carbon::now()->year;
+                break;
+    
+            default:
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+        }
+
+        $previous = $queryPrevious->get();
+        $current = $queryCurrent->get();
+
+        $firstRec = $queryPrevious->first();
+        if (!$firstRec) {
+            $firstRec = $queryCurrent->first();
+        }
+
+        $totalLoop = max(count($previous), count($current));
+        if ($totalLoop <= 0) {
+            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
+        }
+
+        // echo "<pre>";
+        // print_r($firstRec->toArray());
+        // echo "</pre>";
+        // die;
+
+        $reportData = [];
+        if($format == env('REPORT_FORMAT', 'table'))
+            for ($i = 0; $i < $totalLoop; $i++) {
+
+                $nodeName = ($previous[$i]->node_name ?? $current[$i]->node_name);
+                $shiftName = str_replace(" ", '', ($previous[$i]->shift_name ?? $current[$i]->shift_name));
+                $preMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Last)';
+                $curMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Current)';
+
+                $reportData[$nodeName]['total_record'][$shiftName] = ($previous[$i]->total_record ?? $current[$i]->total_record);
+                $reportData[$nodeName][$shiftName] = ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end);
+                
+                $reportData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2)) . '%';
+                $reportData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2)) . '%';
+
+                $reportData[$nodeName]['speed'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'speed'), 2));
+                $reportData[$nodeName]['speed'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'speed'), 2));
+                
+                $reportData[$nodeName]['pick'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'pick'), 2));
+                $reportData[$nodeName]['pick'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'pick'), 2));
+                
+                $reportData[$nodeName]['stoppage'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'stoppage'), 2));
+                $reportData[$nodeName]['stoppage'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'stoppage'), 2));
+            }
+        else {
+            for ($i = 0; $i < $totalLoop; $i++) {
+            
+                $node = $previous[$i]->node_name ?? $current[$i]->node_name;
+                $machineDisplayName = $previous[$i]->machine_name ?? $current[$i]->machine_name;
+                $shiftName = str_replace(" ", '', ($previous[$i]->shift_name ?? $current[$i]->shift_name));
+            
+                // Build metrics with previous and current values
+                $speed = [
+                    'label' => $machineDisplayName,
+                    'previous' => round((float)$this->getValue($previous, $i, 'speed'), 2),
+                    'current' => round((float)$this->getValue($current, $i, 'speed'), 2),
+                ];
+                $efficiency = [
+                    'label' => $machineDisplayName,
+                    'previous' => round((float)$this->getValue($previous, $i, 'efficiency'), 2),
+                    'current' => round((float)$this->getValue($current, $i, 'efficiency'), 2),
+                ];
+                $no_of_stoppage = [
+                    'label' => $machineDisplayName,
+                    'previous' => round((float)$this->getValue($previous, $i, 'no_of_stoppage'), 2),
+                    'current' => round((float)$this->getValue($current, $i, 'no_of_stoppage'), 2),
+                ];
+                $shift_pick = [
+                    'label' => $machineDisplayName,
+                    'previous' => round((float)$this->getValue($previous, $i, 'shift_pick'), 2),
+                    'current' => round((float)$this->getValue($current, $i, 'shift_pick'), 2),
+                ];
+            
+                // Organize the result array
+                $reportData[$node][$shiftName]['label'] = $node . ' (' . ucwords($filter) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
+                $reportData[$node][$shiftName]['speed'][] = $speed;
+                $reportData[$node][$shiftName]['efficiency'][] = $efficiency;
+                $reportData[$node][$shiftName]['no_of_stoppage'][] = $no_of_stoppage;
+                $reportData[$node][$shiftName]['shift_pick'][] = $shift_pick;
+            }
+        }
+
+        // echo "<pre>";
+        // print_r($reportData);
+        // echo "</pre>";
+        // die; 
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            return view('report.table', compact('groupedData', 'filter', 'userDetail', 'firstRec'));
+        } else {
+            return view('report.chart', compact('groupedData', 'previousLabel', 'currentLabel'));
         }
     }
 
-    private function sendOnEmail(object $user, string $reportType, string $fileName)
-    {
-        $mailData = [
-            'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
-            'reportType' => ucfirst($reportType),
-            'reportDate' => now()->toDateString(),
-            'reportLink' => asset('/') . "api/generate-report/$reportType/$user->id",
-            // 'reportLink' => route('generate.report', [$reportType, $user->id]),
-            // 'reportLink' => asset('/') . "reports/html/$fileName",
-        ];
-
-        Mail::to($user->email)->send(new ReportMail($mailData, $fileName));
-    }
-
-    private function sendOnWhatsApp(object $user, string $reportType, string $fileName)
-    {
-        // Add WhatsApp sending logic here
+    private function getValue($data, $index, $key, $default = 0) {
+        return isset($data[$index]) ? $data[$index]->$key : $default;
     }
     /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
 }
