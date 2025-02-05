@@ -21,5 +21,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('packet', [ApiController::class, 'packet'])->name('packet');
 Route::get('send-report', [ApiController::class, 'sendReport'])->name('send.report');
-Route::post('generate-report/{filter}/{format}/{userId}', [ApiController::class, 'generateReport'])->name('generate.report');
+Route::any('generate-report/{filter}/{format}/{userId}', [ApiController::class, 'generateReport'])->name('generate.report');
 Route::any('run-command', [ApiController::class, 'runCommand'])->name('run.command');
