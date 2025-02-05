@@ -168,7 +168,7 @@
             <div class="row">
                 <div class="col-lg-6">
                     <div class="image-container">
-                        <img class="img-fluid" src="{{ asset('/') }}assets/frontend/images/details-2.png" alt="alternative">
+                        <img class="img-fluid" src="{{ asset('/') }}assets/frontend/images/birdview_effect.gif" alt="alternative">
                     </div> <!-- end of image-container -->
                 </div> <!-- end of col -->
                 <div class="col-lg-6">
