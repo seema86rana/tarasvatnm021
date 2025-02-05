@@ -91,9 +91,11 @@ class GenerateReport implements ShouldQueue
 
     protected function generateReportApi($filter, $format, $userId)
     {
+        $url = env('GENERATE_REPORT_BASE_URL') . "{$filter}/{$format}/{$userId}";
+
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => env('GENERATE_REPORT_BASE_URL') . "{$filter}/{$format}/{$userId}",
+            CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -102,12 +104,20 @@ class GenerateReport implements ShouldQueue
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json',
+                'User-Agent: Laravel-cURL'
+            ],
         ));
 
         $response = curl_exec($curl);
+        $error = curl_error($curl);
         curl_close($curl);
-        Log::info("generateReportApi URL: " . env('GENERATE_REPORT_BASE_URL') . "{$filter}/{$format}/{$userId}");
-        Log::info("generateReportApi Response: {$response}");
+
+        Log::info("generateReportApi URL: " . $url);
+        Log::info("generateReportApi Response: " . ($error ?: $response));
+
         return $response;
     }
 }
