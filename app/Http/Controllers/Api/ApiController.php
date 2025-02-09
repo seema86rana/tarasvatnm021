@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ApiController extends Controller
 {
@@ -90,23 +91,7 @@ class ApiController extends Controller
             Artisan::call('optimize');
             Artisan::call('optimize:clear');
 
-            /*
-            if($mig == 97531) {
-                Artisan::call('migrate:refresh');
-                Artisan::call('db:seed');
-                
-                return response()->json(['status' => true, 'message' => 'Artisan command executed (database).'], 200);
-            } 
-            else if($mig == 13579) {
-                Artisan::call('queue:work', [
-                    '--stop-when-empty' => true,
-                ]);
-                
-                return response()->json(['status' => true, 'message' => 'Artisan command executed (queue).'], 200);
-            }
-            */
             return response()->json(['status' => true, 'message' => 'Artisan command executed.'], 200);
-            
         } catch (Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
@@ -114,7 +99,7 @@ class ApiController extends Controller
 
     /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
     /** ProcessPacket */
-    public function index(Request $request)
+    public function packets(Request $request)
     {
         try {
             $reqData = $request->all();
@@ -591,6 +576,7 @@ class ApiController extends Controller
         }
     }
 
+    /** GenerateReport */
     public function generateReports($filter, $format, $userId)
     {
         $previousLabel = '';
@@ -711,8 +697,8 @@ class ApiController extends Controller
                 $reportData[$nodeName]['total_record'][$shiftName] = ($previous[$i]->total_record ?? $current[$i]->total_record);
                 $reportData[$nodeName][$shiftName] = ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end);
                 
-                $reportData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2)) . '%';
-                $reportData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2)) . '%';
+                $reportData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2));
+                $reportData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2));
 
                 $reportData[$nodeName]['speed'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'speed'), 2));
                 $reportData[$nodeName]['speed'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'speed'), 2));
@@ -766,10 +752,22 @@ class ApiController extends Controller
         // echo "</pre>";
         // die; 
 
+        // return view('report.table', compact('reportData', 'filter', 'firstRec'));
+        // $htmlFile = view('report.test-table')->render();
+        $htmlFile = view('report.table', compact('reportData', 'filter', 'firstRec'))->render();
+        $pdfFileName = "reports/pdf/" . uniqid() . ".pdf";
+        $pdf = Pdf::loadHTML($htmlFile)->setPaper('a4', 'landscape');
+
+        return $pdf->stream('report.pdf');
+
+        // $pdfPath = public_path($pdfFileName);
+        // $pdf->save($pdfPath);
+        // return $pdfPath;
+
         if ($format == env('REPORT_FORMAT', 'table')) {
-            return view('report.table', compact('groupedData', 'filter', 'userDetail', 'firstRec'));
+            return view('report.table', compact('reportData', 'filter', 'firstRec'));
         } else {
-            return view('report.chart', compact('groupedData', 'previousLabel', 'currentLabel'));
+            return view('report.chart', compact('reportData', 'previousLabel', 'currentLabel'));
         }
     }
 

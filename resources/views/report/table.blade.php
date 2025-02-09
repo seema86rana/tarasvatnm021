@@ -1,27 +1,8 @@
-
 @php
+    $counts = 0;
     if (!function_exists('colorClass')) {
-        function colorClass($value, $total, $type) {
-            $green = 'text-green';
-            $yellow = 'text-yellow';
-            $orange = 'text-orange';
-            $red = 'text-red';
-            $black = 'text-black';
-
-            $percentage = $type == 1 ? ($value / $total) * 100 : ($value / $total);
-
-            switch (true) {
-                case ($percentage >= 90):
-                    return $green;
-                case ($percentage >= 70 && $percentage <= 90):
-                    return $yellow;
-                case ($percentage >= 50 && $percentage <= 70):
-                    return $orange;
-                case ($percentage <= 50):
-                    return $red;
-                default:
-                    return $black;
-            }
+        function colorClass($pre, $cur) {
+            return ($pre >= $cur) ? 'text-green' : 'text-red';
         }
     }
 @endphp
@@ -33,96 +14,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Machine Performance Report</title>
     <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        .page { width: 100%; height: 100%; }
+        .header { text-align: center; background: #d3e3fc; padding: 15px; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+        .report-info { font-size: 18px; }
+        .table-container:nth-of-type(even) { margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; }
+        .bg-column { background: #ccc; }
+        th, td { border: 1px solid #000; padding: 3px; text-align: center; word-wrap: break-word; }
+        th { background-color: #ccc; font-weight: bold; }
         .text-green { color: green; }
-        .text-yellow { color: yellow; }
-        .text-orange { color: orange; }
         .text-red { color: red; }
-        .text-black { color: black; }
-        @page {
-            size: A4 landscape;
-            margin: 20mm;
-        }
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .header {
-            text-align: center;
-            background: #d3e3fc;
-            padding: 15px;
-            font-size: 30px;
-            font-weight: bold;
-        }
-        .report-info {
-            margin-top: 20px;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-        .table-container {
-            page-break-before: always;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-        }
-        th, .td-column {
-            background: #ccc;
-        }
-        .half-row-width {
-            width: 50%;
-        }
-        .btn-container {
-            text-align: center;
-            margin: 20px;
-        }
-        .download-btn {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-        .download-btn:hover {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
-    <div style="padding: 20px;" id="report-content">
-        <div id="report-data">
-            <div class="header">Machine Performance Comparison: {{ ucwords($filter) }} Trends & Insight</div>
-            <div class="report-info">
-                <div style="display: flex; margin-bottom: 10px;">
-                    <span class="half-row-width"><strong>Device Name:</strong> {{ $firstRec->device_name }}</span>
-                    <br>
-                    <span class="half-row-width"><strong>Report Date:</strong> {{ date('d/m/Y') }}</span>
-                </div>
-                <span><strong>Username:</strong> {{ $userDetail->name }}</span>
-            </div>
+    <div class="page">
+        <div class="header">Machine Performance Comparison: {{ ucwords($filter) }} Trends & Insight</div>
+        <div class="report-info">
+            <table>
+                <tbody>
+                    <tr>
+                        <td style="border: none; float: inline-start;"><strong>Device Name:</strong> {{ $firstRec->device_name }}</td>
+                        <td style="border: none; float: inline-end;"><strong>Report Date:</strong> {{ date('d/m/Y') }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+    </div>
+    
+    <div class="page">
         @foreach($reportData as $key => $node)
             @php
-                $maxCount = 0;
-                $maxShift = "";
-                $efficiencyCount = $speedCount = $pickCount = $stopageCount = 0;
-                foreach ($node['efficiency'] as $shift => $values) {
-                    $count = count($values);
-                    if ($count > $maxCount) {
-                        $maxCount = $count;
-                        $maxShift = $shift;
-                    }
-                }
+                $maxShift = array_key_first($node['efficiency']);
                 $category = array_keys($node['efficiency'][$maxShift]);
             @endphp
+            
+            @if($counts % 2 == 0 && $counts != 0)
+                </div><div class="page">
+            @endif
+            
             <div class="table-container">
-                <h2 style="margin-top: 40px;">Node: {{ $key }}</h2>
+                <h2>Node: {{ $key }}</h2>
                 <table>
                     <tr>
                         <th>Category</th>
@@ -131,64 +63,45 @@
                             <th>{{ $value }}</th>
                         @endforeach
                     </tr>
-                    @foreach($node['efficiency'] as $key => $efficiency)
-                        <tr>
-                            @if($efficiencyCount == 0)
-                                <td class="td-column">Efficiency</td>
-                            @else
-                                <td class="td-column"></td>
-                            @endif
-                            <td class="td-column">{{ $node[$key] }}</td>
-                            @foreach($efficiency as $value)
-                                <td class="{{ colorClass((float)$value, (int)$node['total_record'][$key], 0) }}">{{ $value }}</td>
-                            @endforeach
-                        </tr>
-                        @php $efficiencyCount++; @endphp
-                    @endforeach
-                    @foreach($node['speed'] as $key => $speed)
-                        <tr>
-                            @if($speedCount == 0)
-                                <td class="td-column">Speed</td>
-                            @else
-                                <td class="td-column"></td>
-                            @endif
-                            <td class="td-column">{{ $node[$key] }}</td>
-                            @foreach($speed as $value)
-                                <td class="{{ colorClass((float)$value, (int)$node['total_record'][$key], 1) }}">{{ $value }}</td>
-                            @endforeach
-                        </tr>
-                        @php $speedCount++; @endphp
-                    @endforeach
-                    @foreach($node['pick'] as $key => $pick)
-                        <tr>
-                            @if($pickCount == 0)
-                                <td class="td-column">Pick</td>
-                            @else
-                                <td class="td-column"></td>
-                            @endif
-                            <td class="td-column">{{ $node[$key] }}</td>
-                            @foreach($pick as $value)
-                                <td class="{{ colorClass((float)$value, (int)$node['total_record'][$key], 1) }}">{{ $value }}</td>
-                            @endforeach
-                        </tr>
-                        @php $pickCount++; @endphp
-                    @endforeach
-                    @foreach($node['stoppage'] as $key => $stoppage)
-                        <tr>
-                            @if($stopageCount == 0)
-                                <td class="td-column">Stoppage</td>
-                            @else
-                                <td class="td-column"></td>
-                            @endif
-                            <td class="td-column">{{ $node[$key] }}</td>
-                            @foreach($stoppage as $value)
-                                <td class="{{ colorClass((float)$value, (int)$node['total_record'][$key], 1) }}">{{ $value }}</td>
-                            @endforeach
-                        </tr>
-                        @php $stopageCount++; @endphp
+                    
+                    @foreach(['efficiency', 'speed', 'pick', 'stoppage'] as $section)
+                        @foreach($node[$section] as $shift => $values)
+                            <tr>
+                                @if($loop->first)
+                                    <td class="bg-column">{{ ucfirst($section) }}</td>
+                                @else
+                                    <td class="bg-column"></td>
+                                @endif
+                                <td class="bg-column">{{ $node[$shift] }}</td> <!-- Fixed shift name -->
+                                @php $index = 0; @endphp
+                                @foreach($values as $value)
+                                    @php
+                                        $total = isset($node['total_record'][$shift]) ? max(floatval($node['total_record'][$shift]), 1) : 1;
+
+                                        $cur = floatval($value);
+                                        if(in_array($section, ['efficiency', 'speed'])) {
+                                            $cur = round(floatval($value) / $total, 2);
+                                        }
+
+                                        if (($index % 2) == 0) {
+                                            $prev = (float)$values[$category[$index]];
+                                            $next = (float)$values[$category[$index + 1]];
+                                        }
+                                        else {
+                                            $prev = (float)$values[$category[$index]];
+                                            $next = (float)$values[$category[$index - 1]];
+                                        }
+                                    @endphp
+                                    <td class="{{ colorClass($prev, $next) }}">{{ $cur }} @if($section == 'efficiency') % @endif</td>
+                                    @php $index++; @endphp
+                                @endforeach
+                            </tr>
+                        @endforeach
                     @endforeach
                 </table>
             </div>
+            
+            @php $counts++; @endphp
         @endforeach
     </div>
 </body>
