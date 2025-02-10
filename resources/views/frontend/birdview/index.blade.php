@@ -6,7 +6,8 @@
     <link rel="stylesheet" href="{{ asset('/') }}assets/frontend/css/bird_view.css">
     <style>
         .dull-preview {
-            background: rgba(0,0,0,0.6) !important;
+            background: rgba(0,0,0,0.2) !important;
+            cursor: not-allowed;
         }
     </style>
 @endsection
