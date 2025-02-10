@@ -5,6 +5,12 @@
             return ($pre >= $cur) ? 'text-green' : 'text-red';
         }
     }
+    if (!function_exists('numberFormat')) {
+        function numberFormat($number) {
+            $number = (int) $number;
+            return number_format($number, 0, '', ',');
+        }
+    }
 @endphp
 
 <!DOCTYPE html>
@@ -92,7 +98,7 @@
                                             $next = (float)$values[$category[$index - 1]];
                                         }
                                     @endphp
-                                    <td class="{{ colorClass($prev, $next) }}">{{ $cur }} @if($section == 'efficiency') % @endif</td>
+                                    <td class="{{ colorClass($prev, $next) }}">@if($section == 'pick') {{ numberFormat($cur) }} @else {{ $cur }} @endif @if($section == 'efficiency') % @endif</td>
                                     @php $index++; @endphp
                                 @endforeach
                             </tr>
