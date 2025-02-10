@@ -1,7 +1,7 @@
 <div class="navbar navbar-inverse navbar-fixed-top">
 	<div class="navbar-header">
 		<a  href="{{ url('/') }}" style="display: flex;">
-			<img class="FullLogo" src="{{asset('/')}}assets/tarasvat_admin_logo" alt="Tarasvat">
+			<img class="FullLogo" src="{{asset('/')}}assets/tarasvat_admin_logo.png" alt="Tarasvat">
 			<!-- <img class="IconLogo" src="{{asset('/')}}assets/test_logo.png" alt=""> -->
 			<!-- <img class="" src="{{asset('/')}}assets/test_logo.png" alt=""> -->
 		</a>
