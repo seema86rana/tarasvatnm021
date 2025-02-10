@@ -363,6 +363,7 @@ ul{
     }
     .shift_wrapper {
         margin: 10px 0 0;
+        position: relative;
     }
     .shift_wrapper h4 span {
         font-size: 12px;
