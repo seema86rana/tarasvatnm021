@@ -680,12 +680,62 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
 
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            switch ($filter) {
+                case 'daily':
+                    $previousDay = Carbon::parse($previousDay)->format('d/m/Y');
+                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
+                    break;
+        
+                case 'weekly':
+                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+        
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+        
+                case 'monthly':
+                    $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthPrevious = Carbon::parse($previousDay)->endOfMonth()->format('d/m/Y');
+                    $previousDay = $firstDayOfMonthPrevious . " - " . $lastDayOfMonthPrevious;
+        
+                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
+                    break;
+        
+                case 'yearly':
+                    $firstDayOfYearPrevious = Carbon::parse($previousDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearPrevious = Carbon::parse($previousDay)->endOfYear()->format('d/m/Y');
+                    $previousDay = $firstDayOfYearPrevious . " - " . $lastDayOfYearPrevious;
+        
+                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
+                    break;
+        
+                default:
+                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+        
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+            }
+        }
+
         // echo "<pre>";
         // print_r($firstRec->toArray());
         // echo "</pre>";
         // die;
 
         $reportData = [];
+        $groupedData = [];
         if($format == env('REPORT_FORMAT', 'table'))
             for ($i = 0; $i < $totalLoop; $i++) {
 
@@ -694,20 +744,20 @@ class ApiController extends Controller
                 $preMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Last)';
                 $curMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Current)';
 
-                $reportData[$nodeName]['total_record'][$shiftName] = ($previous[$i]->total_record ?? $current[$i]->total_record);
-                $reportData[$nodeName][$shiftName] = ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end);
+                $groupedData[$nodeName]['total_record'][$shiftName] = ($previous[$i]->total_record ?? $current[$i]->total_record);
+                $groupedData[$nodeName][$shiftName] = ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end);
                 
-                $reportData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2));
-                $reportData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2));
+                $groupedData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2));
+                $groupedData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2));
 
-                $reportData[$nodeName]['speed'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'speed'), 2));
-                $reportData[$nodeName]['speed'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'speed'), 2));
+                $groupedData[$nodeName]['speed'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'speed'), 2));
+                $groupedData[$nodeName]['speed'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'speed'), 2));
                 
-                $reportData[$nodeName]['pick'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'pick'), 2));
-                $reportData[$nodeName]['pick'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'pick'), 2));
+                $groupedData[$nodeName]['pick'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'pick'), 2));
+                $groupedData[$nodeName]['pick'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'pick'), 2));
                 
-                $reportData[$nodeName]['stoppage'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'stoppage'), 2));
-                $reportData[$nodeName]['stoppage'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'stoppage'), 2));
+                $groupedData[$nodeName]['stoppage'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'stoppage'), 2));
+                $groupedData[$nodeName]['stoppage'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'stoppage'), 2));
             }
         else {
             for ($i = 0; $i < $totalLoop; $i++) {
@@ -739,22 +789,25 @@ class ApiController extends Controller
                 ];
             
                 // Organize the result array
-                $reportData[$node][$shiftName]['label'] = $node . ' (' . ucwords($filter) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
-                $reportData[$node][$shiftName]['speed'][] = $speed;
-                $reportData[$node][$shiftName]['efficiency'][] = $efficiency;
-                $reportData[$node][$shiftName]['no_of_stoppage'][] = $no_of_stoppage;
-                $reportData[$node][$shiftName]['shift_pick'][] = $shift_pick;
+                $groupedData[$node][$shiftName]['label'] = $node . ' (' . ucwords($filter) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
+                $groupedData[$node][$shiftName]['speed'][] = $speed;
+                $groupedData[$node][$shiftName]['efficiency'][] = $efficiency;
+                $groupedData[$node][$shiftName]['no_of_stoppage'][] = $no_of_stoppage;
+                $groupedData[$node][$shiftName]['shift_pick'][] = $shift_pick;
             }
         }
 
+        $reportData = $groupedData;
+        $filter = ($filter == 'daily') ? 'day' : $filter;
+
         // echo "<pre>";
-        // print_r($reportData);
+        // print_r($groupedData);
         // echo "</pre>";
         // die; 
 
-        // return view('report.table', compact('reportData', 'filter', 'firstRec'));
+        // return view('report.table', compact('reportData', 'filter', 'firstRec', 'previousDay', 'currentDay', 'userDetail'));
         // $htmlFile = view('report.test-table')->render();
-        $htmlFile = view('report.table', compact('reportData', 'filter', 'firstRec'))->render();
+        $htmlFile = view('report.table', compact('reportData', 'filter', 'firstRec', 'previousDay', 'currentDay', 'userDetail'))->render();
         $pdfFileName = "reports/pdf/" . uniqid() . ".pdf";
         $pdf = Pdf::loadHTML($htmlFile)->setPaper('a4', 'landscape');
 
@@ -765,7 +818,7 @@ class ApiController extends Controller
         // return $pdfPath;
 
         if ($format == env('REPORT_FORMAT', 'table')) {
-            return view('report.table', compact('reportData', 'filter', 'firstRec'));
+            return view('report.table', compact('reportData', 'filter', 'firstRec', 'previousDay', 'currentDay', 'userDetail'));
         } else {
             return view('report.chart', compact('reportData', 'previousLabel', 'currentLabel'));
         }

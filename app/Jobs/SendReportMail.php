@@ -159,9 +159,60 @@ class SendReportMail implements ShouldQueue
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
 
+        $filter = ($filter == 'daily') ? 'day' : $filter;
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            switch ($filter) {
+                case 'daily':
+                    $previousDay = Carbon::parse($previousDay)->format('d/m/Y');
+                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
+                    break;
+        
+                case 'weekly':
+                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+        
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+        
+                case 'monthly':
+                    $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthPrevious = Carbon::parse($previousDay)->endOfMonth()->format('d/m/Y');
+                    $previousDay = $firstDayOfMonthPrevious . " - " . $lastDayOfMonthPrevious;
+        
+                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
+                    break;
+        
+                case 'yearly':
+                    $firstDayOfYearPrevious = Carbon::parse($previousDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearPrevious = Carbon::parse($previousDay)->endOfYear()->format('d/m/Y');
+                    $previousDay = $firstDayOfYearPrevious . " - " . $lastDayOfYearPrevious;
+        
+                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
+                    break;
+        
+                default:
+                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+        
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+            }
+        }
+
         if ($format == env('REPORT_FORMAT', 'table')) {
             $reportData = $this->generateReportTable($previous, $current, $totalLoop);
-            $htmlFile = view('report.table', compact('reportData', 'filter', 'firstRec'))->render();
+            $htmlFile = view('report.table', compact('reportData', 'filter', 'firstRec', 'previousDay', 'currentDay', 'userDetail'))->render();
         }
         else {
             $reportData = $this->generateReportChart($filter, $previous, $current, $totalLoop);
@@ -193,13 +244,17 @@ class SendReportMail implements ShouldQueue
     
             // Send the PDF via email
             if ($this->sendOnEmail($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay)) {
-                unlink($pdfFilePath); // Remove PDF after successful email sending
+                // unlink($pdfFilePath); // Remove PDF after successful email sending
             } else {
                 throw new Exception("Failed to send email with PDF attachment.");
             }
     
             // Send the PDF via WhatsApp
-            $this->sendOnWhatsApp($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay);
+            if ($this->sendOnWhatsApp($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay)) {
+                // unlink($pdfFilePath); // Remove PDF after successful email sending
+            } else {
+                throw new Exception("Failed to send whatsapp with PDF link.");
+            }
     
         } catch (Exception $e) {
             Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
@@ -386,6 +441,7 @@ class SendReportMail implements ShouldQueue
             'reportType' => ucfirst($reportType),
             'reportDate' => now()->toDateString(),
             'userName' => $user->name,
+            'userId' => $user->id,
             'subject' => $subject,
             'previousDay' => $previousDay,
             'currentDay' => $currentDay,
@@ -407,8 +463,105 @@ class SendReportMail implements ShouldQueue
      */
     private function sendOnWhatsApp(string $subject, object $user, string $reportType, string $fileName, $previousDay, $currentDay)
     {
-        // Add WhatsApp sending logic here
-        return true;
+        $WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN');
+        $FROM_PHONE_NUMBER_ID = env('FROM_PHONE_NUMBER_ID');
+        $TEMPLATE_NAME = env('TEMPLATE_NAME');
+        $LANGUAGE_AND_LOCALE_CODE = env('LANGUAGE_AND_LOCALE_CODE');
+
+        $userId = $user->id;
+        $userName = $user->name;
+        $userPhone = $user->phone_number;
+
+        $fileName = basename($fileName);
+
+        $pdfFileName =  "Machine_Performance_Report{$userId}_{$currentDay}.pdf";
+        $pdfFileUrl = env('LOCAL_BASE_URL') . "reports/pdf/{$fileName}";
+
+        Log::info("PDF File URL: {$pdfFileUrl}");
+
+        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($TEMPLATE_NAME) || empty($LANGUAGE_AND_LOCALE_CODE)) {
+            Log::error("WhatsApp configuration is incomplete", ['user' => $user->email]);
+            return false;
+        }
+
+        $data = [
+            "messaging_product" => "whatsapp",
+            "recipient_type" => "individual",
+            "to" => $userPhone,
+            "type" => "template",
+            "template" => [
+                "name" => $TEMPLATE_NAME,
+                "language" => [
+                    "code" => $LANGUAGE_AND_LOCALE_CODE,
+                ],
+                "components" => [
+                    [
+                        "type" => "header",
+                        "parameters" => [
+                            [
+                                "type" => "document",
+                                "document" => [
+                                    "link" => $pdfFileUrl,
+                                    "filename" => $pdfFileName,
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        "type" => "body",
+                        "parameters" => [
+                            [
+                                "type" => "text",
+                                "text" => $userName,  // {{1}} in template
+                            ],
+                            [
+                                "type" => "text",
+                                "text" => $currentDay, // {{2}} in template
+                            ],
+                        ]
+                    ]
+                ],
+            ],
+        ];        
+
+        Log::info("data: " . json_encode($data));
+        // return true;
+
+        try {
+            // Send the WhatsApp
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+            CURLOPT_URL => "https://graph.facebook.com/v16.0/{$FROM_PHONE_NUMBER_ID}/messages",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $WHATSAPP_ACCESS_TOKEN,
+            ),
+            ));
+            $response = curl_exec($curl);
+            curl_close($curl);
+
+            $decodeResponse = json_decode($response, true);
+            if (isset($decodeResponse['messages'][0]['message_status']) && $decodeResponse['messages'][0]['message_status'] == 'accepted') {
+                Log::info("WhatsApp sent successfully to {$user->email} with response: {$response}");
+                return true;
+            }
+
+            Log::info("Failed to send WhatsApp to {$user->email} with response: {$response}");
+            return false;
+        } catch (Exception $e) {
+            Log::error("Failed to send WhatsApp to {$user->phone_number}. Error: " . $e->getMessage());
+            throw new Exception("WhatsApp sending failed: " . $e->getMessage());
+        }
     }
 
     private function getValue($data, $index, $key, $default = 0) {

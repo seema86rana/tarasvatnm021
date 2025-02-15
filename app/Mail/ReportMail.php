@@ -35,10 +35,14 @@ class ReportMail extends Mailable
      */
     public function build()
     {
+        $userId = $this->mailData['userId'];
+        $currentDay = str_replace("/", "-", $this->mailData['currentDay']);
+        $currentDay = str_replace(" - ", "_to_", $currentDay);
+        
         return $this->subject($this->subject)
                     ->view('emails.report')
                     ->attach($this->filePath, [
-                        'as' => 'report.pdf',
+                        'as' => "Machine_Performance_Report{$userId}_{$currentDay}.pdf",
                         'mime' => 'application/pdf',
                     ]);
     }
