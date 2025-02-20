@@ -23,3 +23,4 @@ Route::any('packet', [ApiController::class, 'packet'])->name('packet');
 Route::any('send-report', [ApiController::class, 'sendReport'])->name('send.report');
 Route::any('generate-report/{filter}/{format}/{userId}', [ApiController::class, 'generateReport'])->name('generate.report');
 Route::any('run-command', [ApiController::class, 'runCommand'])->name('run.command');
+Route::any('delete-report/{did}', [ApiController::class, 'deleteReport'])->name('delete.report');

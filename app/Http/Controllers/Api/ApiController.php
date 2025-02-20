@@ -6,22 +6,22 @@ use Exception;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Device;
-use App\Mail\ReportMail;
+use App\Models\MachineLog;
 use App\Models\NodeMaster;
 use App\Jobs\ProcessPacket;
-use App\Models\MachineLog;
 use App\Jobs\GenerateReport;
 use App\Jobs\SendReportMail;
 use Illuminate\Http\Request;
 use App\Models\MachineMaster;
 use App\Models\MachineStatus;
 use App\Models\PickCalculation;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\TempMachineStatus;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Artisan;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ApiController extends Controller
 {
@@ -94,6 +94,38 @@ class ApiController extends Controller
             return response()->json(['status' => true, 'message' => 'Artisan command executed.'], 200);
         } catch (Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteReport($did): JsonResponse
+    {
+        try {
+            DB::beginTransaction(); // Start transaction
+
+            $device = Device::where('name', $did)->first();
+
+            if (!$device) {
+                return response()->json(["status" => false, "message" => "Device not found!"], 404);
+            }
+
+            $nodeIds = NodeMaster::where('device_id', $device->id)->pluck('id')->toArray();
+            $machineIds = MachineMaster::whereIn('node_id', $nodeIds)->pluck('id')->toArray();
+            $machineStatusIds = MachineStatus::whereIn('machine_id', $machineIds)->pluck('id')->toArray();
+
+            // Delete related records in the correct order
+            PickCalculation::whereIn('machine_status_id', $machineStatusIds)->delete();
+            TempMachineStatus::whereIn('machine_id', $machineIds)->delete();
+            MachineStatus::whereIn('machine_id', $machineIds)->delete();
+            MachineLog::whereIn('machine_id', $machineIds)->delete();
+            MachineMaster::whereIn('id', $machineIds)->delete();
+            NodeMaster::whereIn('id', $nodeIds)->delete();
+
+            DB::commit(); // Commit transaction
+
+            return response()->json(["status" => true, "message" => "Report deleted successfully!"], 200);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback transaction on failure
+            return response()->json(["status" => false, "message" => $e->getMessage()], 500);
         }
     }
 
