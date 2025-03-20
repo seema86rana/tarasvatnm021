@@ -55,6 +55,18 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'email_verified_at' => 'datetime',
     ];
 
+    public static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function (User $user) {
+            $devices = Device::where('user_id', $user->id)->get();
+            if ($devices->isNotEmpty()) {
+                $devices->each->delete();
+            }
+        });
+    }
+
     public function role() {
         return $this->belongsTo(Role::class, 'role_id', 'id'); 
     }

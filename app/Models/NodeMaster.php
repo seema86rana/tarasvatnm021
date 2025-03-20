@@ -19,6 +19,18 @@ class NodeMaster extends Model
 
     public $timestamps = true;
 
+    public static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function (NodeMaster $nodeMaster) {
+            $machineMasters = MachineMaster::where('node_id', $nodeMaster->id)->get();
+            if ($machineMasters->isNotEmpty()) {
+                $machineMasters->each->delete();
+            }
+        });
+    }
+
     public function device()
     {
         return $this->belongsTo(Device::class, 'device_id', 'id');

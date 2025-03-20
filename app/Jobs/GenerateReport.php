@@ -91,7 +91,7 @@ class GenerateReport implements ShouldQueue
 
     protected function generateReportApi($filter, $format, $userId)
     {
-        $url = env('GENERATE_REPORT_BASE_URL') . "{$filter}/{$format}/{$userId}";
+        $url = env('GENERATE_REPORT_BASE_URL', '') . "{$filter}/{$format}/{$userId}";
 
         $curl = curl_init();
         curl_setopt_array($curl, array(

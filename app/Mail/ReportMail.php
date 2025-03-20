@@ -22,7 +22,7 @@ class ReportMail extends Mailable
      */
     public function __construct($mailData, $filePath, $subject)
     {
-        date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
+        date_default_timezone_set((config('app.timezone') ?? 'Asia/Kolkata'));
         $this->mailData = $mailData;
         $this->filePath = $filePath;
         $this->subject = $subject;

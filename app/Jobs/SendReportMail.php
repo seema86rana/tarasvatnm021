@@ -463,7 +463,7 @@ class SendReportMail implements ShouldQueue
      */
     private function sendOnWhatsApp(string $subject, object $user, string $reportType, string $fileName, $previousDay, $currentDay)
     {
-        $WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN');
+        $WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN', '');
         $FROM_PHONE_NUMBER_ID = env('FROM_PHONE_NUMBER_ID');
         $TEMPLATE_NAME = env('TEMPLATE_NAME');
         $LANGUAGE_AND_LOCALE_CODE = env('LANGUAGE_AND_LOCALE_CODE');

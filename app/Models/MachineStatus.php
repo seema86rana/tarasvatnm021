@@ -31,6 +31,18 @@ class MachineStatus extends Model
     ];
     
     public $timestamps = true;
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function (MachineStatus $machineStatus) {
+            $pickCals = PickCalculation::where('machine_status_id', $machineStatus->id)->get();
+            if ($pickCals->isNotEmpty()) {
+                $pickCals->each->delete();
+            }
+        });
+    }
     
     public function machine() {
         return $this->belongsTo(MachineMaster::class, 'machine_id', 'id');

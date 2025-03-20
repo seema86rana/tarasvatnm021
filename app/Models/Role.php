@@ -21,6 +21,18 @@ class Role extends Model
 
     public $timestamps = true;
 
+    public static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function (Role $role) {
+            $users = User::where('role_id', $role->id)->get();
+            if ($users->isNotEmpty()) {
+                $users->each->delete();
+            }
+        });
+    }
+
     public function users() {
         return $this->hasMany(User::class, 'id', 'role_id');
     }

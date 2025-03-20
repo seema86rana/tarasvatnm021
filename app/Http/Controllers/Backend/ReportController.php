@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Backend;
 
-use DataTables;
+use Exception;
 use App\Models\User;
 use App\Models\Device;
 use App\Models\NodeMaster;
@@ -11,7 +11,7 @@ use App\Models\MachineMaster;
 use App\Models\TempMachineStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Exception;
+use Yajra\DataTables\Facades\DataTables;
 
 class ReportController extends Controller
 {
@@ -72,7 +72,7 @@ class ReportController extends Controller
             $data = $query->orderBy('id','ASC');
 
             $i = $start;
-            return Datatables::of($data)
+            return DataTables::of($data)
                 ->setTotalRecords($totalRecord) // Important for pagination with large data
                 ->setFilteredRecords($totalRecord) // If you implement search, update this dynamically
                 ->addColumn('serial_no', function ($row) use (&$i) {

@@ -27,6 +27,18 @@ class Device extends Model
 
     public $timestamps = true;
 
+    public static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function (Device $device) {
+            $nodeMasters = NodeMaster::where('device_id', $device->id)->get();
+            if ($nodeMasters->isNotEmpty()) {
+                $nodeMasters->each->delete();
+            }
+        });
+    }
+
     public function user() {
         return $this->belongsTo(User::class, 'user_id', 'id'); 
     }
