@@ -7,12 +7,6 @@
 @section('header_css')
     <!-- Bootstrap Datepicker CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
-    <style>
-        .small-text {
-            font-size: 0.8em; /* Makes text smaller */
-            color: #777; /* Optional: Gray color for a subtle look */
-        }
-    </style>
 @endsection
 
 @section('page_header')
@@ -21,7 +15,7 @@
         <div class="page-title">
             <h4>
                 <i class="icon-stack2 position-left"></i>
-                <span class="text-semibold">Reports</span>
+                <span class="text-semibold">Clear Report Data</span>
             </h4>
         </div>
     </div>
@@ -36,10 +30,10 @@
 
 <div class="panel panel-flat">
     <div class="panel-heading">
-        <h5>Filter Report</h5>
+        <h5>Clear Report Data Filter</h5>
     </div>
     <div class="panel-body">
-        <form class="filter-report-form" id="filter-report-form" action="#" method="post" autocomplete="off">
+        <form class="filter-clear-log-form" id="filter-clear-log-form" action="#" method="post" autocomplete="off">
             @csrf
             <input type="hidden" name="_token" value="{{ csrf_token() }}" />
             <div class="form-group">
@@ -103,11 +97,11 @@
                     <div class="col-md-12 mt-3 text-right" style="float: left;">
                         <label for="button">&nbsp;</label>
                         <br>
-                        <button type="button" class="btn btn-theme-dark save-report" id="save-report">
+                        <button type="button" class="btn btn-theme-dark delete-machine-log" id="delete-machine-log">
                             <i class="icon-check"></i> Submit
                         </button>
                         &nbsp;&nbsp;&nbsp;
-                        <button type="reset" class="btn btn-default" id="clear-form-report">
+                        <button type="reset" class="btn btn-default" id="clear-form-log">
                             <i class="icon-reset"></i> Clear
                         </button>
                     </div>
@@ -116,58 +110,11 @@
         </form>
     </div>
 </div>
-
-<div class="panel panel-flat">
-    <div class="panel-heading">
-        <h5 class="panel-title">Report's list</h5>
-        <div class="heading-elements">
-            <!-- <button class="btn btn-theme-dark btn-labeled filter-report">
-                <b><i class="fa fa-filter"></i></b> Filter
-            </button> -->
-            <button class="btn btn-theme-dark btn-labeled reload-report">
-                <b><i class="fa fa-refresh"></i></b> Reload
-            </button>
-            <!-- <button class="btn btn-theme-dark btn-labeled">
-                <b><i class="fa fa-file-excel-o" aria-hidden="true"></i></b> Export XLSX
-            </button> -->
-        </div>
-    </div>
-    <div class="row px-4 removable-flash-messages">
-        <div class="col-md-12">
-            @include('layouts.include.backend.message')
-        </div>
-    </div>
-    <div class="panel-body table-responsive">
-        <table class="table table-bordered table-striped datatable-scroller reports-dt" id="reports-dt">
-            <thead>
-                <tr>
-                    <th>Log ID</th>
-                    <th>Device</th>
-                    <th>Machine</th>
-                    <th>Total Running</th>
-                    <th>Total Time</th>
-                    <th>Efficiency</th>
-                    <th>Shift Detail</th>
-                    <th>Device Datetime</th>
-                    <th>Machine Datetime</th>
-                    <th>Last Stop</th>
-                    <th>Last Running</th>
-                    <th>No. of Stoppage</th>
-                    <th>Mode</th>
-                    <th>Speed</th>
-                    <th>Pick</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-</div>
 @endsection
 
 @section('footer_js')
 <script type="text/javascript">
-	let reportUrl = "{{ route('view-reports.index') }}";
+	let clearLogUrl = "{{ route('clear-reports.index') }}";
 
     $(document).ready(function () {
         $('.select2').select2({
@@ -186,13 +133,7 @@
 </script>
  <!-- Bootstrap Datepicker JS (Load after jQuery) -->
  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-<script type="text/javascript" src="{{asset('assets/backend/js/plugins/forms/styling/switchery.min.js')}}"></script>
-<script type="text/javascript" src="{{ asset('assets/backend/js/plugins/tables/datatables/datatables.min.js') }}"></script>
-<script type="text/javascript" src="{{ asset('assets/backend/js/plugins/tables/datatables/extensions/scroller.min.js')}}"></script>
-<script type="text/javascript" src="{{ asset('assets/backend/js/jszip.min.js') }}"></script>
-<script type="text/javascript" src="{{ asset('assets/backend/js/plugins/tables/datatables/extensions/pdfmake/pdfmake.min.js') }}"></script>
-<script type="text/javascript" src="{{ asset('assets/backend/js/plugins/tables/datatables/extensions/pdfmake/vfs_fonts.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('assets/backend/js/plugins/forms/selects/select2.min.js') }}"></script>
 
-<script type="text/javascript" src="{{ asset('assets/backend/js/custom/reports.js') }}"></script>
+<script type="text/javascript" src="{{ asset('assets/backend/js/custom/clearlog.js') }}"></script>
 @endsection

@@ -37,11 +37,25 @@ class ReportController extends Controller
 
             $user_id = $request->user_id;
             $device_id = $request->device_id;
+            $select_shift = $request->select_shift;
+            $select_shift_day = $request->select_shift_day;
             $node_id = $request->node_id;
             $machine_id = $request->machine_id;
             $date = $request->date;
             $start = $request->start;
             $length = $request->length;
+
+            // Extract shift times
+            $startTime = $endTime = '';
+            if ($select_shift) {
+                [$startTime, $endTime] = array_map(fn($t) => date('H:i:s', strtotime(trim($t))), explode(' - ', $select_shift));
+            }
+        
+            // Extract shift days
+            $startDay = $endDay = '';
+            if ($select_shift_day) {
+                [$startDay, $endDay] = array_map('trim', explode(' - ', $select_shift_day));
+            }
 
             $query = TempMachineStatus::with([])
                 ->when(!empty($user_id), function ($query) use ($user_id) {
@@ -68,6 +82,34 @@ class ReportController extends Controller
                     return $query->whereDate('created_at', date('Y-m-d', strtotime($date)));
                 });
                 
+            if ($date) {
+                $startDate = Carbon::createFromFormat('m/d/Y', $date);
+                $endDate = $startDate->copy()->addDay(); // Next day for shifts crossing midnight
+
+                if ($startTime && $endTime) {
+                    // If shift ends the next day, adjust the end date
+                    $modifyEndDate = ($endDay == '2') ? $endDate : $startDate;
+
+                    $start_date = Carbon::createFromFormat('m/d/Y H:i:s', "{$date} {$startTime}")
+                        ->format('Y-m-d H:i:s');
+
+                    $end_date = Carbon::createFromFormat('m/d/Y H:i:s', "{$modifyEndDate->format('m/d/Y')} {$endTime}")
+                        ->format('Y-m-d H:i:s');
+
+                    $query->whereBetween('device_datetime', [$start_date, $end_date]);
+                    
+                } else {
+                    // Default to full day if no shift time provided
+                    $query->whereBetween('device_datetime', [
+                        $startDate->startOfDay()->format('Y-m-d H:i:s'),
+                        $startDate->endOfDay()->format('Y-m-d H:i:s')
+                    ]);
+                }
+            } elseif ($startTime && $endTime) {
+                // Filter only by time when no date is selected
+                $query->whereRaw("TIME(device_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
+            }
+
             $totalRecord = $query->count();
             $data = $query->orderBy('id','ASC');
 
@@ -75,20 +117,26 @@ class ReportController extends Controller
             return Datatables::of($data)
                 ->setTotalRecords($totalRecord) // Important for pagination with large data
                 ->setFilteredRecords($totalRecord) // If you implement search, update this dynamically
-                ->addColumn('serial_no', function ($row) use (&$i) {
-                    return $i += 1;
-                })
-                ->addColumn('user', function ($row) {
-                    return !empty($row->machine->node->device->user->name) ? $row->machine->node->device->user->name : '--------';
+                // ->addColumn('serial_no', function ($row) use (&$i) {
+                //     return $i += 1;
+                // })
+                ->addColumn('log_id', function ($row) {
+                    return $row->id;
                 })
                 ->addColumn('device', function ($row) {
                     return !empty($row->machine->node->device->name) ? $row->machine->node->device->name : '--------';
                 })
-                ->addColumn('node', function ($row) {
-                    return !empty($row->machine->node->name) ? $row->machine->node->name : '--------';
-                })
                 ->addColumn('machine', function ($row) {
                     return !empty($row->machine->name) ? $row->machine->name : '--------';
+                })
+                ->addColumn('total_running', function ($row) {
+                    return !empty($row->total_running) ? (int) $row->total_running . ' <span class="small-text">(min)</span>' : '--------';
+                })
+                ->addColumn('total_time', function ($row) {
+                    return !empty($row->total_time) ? (int) $row->total_time . ' <span class="small-text">(min)</span>' : '--------';
+                })
+                ->addColumn('efficiency', function ($row) {
+                    return !empty($row->efficiency) ? (float) $row->efficiency . '%' : '--------';
                 })
                 ->addColumn('shift', function ($row) {
                     $shiftStart = date('d/m/Y h:i A', strtotime($row->shift_start_datetime));
@@ -102,19 +150,31 @@ class ReportController extends Controller
                 ->addColumn('machineDatetime', function ($row) {
                     return date('d/m/Y H:i:s', strtotime($row->machine_datetime));
                 })
+                ->addColumn('last_stop', function ($row) {
+                    return !empty($row->last_stop) ? (int) $row->last_stop . ' <span class="small-text">(min)</span>' : '--------';
+                })
+                ->addColumn('last_running', function ($row) {
+                    return !empty($row->last_running) ? (int) $row->last_running . ' <span class="small-text">(min)</span>' : '--------';
+                })
+                ->addColumn('no_of_stoppage', function ($row) {
+                    return !empty($row->no_of_stoppage) ? $row->no_of_stoppage : 0;
+                })
                 ->addColumn('mode', function ($row) {
                     return !empty($row->status) ? $row->status : 0;
+                })
+                ->addColumn('speed', function ($row) {
+                    return !empty($row->speed) ? $row->speed : 0;
                 })
                 ->addColumn('pick', function ($row) {
                     return !empty($row->machine_log->pick) ? $row->machine_log->pick : 0;
                 })
-                ->rawColumns(['serial_no', 'user', 'device', 'node', 'machine', 'shift', 'deviceDatetime', 'machineDatetime', 'mode', 'pick'])
+                ->rawColumns(['log_id', 'device', 'machine', 'total_running', 'total_time', 'efficiency', 'shift', 'deviceDatetime', 'machineDatetime', 'last_stop', 'last_running', 'no_of_stoppage', 'mode', 'speed', 'pick'])
                 ->make(true);
         }
 
         $title = "Report | " . ucwords(str_replace("_", " ", config('app.name', 'Laravel')));
         $breadcrumbs = [
-			route('reports.index') => 'Report',
+			route('view-reports.index') => 'Report',
 			'javascript: void(0)' => 'List',
 		];
 
@@ -181,6 +241,11 @@ class ReportController extends Controller
                 return $query->where('user_id', $user_id);
             })->where('status', 1)->get();
 
+            $deviceShift = !empty($device_id) 
+                    ? optional(Device::where('id', $device_id)->where('status', 1)->value('shift'), function ($shift) {
+                        return json_decode($shift, true);
+                    }) : [];
+
             $nodeMaster = NodeMaster::when(!empty($device_id), function ($query) use ($device_id) {
                 return $query->where('device_id', $device_id);
             })->where('status', 1)->get();
@@ -192,6 +257,7 @@ class ReportController extends Controller
             $response = [
                 'statusCode' => 1,
                 'device' => $device->isNotEmpty() ? $device->toArray() : [],
+                'deviceShift' => !empty($deviceShift) ? $deviceShift : [],
                 'nodeMaster' => $nodeMaster->isNotEmpty() ? $nodeMaster->toArray() : [],
                 'machineMaster' => $machineMaster->isNotEmpty() ? $machineMaster->toArray() : [],
             ];

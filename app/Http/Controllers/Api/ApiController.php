@@ -117,8 +117,6 @@ class ApiController extends Controller
             TempMachineStatus::whereIn('machine_id', $machineIds)->delete();
             MachineStatus::whereIn('machine_id', $machineIds)->delete();
             MachineLog::whereIn('machine_id', $machineIds)->delete();
-            MachineMaster::whereIn('id', $machineIds)->delete();
-            NodeMaster::whereIn('id', $nodeIds)->delete();
 
             DB::commit(); // Commit transaction
 

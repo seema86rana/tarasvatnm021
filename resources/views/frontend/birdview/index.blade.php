@@ -25,7 +25,7 @@
                     <div class="col-md-6 order-3 order-md-2">
                         <div class="rs_wrapper">
                             <ul>
-                                <li class="t_box" id="deviceTime">00:00 AM</li>
+                                <li class="t_box" id="deviceTime">dd/mm/yyyy hh:ii AM</li>
                             </ul>
                         </div>
                         

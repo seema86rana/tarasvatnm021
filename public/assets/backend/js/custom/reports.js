@@ -2,6 +2,8 @@
 
 let user_id = "";
 let device_id = "";
+let select_shift = "";
+let select_shift_day = "";
 let node_id = "";
 let machine_id = "";
 let date = "";
@@ -16,13 +18,16 @@ $(document).ready(function () {
             processing: true,
             serverSide: true,
             fixedHeader: true,
-            // ajax: reportUrl,
+            searching: false,
+            ordering: false,
             ajax: {
                 url: reportUrl,
                 type: "GET",
                 data: function(d) {
                     d.user_id = user_id;
                     d.device_id = device_id;
+                    d.select_shift = select_shift;
+                    d.select_shift_day = select_shift_day;
                     d.node_id = node_id;
                     d.machine_id = machine_id;
                     d.date = date;
@@ -48,20 +53,25 @@ $(document).ready(function () {
                 $(this).find('tbody tr').slice(-3).find('.dropdown, .btn-group').removeClass('dropup');
             },
             initComplete: function() {
-                loaderToggle(0); // Close the loader after the data has loaded
+                loaderToggle(0); // Turn off loader when DataTable finishes initialization
             },
             columns: [
-                { data: 'serial_no', name: 'serial_no', orderable: false, searchable: false, width: '5%' },
-                { data: 'user', name: 'user', width: '10%' },
+                // orderable: true, searchable: false, width: '5%'
+                { data: 'log_id', name: 'log_id', width: '5%' },
                 { data: 'device', name: 'device', width: '10%' },
-                { data: 'node', name: 'node', width: '10%' },
-                { data: 'machine', name: 'machine', width: '10%' },
-                { data: 'shift', name: 'shift', orderable: false, searchable: false, width: '10%' },
-                { data: 'deviceDatetime', name: 'deviceDatetime', orderable: false, searchable: false, width: '15%' },
-                { data: 'machineDatetime', name: 'machineDatetime', orderable: false, searchable: false, width: '15%' },
-                { data: 'mode', name: 'mode', orderable: false, searchable: false, width: '5%' },
-                { data: 'speed', name: 'speed', orderable: false, searchable: false, width: '5%' },
-                { data: 'pick', name: 'pick', orderable: false, searchable: false, width: '5%' },
+                { data: 'machine', name: 'machine', width: '5%' },
+                { data: 'total_running', name: 'total_running', width: '5%' },
+                { data: 'total_time', name: 'total_time', width: '5%' },
+                { data: 'efficiency', name: 'efficiency', width: '5%' },
+                { data: 'shift', name: 'shift', width: '10%' },
+                { data: 'deviceDatetime', name: 'deviceDatetime', width: '10%' },
+                { data: 'machineDatetime', name: 'machineDatetime', width: '10%' },
+                { data: 'last_stop', name: 'last_stop', width: '5%' },
+                { data: 'last_running', name: 'last_running', width: '5%' },
+                { data: 'no_of_stoppage', name: 'no_of_stoppage', width: '5%' },
+                { data: 'mode', name: 'mode', width: '5%' },
+                { data: 'speed', name: 'speed', width: '5%' },
+                { data: 'pick', name: 'pick', width: '5%' },
             ]
         });
 
@@ -77,8 +87,6 @@ $(document).ready(function () {
             type: 'GET',
             dataType: 'json',
             data: {user_id, device_id, node_id, machine_id, date},
-            beforeSend: function () {
-            },
             complete: function (response) {
                 let result = response.responseJSON;
                 if (result.statusCode) {
@@ -88,8 +96,9 @@ $(document).ready(function () {
                 }
                 loaderToggle(0);
             },
-            error: function (error) {
+            error: function () {
                 toast_error();
+                loaderToggle(0);
             }
         });
     });
@@ -99,23 +108,24 @@ $(document).ready(function () {
 
         let thisMain = $(this);
         thisMain.prop('disabled', true);
-        await loaderToggle(1);
+        loaderToggle(1);
 
+        // Update filter variables from inputs
         user_id = $("#user_id").val();
         device_id = $("#device_id").val();
+        select_shift = $("#select_shift").val();
+        select_shift_day = $("#select_shift").find(":selected").data("shift-day");
         node_id = $("#node_id").val();
         machine_id = $("#machine_id").val();
         date = $("#date").val();
 
-        setTimeout(() => {
-            $(".modal").modal("hide");
-            $reports_dt.ajax.reload();
+        // Close modal and reload DataTable with a callback
+        $(".modal").modal("hide");
+        $reports_dt.ajax.reload(function() {
+            // When reload finishes, re-enable the button and turn off loader
             thisMain.prop('disabled', false);
-        }, 250);
-
-        setTimeout(() => {
             loaderToggle(0);
-        }, 1000);
+        });
     });
 
     $(document).on("click", "#clear-form-report", async function(e) {
@@ -123,29 +133,31 @@ $(document).ready(function () {
 
         let thisMain = $(this);
         thisMain.prop('disabled', true);
-        await loaderToggle(1);
+        loaderToggle(1);
 
+        // Clear filter variables
         user_id = "";
         device_id = "";
+        select_shift = "";
+        select_shift_day = "";
         node_id = "";
         machine_id = "";
         date = "";
 
+        // Clear form inputs and trigger change if needed
         $("#user_id").val('').trigger('change');
         $("#device_id").val('').trigger('change');
+        $("#select_shift").val('').trigger('change');
         $("#node_id").val('').trigger('change');
         $("#machine_id").val('').trigger('change');
         $("#date").val('');
 
-        setTimeout(() => {
-            $(".modal").modal("hide");
-            $reports_dt.ajax.reload();
+        // Close modal and reload DataTable with a callback
+        $(".modal").modal("hide");
+        $reports_dt.ajax.reload(function() {
             thisMain.prop('disabled', false);
-        }, 250);
-
-        setTimeout(() => {
             loaderToggle(0);
-        }, 1000);
+        });
     });
 
     $(document).on("change", ".onchange_function", async function(e) {
@@ -157,7 +169,7 @@ $(document).ready(function () {
         var formData = new FormData();
         formData.append(thisMain.attr('name'), thisMain.val());
 
-        await loaderToggle(1);
+        loaderToggle(1);
         $.ajax({
             url: reportUrl,
             type: 'POST',
@@ -167,32 +179,31 @@ $(document).ready(function () {
             processData: false,
             dataType: 'json',
             data: formData,
-            beforeSubmit: function () {
-            },
             complete: function (data) {
-
                 data = data.responseJSON;
                 if (data.statusCode == 1) {
                     if(thisMain.attr('name') == 'user_id') {
                         populateSelect2("#device_id", data.device);
+                        populateSelect2("#select_shift", data.deviceShift, 'selectedShift');
                         populateSelect2("#node_id", data.nodeMaster);
                         populateSelect2("#machine_id", data.machineMaster);
                     } 
                     else if(thisMain.attr('name') == 'device_id') {
                         populateSelect2("#node_id", data.nodeMaster);
                         populateSelect2("#machine_id", data.machineMaster);
+                        populateSelect2("#select_shift", data.deviceShift, 'selectedShift');
                     }
                     else if(thisMain.attr('name') == 'node_id') {
                         populateSelect2("#machine_id", data.machineMaster);
                     }
                 } else {
-                    jQuery('.load-main').addClass('hidden');
+                    $('.load-main').addClass('hidden');
                     toast_error(data.message, 'Error');
                 }
                 thisMain.prop('disabled', false);
                 loaderToggle(0);
             },
-            error: function (error) {
+            error: function () {
                 thisMain.prop('disabled', false);
                 loaderToggle(0);
             }
@@ -202,17 +213,17 @@ $(document).ready(function () {
     $(document).on("click", ".reload-report", async function (e) {
         // Add spinning effect to the icon
         $(this).find('.fa-refresh').addClass('fa-spin');
+        loaderToggle(1);
         
-        // Reload the DataTable
-        await $reports_dt.ajax.reload();
-    
-        // Remove spinning effect after 1 second
-        setTimeout(() => {
-            $(this).find('.fa-refresh').removeClass('fa-spin');
-        }, 1000);
+        // Reload the DataTable and then remove the spinning effect when finished
+        $reports_dt.ajax.reload(function() {
+            $(document).find('.fa-refresh').removeClass('fa-spin');
+            loaderToggle(0);
+        });
     });
 
 });
+
 
 function sw() {
     var switches = Array.prototype.slice.call(document.querySelectorAll('.switchery'));
@@ -227,16 +238,13 @@ function populateSelect2(selector, items, type, value) {
     $select.append('<option></option>'); // Add placeholder for Select2
     
     $.each(items, function(index, item) {
-        var title = "";
 
-        if (item.name) {
-            title = item.name;
-        }
-        else {
-            title = item.id;
-        }
+        var isShift = (type === 'selectedShift');
+        var title = isShift ? item.shift_start_time + ' - ' + item.shift_end_time : (item.name || item.id);
+        var dataShiftDay = isShift ? 'data-shift-day="' + item.shift_start_day + ' - ' + item.shift_end_day + '"': '';
+        var optionValue = isShift ? title : item.id;
 
-        $select.append('<option value="' + item.id + '">' + title + '</option>');
+        $select.append('<option value="' + optionValue + '" ' + dataShiftDay + '>' + title + '</option>');
     });
 
     $select.select2({

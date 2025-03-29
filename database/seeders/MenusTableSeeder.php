@@ -18,6 +18,33 @@ class MenusTableSeeder extends Seeder
         // Truncate the table
         DB::table('menus')->truncate();
 
+        /* 
+        for ($i=0; $i < 5000000; $i++) { 
+            DB::table('temp_machine_status')->insert([
+                'machine_status_id' => 3,
+                'machine_log_id' => 2,
+                'machine_id' => 75,
+                'active_machine' => 1,
+                'speed' => 160,
+                'status' => 1,
+                'no_of_stoppage' => 1,
+                'last_stop' => 60.00,
+                'last_running' => 2.00,
+                'total_running' => 62.00,
+                'total_time' => 62.00,
+                'efficiency' => 100.00,
+                'device_datetime' => date('Y-m-d H:i:s'),
+                'machine_datetime' => date('Y-m-d H:i:s'),
+                'shift_date' => date('Y-m-d'),
+                'shift_name' => 'shift 1',
+                'shift_start_datetime' => date('Y-m-d H:i:s'),
+                'shift_end_datetime' => date('Y-m-d H:i:s'),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+        }
+        */
+
         // Seed the table with data
         DB::table('menus')->insert([
             [
@@ -53,7 +80,7 @@ class MenusTableSeeder extends Seeder
             [
                 'name' => 'Setting', // 4
                 'parent_id' => 0,
-                'route' => 'settings',
+                'route' => '#1',
                 'icon' => '<i class="icon-cog3"></i>',
                 'position' => 4,
                 'status' => 1,
@@ -71,11 +98,31 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
             [
-                'name' => 'Report', // 6
+                'name' => 'Reports', // 6
                 'parent_id' => 0,
-                'route' => 'reports',
-                'icon' => '<i class="icon-clippy"></i>',
+                'route' => '#2',
+                'icon' => '<i class="fa fa-file-text"></i>',
                 'position' => 5,
+                'status' => 1,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'View Report Data', // 7
+                'parent_id' => 6,
+                'route' => 'view-reports',
+                'icon' => '<i class="fa fa-eye"></i>',
+                'position' => 1,
+                'status' => 1,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'Remove Report Data', // 8
+                'parent_id' => 6,
+                'route' => 'clear-reports',
+                'icon' => '<i class="fa fa-trash"></i>',
+                'position' => 2,
                 'status' => 1,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
