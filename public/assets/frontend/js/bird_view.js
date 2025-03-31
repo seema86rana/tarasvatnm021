@@ -54,6 +54,18 @@ function fetchData() {
                 $("#shiftMatching").val(response.shiftStartEnd);
             } else {
                 toastError(response.message);
+
+                const now = new Date();
+                const dateFormat = (num) => String(num).padStart(2, '0');
+                
+                let hours = now.getHours();
+                let ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12; // Convert 24-hour to 12-hour format
+                
+                const formattedDateTime = `${dateFormat(now.getDate())}/${dateFormat(now.getMonth() + 1)}/${now.getFullYear()} ` +
+                    `${dateFormat(hours)}:${dateFormat(now.getMinutes())} ${ampm}`;
+                
+                $("#deviceTime").html(formattedDateTime);                
             }
         },
         error: function(xhr, status, error) {
@@ -119,6 +131,8 @@ function toastSuccess(message = 'Successful...', title = 'Success!') {
         title: title,
         text: message,
         icon: 'success',
+        showCloseButton: true,
+        position: 'bottom-start'
     });
 }
 
@@ -127,5 +141,7 @@ function toastError(message = 'Oops!, Something went wrong.', title = 'Error!') 
         title: title,
         text: message,
         icon: 'error',
+        showCloseButton: true,
+        position: 'bottom-start'
     });
 }

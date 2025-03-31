@@ -7,6 +7,7 @@ use App\Http\Controllers\Backend\DashboardController as BackendDashboardControll
 use App\Http\Controllers\Backend\ProfileController as BackendProfileController;
 use App\Http\Controllers\Backend\DeviceController as BackendDeviceController;
 use App\Http\Controllers\Backend\ReportController as BackendReportController;
+use App\Http\Controllers\Backend\ClearLogController as BackendClearLogController;
 use App\Http\Controllers\FrontEnd\BirdViewController as FrontEndBirdViewController;
 use App\Http\Controllers\FrontEnd\HomeController as FrontEndHomeController;
 use Illuminate\Support\Facades\Auth;
@@ -60,6 +61,9 @@ Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth',
     Route::resource('devices', BackendDeviceController::class);
     Route::post('devices/{id}', [BackendDeviceController::class, 'update'])->name('devices.updates');
 
-    Route::resource('reports', BackendReportController::class);
-    Route::post('reports/{id}', [BackendReportController::class, 'update'])->name('reports.updates');
+    Route::resource('view-reports', BackendReportController::class);
+    Route::post('view-reports/{id}', [BackendReportController::class, 'update'])->name('view-reports.updates');
+
+    Route::resource('clear-reports', BackendClearLogController::class);
+    Route::post('clear-reports/{id}', [BackendClearLogController::class, 'update'])->name('clear-reports.updates');
 });
