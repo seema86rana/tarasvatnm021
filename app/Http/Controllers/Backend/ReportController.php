@@ -167,7 +167,7 @@ class ReportController extends Controller
                     return !empty($row->speed) ? $row->speed : 0;
                 })
                 ->addColumn('pick', function ($row) {
-                    return !empty($row->machine_log->pick) ? $row->machine_log->pick : 0;
+                    return !empty($row->machine_log->pick) ? self::formatIndianNumber($row->machine_log->pick) : 0;
                 })
                 ->rawColumns(['log_id', 'device', 'machine', 'total_running', 'total_time', 'efficiency', 'shift', 'deviceDatetime', 'machineDatetime', 'last_stop', 'last_running', 'no_of_stoppage', 'mode', 'speed', 'pick'])
                 ->make(true);
@@ -316,5 +316,9 @@ class ReportController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    private static function formatIndianNumber($num) {
+        return number_format($num, 0, '.', ',');
     }
 }
