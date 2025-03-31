@@ -256,7 +256,7 @@ class DeviceController extends Controller
                 'statusCode' => 1,
                 'message' => 'Device status updated successfully!',
             ]);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),

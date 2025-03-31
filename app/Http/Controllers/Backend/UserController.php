@@ -162,7 +162,7 @@ class UserController extends Controller
                 'message' => "User created successfully!",
             );
             return response()->json($response);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),
@@ -207,7 +207,7 @@ class UserController extends Controller
                 'statusCode' => 1,
                 'message' => 'User status updated successfully!',
             ]);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),
@@ -288,7 +288,7 @@ class UserController extends Controller
                 'statusCode' => 1,
                 'message' => 'User updated successfully!',
             ]);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),

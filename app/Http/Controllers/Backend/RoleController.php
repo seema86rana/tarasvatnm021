@@ -138,7 +138,7 @@ class RoleController extends Controller
                 'message' => "Role created successfully!",
             );
             return response()->json($response);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),
@@ -183,7 +183,7 @@ class RoleController extends Controller
                 'statusCode' => 1,
                 'message' => 'Role status updated successfully!',
             ]);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),
@@ -258,7 +258,7 @@ class RoleController extends Controller
                 'statusCode' => 1,
                 'message' => 'Role updated successfully!',
             ]);
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),

@@ -129,7 +129,7 @@ class ProfileController extends Controller
 
             return redirect()->back()->with('success', "Profile update successfully!");
 
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             return redirect()->back()->with('error', $error->getMessage());
         }
     }
@@ -171,7 +171,7 @@ class ProfileController extends Controller
     
             return redirect()->back()->with('error', "Something went wrong!");
     
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             return redirect()->back()->with('error', $error->getMessage());
         }
     }    

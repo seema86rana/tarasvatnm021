@@ -179,7 +179,7 @@ class ClearLogController extends Controller
                 ];
                 return response()->json($response);
             }
-        } catch (Exception $error) {
+        } catch (\Exception $error) {
             $response = array(
 				'statusCode' => 0,
 				'message' => $error->getMessage(),
