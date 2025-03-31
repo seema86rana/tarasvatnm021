@@ -108,7 +108,7 @@ class MenusTableSeeder extends Seeder
                 'updated_at' => Carbon::now(),
             ],
             [
-                'name' => 'View Report Data', // 7
+                'name' => 'Machine Log Report', // 7
                 'parent_id' => 6,
                 'route' => 'view-reports',
                 'icon' => '<i class="fa fa-eye"></i>',

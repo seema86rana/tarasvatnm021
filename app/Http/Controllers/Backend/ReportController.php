@@ -173,9 +173,9 @@ class ReportController extends Controller
                 ->make(true);
         }
 
-        $title = "Report | " . ucwords(str_replace("_", " ", config('app.name', 'Laravel')));
+        $title = "Machine Log Report | " . ucwords(str_replace("_", " ", config('app.name', 'Laravel')));
         $breadcrumbs = [
-			route('view-reports.index') => 'Report',
+			route('view-reports.index') => 'Machine Log Report',
 			'javascript: void(0)' => 'List',
 		];
 

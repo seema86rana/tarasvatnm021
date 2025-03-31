@@ -21,7 +21,7 @@
         <div class="page-title">
             <h4>
                 <i class="icon-stack2 position-left"></i>
-                <span class="text-semibold">Reports</span>
+                <span class="text-semibold">Machine Log Report</span>
             </h4>
         </div>
     </div>
@@ -36,7 +36,7 @@
 
 <div class="panel panel-flat">
     <div class="panel-heading">
-        <h5>Filter Report</h5>
+        <h5>Filter Machine Log Report</h5>
     </div>
     <div class="panel-body">
         <form class="filter-report-form" id="filter-report-form" action="#" method="post" autocomplete="off">
@@ -96,7 +96,7 @@
                         </select>
                     </div>
                     <div class="col-md-4 mt-3">
-                        <label for="date">Select Date</label>
+                        <label for="date">Select Date Range</label>
                         <input type="text" class="form-control datepicker" value="{{ isset($date) ? date('m/d/Y', strtotime($date)) : '' }}" name="date" id="date" placeholder="Select date">
                     </div>
 
@@ -119,7 +119,7 @@
 
 <div class="panel panel-flat">
     <div class="panel-heading">
-        <h5 class="panel-title">Report's list</h5>
+        <h5 class="panel-title">Machine Log Report's list</h5>
         <div class="heading-elements">
             <!-- <button class="btn btn-theme-dark btn-labeled filter-report">
                 <b><i class="fa fa-filter"></i></b> Filter
