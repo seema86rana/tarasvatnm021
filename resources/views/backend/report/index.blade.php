@@ -6,7 +6,7 @@
 
 @section('header_css')
     <!-- Bootstrap Datepicker CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.css">
     <style>
         .small-text {
             font-size: 0.8em; /* Makes text smaller */
@@ -96,8 +96,8 @@
                         </select>
                     </div>
                     <div class="col-md-4 mt-3">
-                        <label for="date">Select Date Range</label>
-                        <input type="text" class="form-control datepicker" value="{{ isset($date) ? date('m/d/Y', strtotime($date)) : '' }}" name="date" id="date" placeholder="Select date">
+                        <label for="dateRange">Select Date Range</label>
+                        <input type="text" class="form-control" name="dateRange" id="dateRange" placeholder="Select date range">
                     </div>
 
                     <div class="col-md-12 mt-3 text-right" style="float: left;">
@@ -120,16 +120,30 @@
 <div class="panel panel-flat">
     <div class="panel-heading">
         <h5 class="panel-title">Machine Log Report's list</h5>
-        <div class="heading-elements">
+        <div class="heading-elements d-flex">
             <!-- <button class="btn btn-theme-dark btn-labeled filter-report">
                 <b><i class="fa fa-filter"></i></b> Filter
             </button> -->
-            <button class="btn btn-theme-dark btn-labeled reload-report">
+            <button class="btn btn-theme-dark btn-labeled reload-report mr-2">
                 <b><i class="fa fa-refresh"></i></b> Reload
             </button>
             <!-- <button class="btn btn-theme-dark btn-labeled">
                 <b><i class="fa fa-file-excel-o" aria-hidden="true"></i></b> Export XLSX
             </button> -->
+            <form id="export-machine-log-report-form" action="{{ route('view-reports.store') }}" method="post">
+                @csrf
+                <input type="hidden" name="type" value="exportMachineLog">
+                <input type="hidden" name="user_id" value="">
+                <input type="hidden" name="device_id" value="">
+                <input type="hidden" name="select_shift" value="">
+                <input type="hidden" name="select_shift_day" value="">
+                <input type="hidden" name="node_id" value="">
+                <input type="hidden" name="machine_id" value="">
+                <input type="hidden" name="dateRange" value="">
+                <button id="export-machine-log-report-button" class="btn btn-theme-dark btn-labeled">
+                    <b><i class="fa fa-file-excel-o" aria-hidden="true"></i></b> Export XLSX
+                </button>
+            </form>
         </div>
     </div>
     <div class="row px-4 removable-flash-messages">
@@ -166,6 +180,11 @@
 @endsection
 
 @section('footer_js')
+<!-- Moment.js (Required for Date Range Picker) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<!-- Date Range Picker CSS & JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.js"></script>
+
 <script type="text/javascript">
 	let reportUrl = "{{ route('view-reports.index') }}";
 
@@ -176,16 +195,25 @@
             width: '100%'
         });
 
-        $('.datepicker').datepicker({
-            format: 'mm/dd/yyyy',
-            autoclose: true,
-            todayHighlight: true,
-            endDate: new Date(),
+        let endDate = new Date();
+        let startDate = new Date();
+        startDate.setHours(startDate.getHours() - 24); // Subtract 24 hours
+
+        $('#dateRange').daterangepicker({
+            autoUpdateInput: true,
+            timePicker: true,
+            timePicker24Hour: false,
+            timePickerSeconds: false,
+            startDate: startDate,
+            endDate: endDate,
+            locale: {
+                format: 'MM/DD/YYYY h:mm A',
+            },
+            maxDate: endDate // Prevent future dates
         });
     });
 </script>
- <!-- Bootstrap Datepicker JS (Load after jQuery) -->
- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+
 <script type="text/javascript" src="{{asset('assets/backend/js/plugins/forms/styling/switchery.min.js')}}"></script>
 <script type="text/javascript" src="{{ asset('assets/backend/js/plugins/tables/datatables/datatables.min.js') }}"></script>
 <script type="text/javascript" src="{{ asset('assets/backend/js/plugins/tables/datatables/extensions/scroller.min.js')}}"></script>

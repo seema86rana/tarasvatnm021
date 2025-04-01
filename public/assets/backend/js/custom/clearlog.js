@@ -6,7 +6,7 @@ let select_shift = "";
 let select_shift_day = "";
 let node_id = "";
 let machine_id = "";
-let date = "";
+let dateRange = "";
 
 $(document).ready(function () {
     $(document).on("click", "#delete-machine-log", async function(e) {
@@ -15,11 +15,11 @@ $(document).ready(function () {
 
         user_id = $("#user_id").val();
         device_id = $("#device_id").val();
-        node_id = $("#node_id").val();
-        machine_id = $("#machine_id").val();
         select_shift = $("#select_shift").val();
         select_shift_day = $("#select_shift").find(":selected").data("shift-day");
-        date = $("#date").val();
+        node_id = $("#node_id").val();
+        machine_id = $("#machine_id").val();
+        dateRange = $("#dateRange").val();
 
         var formData = {
             user_id: user_id,
@@ -28,7 +28,7 @@ $(document).ready(function () {
             select_shift_day: select_shift_day,
             node_id: node_id,
             machine_id: machine_id,
-            date: date,
+            dateRange: dateRange,
             type: 'clearMachineLog'
         };
 
@@ -54,10 +54,6 @@ $(document).ready(function () {
                 loaderToggle(0);
             }
         });
-
-        setTimeout(() => {
-            loaderToggle(0);
-        }, 1000);
     });
 
     $(document).on("click", "#clear-form-log", async function(e) {
@@ -72,14 +68,14 @@ $(document).ready(function () {
         select_shift_day = "";
         node_id = "";
         machine_id = "";
-        date = "";
+        dateRange = "";
 
         $("#user_id").val('').trigger('change');
         $("#device_id").val('').trigger('change');
         $("#select_shift").val('').trigger('change');
         $("#node_id").val('').trigger('change');
         $("#machine_id").val('').trigger('change');
-        $("#date").val('');
+        $("#dateRange").val('');
 
         setTimeout(() => {
             loaderToggle(0);

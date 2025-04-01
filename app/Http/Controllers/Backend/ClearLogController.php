@@ -77,7 +77,7 @@ class ClearLogController extends Controller
             $select_shift_day = $request->select_shift_day;
             $node_id = $request->node_id;
             $machine_id = $request->machine_id;
-            $selected_date = $request->date;
+            $dateRange = $request->dateRange;
             $type = $request->type;
 
             if ($type === 'clearMachineLog') {
@@ -100,6 +100,15 @@ class ClearLogController extends Controller
                 $nodeIds = $node_id ? [$node_id] : (!empty($deviceIds) ? NodeMaster::whereIn('device_id', $deviceIds)->pluck('id')->toArray() : []);
                 $machineIds = $machine_id ? [$machine_id] : (!empty($nodeIds) ? MachineMaster::whereIn('node_id', $nodeIds)->pluck('id')->toArray() : []);
 
+                $fromDate = Carbon::now()->subDay(); // Previous day
+                $toDate = Carbon::now(); // Current time
+
+                if ($dateRange) {
+                    $dateArray = explode(" - ", $dateRange);
+                    $fromDate = Carbon::parse(trim($dateArray[0]))->format('Y-m-d H:i:s');
+                    $toDate = Carbon::parse(trim($dateArray[1]))->format('Y-m-d H:i:s');
+                }
+
                 // Extract shift times
                 $startTime = $endTime = '';
                 if ($select_shift) {
@@ -115,32 +124,25 @@ class ClearLogController extends Controller
                 // Query to filter machine status
                 $query = MachineStatus::whereIn('machine_id', $machineIds);
 
-                if ($selected_date) {
-                    $startDate = Carbon::createFromFormat('m/d/Y', $selected_date);
-                    $endDate = $startDate->copy()->addDay(); // Next day for shifts crossing midnight
-
+                if ($dateRange) {
+                    $startDate = Carbon::parse($fromDate);
+                    $endDate = Carbon::parse($toDate);
+    
                     if ($startTime && $endTime) {
-                        // If shift ends the next day, adjust the end date
-                        $modifyEndDate = ($endDay == '2') ? $endDate : $startDate;
-
-                        $start_date = Carbon::createFromFormat('m/d/Y H:i:s', "{$selected_date} {$startTime}")
-                            ->format('Y-m-d H:i:s');
-
-                        $end_date = Carbon::createFromFormat('m/d/Y H:i:s', "{$modifyEndDate->format('m/d/Y')} {$endTime}")
-                            ->format('Y-m-d H:i:s');
-
-                        $query->whereBetween('device_datetime', [$start_date, $end_date]);
-                        
+                        // If shift crosses midnight, adjust end date
+                        $modifyEndDate = ($endDay == '2') ? $startDate->addDay() : $startDate;
+    
+                        $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate->format('Y-m-d')} {$startTime}");
+                        $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate->format('Y-m-d')} {$endTime}");
+    
+                        $query->whereBetween('machine_datetime', [$start_date, $end_date]);
                     } else {
-                        // Default to full day if no shift time provided
-                        $query->whereBetween('device_datetime', [
-                            $startDate->startOfDay()->format('Y-m-d H:i:s'),
-                            $startDate->endOfDay()->format('Y-m-d H:i:s')
-                        ]);
+                        // Default full-day filter
+                        $query->whereBetween('machine_datetime', [$fromDate, $toDate]);
                     }
                 } elseif ($startTime && $endTime) {
                     // Filter only by time when no date is selected
-                    $query->whereRaw("TIME(device_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
+                    $query->whereRaw("TIME(machine_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
                 }
 
                 $machineStatusIds = $query->pluck('id')->toArray();

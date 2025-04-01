@@ -13,6 +13,9 @@ use App\Models\TempMachineStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\View;
 use Yajra\DataTables\Facades\DataTables;
+use App\Exports\MachineLogExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportController extends Controller
 {
@@ -42,9 +45,18 @@ class ReportController extends Controller
             $select_shift_day = $request->select_shift_day;
             $node_id = $request->node_id;
             $machine_id = $request->machine_id;
-            $date = $request->date;
+            $dateRange = $request->dateRange;
             $start = $request->start;
             $length = $request->length;
+
+            $fromDate = Carbon::now()->subDay(); // Previous day
+            $toDate = Carbon::now(); // Current time
+
+            if ($dateRange) {
+                $dateArray = explode(" - ", $dateRange);
+                $fromDate = Carbon::parse(trim($dateArray[0]))->format('Y-m-d H:i:s');
+                $toDate = Carbon::parse(trim($dateArray[1]))->format('Y-m-d H:i:s');
+            }
 
             // Extract shift times
             $startTime = $endTime = '';
@@ -58,7 +70,7 @@ class ReportController extends Controller
                 [$startDay, $endDay] = array_map('trim', explode(' - ', $select_shift_day));
             }
 
-            $query = TempMachineStatus::with([])
+            $query = TempMachineStatus::query()
                 ->when(!empty($user_id), function ($query) use ($user_id) {
                     return $query->whereHas('machine.node.device.user', function($q) use ($user_id) {
                         $q->where('user_id', $user_id);
@@ -78,37 +90,27 @@ class ReportController extends Controller
                     return $query->whereHas('machine', function($q) use ($machine_id) {
                         $q->where('machine_id', $machine_id);
                     });
-                })
-                ->when(!empty($date), function ($query) use ($date) {
-                    return $query->whereDate('created_at', date('Y-m-d', strtotime($date)));
                 });
                 
-            if ($date) {
-                $startDate = Carbon::createFromFormat('m/d/Y', $date);
-                $endDate = $startDate->copy()->addDay(); // Next day for shifts crossing midnight
+            if ($dateRange) {
+                $startDate = Carbon::parse($fromDate);
+                $endDate = Carbon::parse($toDate);
 
                 if ($startTime && $endTime) {
-                    // If shift ends the next day, adjust the end date
-                    $modifyEndDate = ($endDay == '2') ? $endDate : $startDate;
+                    // If shift crosses midnight, adjust end date
+                    $modifyEndDate = ($endDay == '2') ? $startDate->addDay() : $startDate;
 
-                    $start_date = Carbon::createFromFormat('m/d/Y H:i:s', "{$date} {$startTime}")
-                        ->format('Y-m-d H:i:s');
+                    $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate->format('Y-m-d')} {$startTime}");
+                    $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate->format('Y-m-d')} {$endTime}");
 
-                    $end_date = Carbon::createFromFormat('m/d/Y H:i:s', "{$modifyEndDate->format('m/d/Y')} {$endTime}")
-                        ->format('Y-m-d H:i:s');
-
-                    $query->whereBetween('device_datetime', [$start_date, $end_date]);
-                    
+                    $query->whereBetween('machine_datetime', [$start_date, $end_date]);
                 } else {
-                    // Default to full day if no shift time provided
-                    $query->whereBetween('device_datetime', [
-                        $startDate->startOfDay()->format('Y-m-d H:i:s'),
-                        $startDate->endOfDay()->format('Y-m-d H:i:s')
-                    ]);
+                    // Default full-day filter
+                    $query->whereBetween('machine_datetime', [$fromDate, $toDate]);
                 }
             } elseif ($startTime && $endTime) {
                 // Filter only by time when no date is selected
-                $query->whereRaw("TIME(device_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
+                $query->whereRaw("TIME(machine_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
             }
 
             $totalRecord = $query->count();
@@ -194,12 +196,12 @@ class ReportController extends Controller
      */
     public function create(Request $request)
     {
-        $modal_title = "Filter Report";
+        $modal_title = "Filter Machine Log Report";
         $user_id = $request->user_id;
         $device_id = $request->device_id;
         $node_id = $request->node_id;
         $machine_id = $request->machine_id;
-        $date = $request->date;
+        $dateRange = $request->dateRange;
 
         $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
 
@@ -217,7 +219,7 @@ class ReportController extends Controller
         
         return response()->json([
             'statusCode' => 1,
-            'html' => View::make("backend.report.add_and_edit", compact('modal_title', 'user', 'device', 'nodeMaster', 'machineMaster', 'user_id', 'device_id', 'node_id', 'machine_id', 'date'))->render(),
+            'html' => View::make("backend.report.add_and_edit", compact('modal_title', 'user', 'device', 'nodeMaster', 'machineMaster', 'user_id', 'device_id', 'node_id', 'machine_id', 'dateRange'))->render(),
         ]);
     }
 
@@ -237,33 +239,38 @@ class ReportController extends Controller
             $user_id = $request->user_id;
             $device_id = $request->device_id;
             $node_id = $request->node_id;
-            
-            $device = Device::when(!empty($user_id), function ($query) use ($user_id) {
-                return $query->where('user_id', $user_id);
-            })->where('status', 1)->get();
+            $type = $request->type;
 
-            $deviceShift = !empty($device_id) 
-                    ? optional(Device::where('id', $device_id)->where('status', 1)->value('shift'), function ($shift) {
-                        return json_decode($shift, true);
-                    }) : [];
+            if ($type == 'exportMachineLog') {
 
-            $nodeMaster = NodeMaster::when(!empty($device_id), function ($query) use ($device_id) {
-                return $query->where('device_id', $device_id);
-            })->where('status', 1)->get();
+                return Excel::download(new MachineLogExport($request), 'machine-log-report.xlsx');
+            } else {
+                $device = Device::when(!empty($user_id), function ($query) use ($user_id) {
+                    return $query->where('user_id', $user_id);
+                })->where('status', 1)->get();
 
-            $machineMaster = MachineMaster::when(!empty($node_id), function ($query) use ($node_id) {
-                return $query->where('node_id', $node_id);
-            })->where('status', 1)->get();
+                $deviceShift = !empty($device_id) 
+                        ? optional(Device::where('id', $device_id)->where('status', 1)->value('shift'), function ($shift) {
+                            return json_decode($shift, true);
+                        }) : [];
 
-            $response = [
-                'statusCode' => 1,
-                'device' => $device->isNotEmpty() ? $device->toArray() : [],
-                'deviceShift' => !empty($deviceShift) ? $deviceShift : [],
-                'nodeMaster' => $nodeMaster->isNotEmpty() ? $nodeMaster->toArray() : [],
-                'machineMaster' => $machineMaster->isNotEmpty() ? $machineMaster->toArray() : [],
-            ];
-            return response()->json($response);
-            
+                $nodeMaster = NodeMaster::when(!empty($device_id), function ($query) use ($device_id) {
+                    return $query->where('device_id', $device_id);
+                })->where('status', 1)->get();
+
+                $machineMaster = MachineMaster::when(!empty($node_id), function ($query) use ($node_id) {
+                    return $query->where('node_id', $node_id);
+                })->where('status', 1)->get();
+
+                $response = [
+                    'statusCode' => 1,
+                    'device' => $device->isNotEmpty() ? $device->toArray() : [],
+                    'deviceShift' => !empty($deviceShift) ? $deviceShift : [],
+                    'nodeMaster' => $nodeMaster->isNotEmpty() ? $nodeMaster->toArray() : [],
+                    'machineMaster' => $machineMaster->isNotEmpty() ? $machineMaster->toArray() : [],
+                ];
+                return response()->json($response);
+            }
         } catch (Exception $error) {
             $response = array(
 				'statusCode' => 0,

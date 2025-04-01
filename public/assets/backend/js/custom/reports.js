@@ -6,7 +6,7 @@ let select_shift = "";
 let select_shift_day = "";
 let node_id = "";
 let machine_id = "";
-let date = "";
+let dateRange = "";
 
 $(document).ready(function () {
 
@@ -24,13 +24,13 @@ $(document).ready(function () {
                 url: reportUrl,
                 type: "GET",
                 data: function(d) {
-                    d.user_id = user_id;
-                    d.device_id = device_id;
-                    d.select_shift = select_shift;
-                    d.select_shift_day = select_shift_day;
-                    d.node_id = node_id;
-                    d.machine_id = machine_id;
-                    d.date = date;
+                    d.user_id = $("#user_id").val();
+                    d.device_id = $("#device_id").val();
+                    d.select_shift = $("#select_shift").val();
+                    d.select_shift_day = $("#select_shift_day").val();
+                    d.node_id = $("#node_id").val();
+                    d.machine_id = $("#machine_id").val();
+                    d.dateRange = $("#dateRange").val();
                 }
             },
             dom: '<"datatable-header"fl><"datatable-scroll"t><"datatable-footer"ip>',
@@ -86,7 +86,7 @@ $(document).ready(function () {
             url: reportUrl + '/create',
             type: 'GET',
             dataType: 'json',
-            data: {user_id, device_id, node_id, machine_id, date},
+            data: {user_id, device_id, node_id, machine_id, dateRange},
             complete: function (response) {
                 let result = response.responseJSON;
                 if (result.statusCode) {
@@ -117,7 +117,7 @@ $(document).ready(function () {
         select_shift_day = $("#select_shift").find(":selected").data("shift-day");
         node_id = $("#node_id").val();
         machine_id = $("#machine_id").val();
-        date = $("#date").val();
+        dateRange = $("#dateRange").val();
 
         // Close modal and reload DataTable with a callback
         $(".modal").modal("hide");
@@ -142,7 +142,7 @@ $(document).ready(function () {
         select_shift_day = "";
         node_id = "";
         machine_id = "";
-        date = "";
+        dateRange = "";
 
         // Clear form inputs and trigger change if needed
         $("#user_id").val('').trigger('change');
@@ -150,7 +150,7 @@ $(document).ready(function () {
         $("#select_shift").val('').trigger('change');
         $("#node_id").val('').trigger('change');
         $("#machine_id").val('').trigger('change');
-        $("#date").val('');
+        $("#dateRange").val('');
 
         // Close modal and reload DataTable with a callback
         $(".modal").modal("hide");
@@ -222,8 +222,28 @@ $(document).ready(function () {
         });
     });
 
-});
+    $(document).on("click", "#export-machine-log-report-button", async function(e) {
+        e.preventDefault();
+        await loaderToggle(1);
+        
+        var form = $("#export-machine-log-report-form");
+    
+        // Set form field values (ensure these variables are defined)
+        form.find("[name='user_id']").val(user_id);
+        form.find("[name='device_id']").val(device_id);
+        form.find("[name='select_shift']").val(select_shift);
+        form.find("[name='select_shift_day']").val(select_shift_day);
+        form.find("[name='node_id']").val(node_id);
+        form.find("[name='machine_id']").val(machine_id);
+        form.find("[name='dateRange']").val(dateRange);
+    
+        // Submit the form
+        form.submit();
+        console.log("Form is submitting...");
+        await loaderToggle(0);
+    });
 
+});
 
 function sw() {
     var switches = Array.prototype.slice.call(document.querySelectorAll('.switchery'));
