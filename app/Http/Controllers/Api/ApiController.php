@@ -225,7 +225,7 @@ class ApiController extends Controller
         $machineStatusIds = MachineStatus::whereDate('shift_date', $shiftDate)
                             ->where('shift_start_datetime', $shiftStartDatetime)
                             ->where('shift_end_datetime', $shiftEndDatetime)
-                            ->pluck('id');
+                            ->pluck('id')->toArray();
         
         // MachineStatus::whereIn('id', $machineStatusId)->update([
         //     'active_machine' => 0,
