@@ -221,14 +221,15 @@ class ApiController extends Controller
             throw new Exception("Shift Start Date and Shift End Date are empty: devive Name: {$reqData['Did']}, device datetime: {$deviceDatetime}");
         }
 
-        $machineStatusId = MachineStatus::whereDate('shift_date', $shiftDate)
+        $insertedMachineIds = [];
+        $machineStatusIds = MachineStatus::whereDate('shift_date', $shiftDate)
                             ->where('shift_start_datetime', $shiftStartDatetime)
                             ->where('shift_end_datetime', $shiftEndDatetime)
                             ->pluck('id');
         
-        MachineStatus::whereIn('id', $machineStatusId)->update([
-            'active_machine' => 0,
-        ]);
+        // MachineStatus::whereIn('id', $machineStatusId)->update([
+        //     'active_machine' => 0,
+        // ]);
 
         if (isset($reqData['Nd']) && is_array($reqData['Nd']) && count($reqData['Nd']) > 0) {
 
@@ -406,6 +407,8 @@ class ApiController extends Controller
                                 PickCalculation::where('id', $pickResponse['id'])->update($pickData);
                             }
                         }
+
+                        $insertedMachineIds[] = $machineStatusTable->id;
                         
                         //-----------------------------------------------------------------
                         $machineStatusData['machine_status_id'] = $machineStatusTable->id;
@@ -433,6 +436,15 @@ class ApiController extends Controller
                     }
                 }
             }
+        }
+
+        if (count($insertedMachineIds) > 0) {
+            $inactivatedMachineIds = array_diff($insertedMachineIds, $machineStatusIds);
+            MachineStatus::whereIn('id', $inactivatedMachineIds)->update([
+                    'active_machine' => 0,
+                ]);
+
+            Log::info("These machine status ids are inactivated: " . implode(',', $inactivatedMachineIds));
         }
         
         Log::info("Processing data Total Node -> {$totalNode} ::: " . json_encode($reqData));

@@ -49,13 +49,19 @@ class ReportController extends Controller
             $start = $request->start;
             $length = $request->length;
 
+            $searchValue = isset($request->search['value']) ? $request->search['value'] : '';
+
+            $orderColumn = isset($request->order[0]['column']) ? (int) $request->order[0]['column'] : 0;
+            $orderDirection = isset($request->order[0]['dir']) ? $request->order[0]['dir'] : 'ASC';
+            $orderColumnSort = ['id', '', '', 'total_running', 'total_time', 'efficiency', '', 'device_datetime', 'machine_datetime', 'last_stop', 'last_running', 'no_of_stoppage', 'status', 'speed', ''];
+
             $fromDate = Carbon::now()->subDay(); // Previous day
             $toDate = Carbon::now(); // Current time
 
             if ($dateRange) {
                 $dateArray = explode(" - ", $dateRange);
-                $fromDate = Carbon::parse(trim($dateArray[0]))->format('Y-m-d H:i:s');
-                $toDate = Carbon::parse(trim($dateArray[1]))->format('Y-m-d H:i:s');
+                $fromDate = Carbon::createFromFormat('m/d/Y h:i A', trim($dateArray[0]))->format('Y-m-d H:i:s');
+                $toDate = Carbon::createFromFormat('m/d/Y h:i A', trim($dateArray[1]))->format('Y-m-d H:i:s');
             }
 
             // Extract shift times
@@ -72,36 +78,43 @@ class ReportController extends Controller
 
             $query = TempMachineStatus::query()
                 ->when(!empty($user_id), function ($query) use ($user_id) {
-                    return $query->whereHas('machine.node.device.user', function($q) use ($user_id) {
+                    return $query->whereHas('machine.node.device.user', function ($q) use ($user_id) {
                         $q->where('user_id', $user_id);
                     });
                 })
+                ->when(!empty($searchValue), function ($query) use ($searchValue) {
+                    return $query->whereHas('machine', function ($q) use ($searchValue) {
+                        $q->where('name', 'like', '%' . $searchValue . '%'); // Fixed extra space
+                    })->orWhereHas('machine.node.device', function ($q) use ($searchValue) {
+                        $q->where('name', 'like', '%' . $searchValue . '%'); // Fixed incorrect reference
+                    });
+                })
                 ->when(!empty($device_id), function ($query) use ($device_id) {
-                    return $query->whereHas('machine.node.device', function($q) use ($device_id) {
+                    return $query->whereHas('machine.node.device', function ($q) use ($device_id) {
                         $q->where('device_id', $device_id);
                     });
                 })
                 ->when(!empty($node_id), function ($query) use ($node_id) {
-                    return $query->whereHas('machine.node', function($q) use ($node_id) {
+                    return $query->whereHas('machine.node', function ($q) use ($node_id) {
                         $q->where('node_id', $node_id);
                     });
                 })
                 ->when(!empty($machine_id), function ($query) use ($machine_id) {
-                    return $query->whereHas('machine', function($q) use ($machine_id) {
+                    return $query->whereHas('machine', function ($q) use ($machine_id) {
                         $q->where('machine_id', $machine_id);
                     });
                 });
                 
             if ($dateRange) {
-                $startDate = Carbon::parse($fromDate);
-                $endDate = Carbon::parse($toDate);
+                $startDate = date('Y-m-d', strtotime($fromDate));
+                $endDate = date('Y-m-d', strtotime($toDate));
 
                 if ($startTime && $endTime) {
                     // If shift crosses midnight, adjust end date
-                    $modifyEndDate = ($endDay == '2') ? $startDate->addDay() : $startDate;
+                    $modifyEndDate = ($endDay == '2') ? date('Y-m-d', strtotime("{$startDate} +1 day")) : $startDate;
 
-                    $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate->format('Y-m-d')} {$startTime}");
-                    $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate->format('Y-m-d')} {$endTime}");
+                    $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate} {$startTime}");
+                    $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate} {$endTime}");
 
                     $query->whereBetween('machine_datetime', [$start_date, $end_date]);
                 } else {
@@ -114,7 +127,15 @@ class ReportController extends Controller
             }
 
             $totalRecord = $query->count();
-            $data = $query->orderBy('id','ASC');
+
+            if (!empty($orderColumn) && !empty($orderDirection) && array_key_exists($orderColumn, $orderColumnSort) && !empty($orderColumnSort[$orderColumn])) {
+                $data = $query->orderBy($orderColumnSort[$orderColumn], $orderDirection);
+            } else {
+                $data = $query->orderBy('id', 'ASC');
+            }
+
+            // dd($startDate);
+            // dd($query->toSql(), $query->getBindings());
 
             $i = $start;
             return DataTables::of($data)

@@ -105,8 +105,8 @@ class ClearLogController extends Controller
 
                 if ($dateRange) {
                     $dateArray = explode(" - ", $dateRange);
-                    $fromDate = Carbon::parse(trim($dateArray[0]))->format('Y-m-d H:i:s');
-                    $toDate = Carbon::parse(trim($dateArray[1]))->format('Y-m-d H:i:s');
+                    $fromDate = Carbon::createFromFormat('m/d/Y h:i A', trim($dateArray[0]))->format('Y-m-d H:i:s');
+                    $toDate = Carbon::createFromFormat('m/d/Y h:i A', trim($dateArray[1]))->format('Y-m-d H:i:s');
                 }
 
                 // Extract shift times
@@ -125,15 +125,15 @@ class ClearLogController extends Controller
                 $query = MachineStatus::whereIn('machine_id', $machineIds);
 
                 if ($dateRange) {
-                    $startDate = Carbon::parse($fromDate);
-                    $endDate = Carbon::parse($toDate);
+                    $startDate = date('Y-m-d', strtotime($fromDate));
+                    $endDate = date('Y-m-d', strtotime($toDate));
     
                     if ($startTime && $endTime) {
                         // If shift crosses midnight, adjust end date
-                        $modifyEndDate = ($endDay == '2') ? $startDate->addDay() : $startDate;
+                        $modifyEndDate = ($endDay == '2') ? date('Y-m-d', strtotime("{$startDate} +1 day")) : $startDate;
     
-                        $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate->format('Y-m-d')} {$startTime}");
-                        $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate->format('Y-m-d')} {$endTime}");
+                        $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate} {$startTime}");
+                        $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate} {$endTime}");
     
                         $query->whereBetween('machine_datetime', [$start_date, $end_date]);
                     } else {
@@ -146,6 +146,9 @@ class ClearLogController extends Controller
                 }
 
                 $machineStatusIds = $query->pluck('id')->toArray();
+
+                // dd($startDate);
+                // dd($query->toSql(), $query->getBindings());
 
                 // Delete related records in proper order
                 PickCalculation::whereIn('machine_status_id', $machineStatusIds)->delete();
