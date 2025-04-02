@@ -27,7 +27,7 @@ $(document).ready(function () {
                     d.user_id = $("#user_id").val();
                     d.device_id = $("#device_id").val();
                     d.select_shift = $("#select_shift").val();
-                    d.select_shift_day = $("#select_shift_day").val();
+                    d.select_shift_day = $("#select_shift").find(":selected").data("shift-day");
                     d.node_id = $("#node_id").val();
                     d.machine_id = $("#machine_id").val();
                     d.dateRange = $("#dateRange").val();
