@@ -116,14 +116,14 @@ class ReportController extends Controller
                     $start_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$startDate} {$startTime}");
                     $end_date = Carbon::createFromFormat('Y-m-d H:i:s', "{$modifyEndDate} {$endTime}");
 
-                    $query->whereBetween('machine_datetime', [$start_date, $end_date]);
+                    $query->whereBetween('device_datetime', [$start_date, $end_date]);
                 } else {
                     // Default full-day filter
-                    $query->whereBetween('machine_datetime', [$fromDate, $toDate]);
+                    $query->whereBetween('device_datetime', [$fromDate, $toDate]);
                 }
             } elseif ($startTime && $endTime) {
                 // Filter only by time when no date is selected
-                $query->whereRaw("TIME(machine_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
+                $query->whereRaw("TIME(device_datetime) BETWEEN ? AND ?", [$startTime, $endTime]);
             }
 
             $totalRecord = $query->count();
