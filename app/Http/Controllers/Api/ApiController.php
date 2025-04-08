@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use Exception;
 use Carbon\Carbon;
+use App\Jobs\Report;
 use App\Models\User;
 use App\Models\Device;
+use App\Jobs\SendReport;
 use App\Models\MachineLog;
 use App\Models\NodeMaster;
 use App\Jobs\ProcessPacket;
 use App\Jobs\GenerateReport;
-use App\Jobs\SendReportMail;
 use Illuminate\Http\Request;
 use App\Models\MachineMaster;
 use App\Models\MachineStatus;
@@ -64,19 +65,63 @@ class ApiController extends Controller
         }
     }
 
-    public function sendReport()
+    public function report($type)
     {
+        // $this->generateMachineStopReport('daily', 'table', 9);
+        // die;
+
+        if (empty($type)) {
+            Log::alert("Report type not specified.");
+            return response()->json(['status' => false, 'message' => "Report type not specified", 400]);
+        }
+
+        $reportArray = [
+            'machine_status', 'machine_stop',
+        ];
+        if (!in_array($type, $reportArray)) {
+            Log::alert("Invalid report type");
+            return response()->json(['status' => false, 'message' => "Invalid report type", 400]);
+        }
+
         $reportType = env('REPORT_TYPE', 'weekly');
         $reportFormat = env('REPORT_FORMAT', 'table');
 
-        GenerateReport::dispatch($reportType, $reportFormat);
-        return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report sent to the user with details.'], 200);
+        Report::dispatch($type, $reportType, $reportFormat);
+        return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report generate and sent to the user with details.'], 200);
     }
 
-    public function generateReport($filter, $format, $userId)
+    public function generateReport(Request $request)
     {
-        SendReportMail::dispatch($filter, $format, $userId);
-        return response()->json(['status' => true, 'message' => 'Generate report sent on user Email and Whatsapp.'], 200);
+        $type = $request->type;
+        $userId = $request->user_id;
+        $reportType = $request->report_type;
+        $reportFormat = $request->report_format;
+
+        if (empty($type) || empty($userId) || empty($reportType) || empty($reportFormat)) {
+            Log::alert("Required fields not passed, report generation failed [payload: {json_encode($request->all())}]");
+            return response()->json(['status' => false, 'message' => "Required fields not passed!"], 400);
+        }
+
+        GenerateReport::dispatch($type, $userId, $reportType, $reportFormat);
+        return response()->json(['status' => true, 'message' => 'Generate reports.'], 200);
+    }
+
+    public function sendReport(Request $request)
+    {
+        $userId = $request->userId;
+        $filter = $request->filter;
+        $previousDay = $request->previousDay;
+        $currentDay = $request->currentDay;
+        $emailSubjectLabel = $request->emailSubjectLabel;
+        $pdfFilePath = $request->pdfFilePath;
+
+        if (empty($userId) || empty($filter) || empty($previousDay) || empty($currentDay) || empty($emailSubjectLabel) || empty($pdfFilePath)) {
+            Log::alert("Required fields not passed, report sned failed [payload: {json_encode($request->all())}]");
+            return response()->json(['status' => false, 'message' => "Required fields not passed!"], 400);
+        }
+
+        SendReport::dispatch($userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
+        return response()->json(['status' => true, 'message' => 'Send reports.'], 200);
     }
 
     public function runCommand()
@@ -817,6 +862,183 @@ class ApiController extends Controller
 
     private function getValue($data, $index, $key, $default = 0) {
         return isset($data[$index]) ? $data[$index]->$key : $default;
+    }
+
+    public function generateMachineStopReport($filter, $format, $userId)
+    {
+        $currentLabel = '';
+        $emailSubjectLabel = '';
+        $currentDay = '';
+
+        $userDetail = User::findOrFail($userId);
+        
+        $query = TempMachineStatus::query()
+            ->selectRaw("
+                users.id AS user_id,
+                devices.name AS device_name,
+                machine_master.name AS machine_name,
+                temp_machine_status.shift_name AS shift_name,
+                temp_machine_status.shift_date AS shift_date,
+                DATE_FORMAT(MIN(temp_machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
+                DATE_FORMAT(MAX(temp_machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
+                temp_machine_status.no_of_stoppage AS stoppage,
+                temp_machine_status.machine_id AS machine_id,
+                MIN(temp_machine_status.last_stop) AS first_stopage,
+                MAX(temp_machine_status.last_stop) AS last_stopage,
+                COUNT(temp_machine_status.id) AS total_record,
+                MIN(temp_machine_status.machine_datetime) AS first_machine_datetime,
+                MAX(temp_machine_status.machine_datetime) AS last_machine_datetime,
+                MIN(temp_machine_status.device_datetime) AS first_device_datetime,
+                MAX(temp_machine_status.device_datetime) AS last_device_datetime
+            ")
+            ->join('machine_master', 'temp_machine_status.machine_id', '=', 'machine_master.id')
+            ->join('node_master', 'machine_master.node_id', '=', 'node_master.id')
+            ->join('devices', 'node_master.device_id', '=', 'devices.id')
+            ->join('users', 'devices.user_id', '=', 'users.id')
+            ->where('users.id', $userId)
+            ->where('temp_machine_status.status', 0)
+            ->groupBy(
+                'users.id',
+                'devices.name',
+                'node_master.name',
+                'machine_master.name',
+                'temp_machine_status.machine_id',
+                'temp_machine_status.shift_name',
+                'temp_machine_status.shift_date',
+                'temp_machine_status.no_of_stoppage'
+            )
+            ->orderBy('temp_machine_status.machine_id')
+            ->orderBy('temp_machine_status.shift_name')
+            ->orderBy('temp_machine_status.no_of_stoppage');
+
+        switch ($filter) {
+            case 'daily':
+                // $query->whereDate('temp_machine_status.created_at', Carbon::today());
+                $query->whereDate('temp_machine_status.created_at', '2025-04-01');
+    
+                $currentLabel = "Today " . Carbon::today()->format('d M Y');
+                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
+                $currentDay = Carbon::today()->format('d M Y');
+                break;
+    
+            case 'weekly':
+                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $currentLabel = "Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+    
+            case 'monthly':
+                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+    
+                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
+                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $currentDay = Carbon::now()->format('M Y');
+                break;
+    
+            case 'yearly':
+                $query->whereYear('temp_machine_status.created_at', Carbon::now()->year);
+    
+                $currentLabel = "Current Year " . Carbon::now()->year;
+                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
+                $currentDay = Carbon::now()->year;
+                break;
+    
+            default:
+                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+        }
+
+        $current = $query->get();
+        $firstRec = $query->first();
+        $totalLoop = count($current);
+
+        if ($totalLoop <= 0) {
+            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.']);
+        }
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            switch ($filter) {
+                case 'daily':
+                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
+                    break;
+        
+                case 'weekly':
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+        
+                case 'monthly':
+                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
+                    break;
+        
+                case 'yearly':
+                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
+                    break;
+        
+                default:
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+            }
+        }
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            $reportData = $this->generateMachineStopReportTable($current);
+            $htmlFile = view('report.machine_stop.table', compact('reportData', 'filter', 'firstRec', 'currentDay', 'userDetail'))->render();
+
+            echo $htmlFile;die;
+        }
+        else {
+            // $reportData = $this->generateMachineStopReportChart($current);
+            // $htmlFile = view('report.machine_stop.chart', compact('reportData', 'currentLabel'))->render();
+        }
+
+        return true;
+    }
+
+    protected function generateMachineStopReportTable($result)
+    {
+        $groupedData = [];
+
+        foreach ($result as $item) {
+            $machineName = $item->machine_name;
+            $shiftTime = "{$item->shift_name}: {$item->shift_start} - {$item->shift_end}";
+            $stopCount = $item->stoppage;
+
+            // Ensure the machine and shift group exist
+            if (!isset($groupedData[$machineName][$shiftTime])) {
+                $groupedData[$machineName][$shiftTime] = [
+                    'records' => [],
+                    'total_duration_min' => 0
+                ];
+            }
+
+            $lastMachine = Carbon::parse($item->last_machine_datetime);
+            $lastDevice = Carbon::parse($item->last_device_datetime);
+            $durationMin = $lastMachine->diffInMinutes($lastDevice);
+
+            $groupedData[$machineName][$shiftTime]['records'][] = [
+                'stop_count' => $stopCount,
+                'stop_time' => date('h:iA', strtotime($item->last_machine_datetime)) . ' – ' . date('h:iA', strtotime($item->last_device_datetime)),
+                'duration_min' => $durationMin,
+            ];
+
+            $groupedData[$machineName][$shiftTime]['total_duration_min'] += $durationMin;
+        }
+
+        return $groupedData;
     }
     /** -----------------------------------------------------------------QUEUE function----------------------------------------------------------------- */
 }
