@@ -12,13 +12,18 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\TempMachineStatus;
 
 class GenerateReport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected $type;
+    protected $userId;
     protected $reportType;
     protected $reportFormat;
+
     public $timeout = 3600;
     public $tries = 3;
 
@@ -27,9 +32,11 @@ class GenerateReport implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(string $reportType, string $reportFormat)
+    public function __construct(string $type, int $userId, string $reportType, string $reportFormat)
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
+        $this->type = $type;
+        $this->userId = $userId;
         $this->reportType = $reportType;
         $this->reportFormat = $reportFormat;
     }
@@ -42,56 +49,596 @@ class GenerateReport implements ShouldQueue
     public function handle()
     {
         try {
-            $this->sendReports($this->reportType, $this->reportFormat);
-            Log::info("Report sent successfully for type: {$this->reportType}");
+            if ($this->type == 'machine_status') {
+                $this->generateMachineStatusReport($this->reportType, $this->reportFormat, $this->userId);
+                Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, report_type: {$this->reportType}, report_format: {$this->reportFormat}");
+            }
+
+            if ($this->type == 'machine_stop') {
+                $this->generateMachineStopReport($this->reportType, $this->reportFormat, $this->userId);
+                Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, report_type: {$this->reportType}, report_format: {$this->reportFormat}");
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Report generated successfully.'], 200);
         } catch (Exception $e) {
             Log::error("Report sending failed: {$e->getMessage()}");
             throw new Exception($e->getMessage());
         }
     }
 
-    protected function sendReports(string $filter, string $format)
+    public function generateMachineStatusReport($filter, $format, $userId)
     {
-        $query = MachineStatus::with('machine.node.device.user');
+        $previousLabel = '';
+        $currentLabel = '';
+        $emailSubjectLabel = '';
+        $previousDay = '';
+        $currentDay = '';
+
+        $userDetail = User::findOrFail($userId);
+        
+        $queryPrevious = MachineStatus::query()
+            ->selectRaw("
+                users.id AS user_id, devices.name AS device_name, node_master.name AS node_name, machine_master.name AS machine_name, machine_status.shift_name AS shift_name,
+                DATE_FORMAT(MIN(machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
+                DATE_FORMAT(MAX(machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
+                SUM(machine_status.speed) AS speed,
+                SUM(machine_status.efficiency) AS efficiency,
+                SUM(machine_status.no_of_stoppage) AS stoppage,
+                SUM(pick_calculations.shift_pick) AS pick,
+                COUNT(users.id) AS total_record
+            ")
+            ->join('machine_master', 'machine_status.machine_id', '=', 'machine_master.id')
+            ->join('node_master', 'machine_master.node_id', '=', 'node_master.id')
+            ->join('devices', 'node_master.device_id', '=', 'devices.id')
+            ->join('users', 'devices.user_id', '=', 'users.id')
+            ->join('pick_calculations', 'machine_status.id', '=', 'pick_calculations.machine_status_id')
+            ->where('users.id', $userId)
+            ->groupBy('users.id', 'devices.name', 'node_master.name', 'machine_master.name', 'machine_status.machine_id', 'machine_status.shift_name');
+
+        $queryCurrent = clone $queryPrevious;
 
         switch ($filter) {
             case 'daily':
-                // $query->whereDate('machine_status.created_at', '2025-01-28');
-                $query->whereDate('machine_status.created_at', Carbon::today());
+                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
+                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
+    
+                $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
+                $currentLabel = "Today " . Carbon::today()->format('d M Y');
+                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
+                $previousDay = Carbon::yesterday()->format('d M Y');
+                $currentDay = Carbon::today()->format('d M Y');
                 break;
+    
             case 'weekly':
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
                 break;
+    
             case 'monthly':
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+    
+                $previousLabel = "Last Month " . Carbon::now()->subMonth()->format('M Y');
+                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
+                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $previousDay = Carbon::now()->subMonth()->format('M Y');
+                $currentDay = Carbon::now()->format('M Y');
                 break;
+    
             case 'yearly':
-                $query->whereYear('machine_status.created_at', Carbon::now()->year);
+                $queryPrevious->whereYear('machine_status.created_at', Carbon::now()->subYear()->year);
+                $queryCurrent->whereYear('machine_status.created_at', Carbon::now()->year);
+    
+                $previousLabel = "Last Year " . Carbon::now()->subYear()->year;
+                $currentLabel = "Current Year " . Carbon::now()->year;
+                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
+                $previousDay = Carbon::now()->subYear()->year;
+                $currentDay = Carbon::now()->year;
                 break;
+    
             default:
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
                 break;
         }
 
-        $userIds = $query->get()->pluck('machine.node.device.user.id')->unique();
-        $users = User::whereIn('id', $userIds)->get();
+        $previous = $queryPrevious->get();
+        $current = $queryCurrent->get();
 
-        if ($users->isEmpty()) {
-            Log::info("No data found for report type: {$filter}");
-            return;
+        $firstRec = $queryPrevious->first();
+        if (!$firstRec) {
+            $firstRec = $queryCurrent->first();
         }
 
-        Log::info("users: {$users}");
-
-        foreach ($users as $user) {
-            $userId = $user->id;
-            $this->generateReportApi($filter, $format, $userId);
+        $totalLoop = max(count($previous), count($current));
+        if ($totalLoop <= 0) {
+            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            switch ($filter) {
+                case 'daily':
+                    $previousDay = Carbon::parse($previousDay)->format('d/m/Y');
+                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
+                    break;
+        
+                case 'weekly':
+                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+        
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+        
+                case 'monthly':
+                    $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthPrevious = Carbon::parse($previousDay)->endOfMonth()->format('d/m/Y');
+                    $previousDay = $firstDayOfMonthPrevious . " - " . $lastDayOfMonthPrevious;
+        
+                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
+                    break;
+        
+                case 'yearly':
+                    $firstDayOfYearPrevious = Carbon::parse($previousDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearPrevious = Carbon::parse($previousDay)->endOfYear()->format('d/m/Y');
+                    $previousDay = $firstDayOfYearPrevious . " - " . $lastDayOfYearPrevious;
+        
+                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
+                    break;
+        
+                default:
+                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+        
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+            }
+        }
+
+        $filter = ($filter == 'daily') ? 'day' : $filter;
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            $reportData = $this->generateMachineStatusReportTable($previous, $current, $totalLoop);
+            $htmlFile = view('report.machine_status.table', compact('reportData', 'filter', 'firstRec', 'previousDay', 'currentDay', 'userDetail'))->render();
+        }
+        else {
+            $reportData = $this->generateMachineStatusReportChart($filter, $previous, $current, $totalLoop);
+            $htmlFile = view('report.machine_status.chart', compact('reportData', 'previousLabel', 'currentLabel'))->render();
+        }
+
+        try {
+            // Generate HTML content
+            $fileName = time() . "-{$filter}-{$format}-machine_status-report-$userId.html";
+            $filePath = public_path("reports/html/$fileName");
+    
+            // Save HTML file locally
+            if (!file_put_contents($filePath, $htmlFile)) {
+                throw new Exception("Failed to save HTML file locally at $filePath.");
+            }
+
+            // Generate HTML file URL
+            $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
+
+            if ($format == env('REPORT_FORMAT', 'table')) {
+                $pdfFilePath = $this->generateTablePdf($filePath);
+            }
+            else {
+                $pdfFilePath = $this->generateChartPdf($filePath, $htmlFileUrl);
+            }
+    
+            Log::info("HTML File URL: {$htmlFileUrl}");
+            Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
+
+            $this->sendReportApi($userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
+
+        } catch (Exception $e) {
+            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
+        }
+
+        return true;
     }
 
-    protected function generateReportApi($filter, $format, $userId)
+    protected function generateMachineStatusReportTable($previous, $current, $totalLoop)
     {
-        $url = env('GENERATE_REPORT_BASE_URL', '') . "{$filter}/{$format}/{$userId}";
+        $groupedData = [];
+        for ($i = 0; $i < $totalLoop; $i++) {
+
+            $nodeName = ($previous[$i]->node_name ?? $current[$i]->node_name);
+            $shiftName = str_replace(" ", '', ($previous[$i]->shift_name ?? $current[$i]->shift_name));
+            $preMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Last)';
+            $curMachineName = ($previous[$i]->machine_name ?? $current[$i]->machine_name) . ' (Current)';
+
+            $groupedData[$nodeName]['total_record'][$shiftName] = ($previous[$i]->total_record ?? $current[$i]->total_record);
+            $groupedData[$nodeName][$shiftName] = ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end);
+            
+            $groupedData[$nodeName]['efficiency'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'efficiency'), 2));
+            $groupedData[$nodeName]['efficiency'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'efficiency'), 2));
+
+            $groupedData[$nodeName]['speed'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'speed'), 2));
+            $groupedData[$nodeName]['speed'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'speed'), 2));
+            
+            $groupedData[$nodeName]['pick'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'pick'), 2));
+            $groupedData[$nodeName]['pick'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'pick'), 2));
+            
+            $groupedData[$nodeName]['stoppage'][$shiftName][$preMachineName] = (round((float)$this->getValue($previous, $i, 'stoppage'), 2));
+            $groupedData[$nodeName]['stoppage'][$shiftName][$curMachineName] = (round((float)$this->getValue($current, $i, 'stoppage'), 2));
+        }
+
+        return $groupedData;        
+    }
+
+    protected function generateMachineStatusReportChart($filter, $previous, $current, $totalLoop)
+    {
+        $groupedData = [];
+        for ($i = 0; $i < $totalLoop; $i++) {
+            
+            $node = $previous[$i]->node_name ?? $current[$i]->node_name;
+            $machineDisplayName = $previous[$i]->machine_name ?? $current[$i]->machine_name;
+            $shiftName = str_replace(" ", '', ($previous[$i]->shift_name ?? $current[$i]->shift_name));
+        
+            // Build metrics with previous and current values
+            $speed = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'speed'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'speed'), 2),
+            ];
+            $efficiency = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'efficiency'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'efficiency'), 2),
+            ];
+            $no_of_stoppage = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'no_of_stoppage'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'no_of_stoppage'), 2),
+            ];
+            $shift_pick = [
+                'label' => $machineDisplayName,
+                'previous' => round((float)$this->getValue($previous, $i, 'shift_pick'), 2),
+                'current' => round((float)$this->getValue($current, $i, 'shift_pick'), 2),
+            ];
+        
+            // Organize the result array
+            $groupedData[$node][$shiftName]['label'] = $node . ' (' . ucwords($filter) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
+            $groupedData[$node][$shiftName]['speed'][] = $speed;
+            $groupedData[$node][$shiftName]['efficiency'][] = $efficiency;
+            $groupedData[$node][$shiftName]['no_of_stoppage'][] = $no_of_stoppage;
+            $groupedData[$node][$shiftName]['shift_pick'][] = $shift_pick;
+        }
+
+        return $groupedData;
+    }
+
+    public function generateMachineStopReport($filter, $format, $userId)
+    {
+        $currentLabel = '';
+        $emailSubjectLabel = '';
+        $currentDay = '';
+
+        $userDetail = User::findOrFail($userId);
+        
+        $query = TempMachineStatus::query()
+            ->selectRaw("
+                users.id AS user_id,
+                devices.name AS device_name,
+                machine_master.name AS machine_name,
+                temp_machine_status.shift_name AS shift_name,
+                temp_machine_status.shift_date AS shift_date,
+                DATE_FORMAT(MIN(temp_machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
+                DATE_FORMAT(MAX(temp_machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
+                temp_machine_status.no_of_stoppage AS stoppage,
+                temp_machine_status.machine_id AS machine_id,
+                MIN(temp_machine_status.last_stop) AS first_stopage,
+                MAX(temp_machine_status.last_stop) AS last_stopage,
+                COUNT(temp_machine_status.id) AS total_record,
+                MIN(temp_machine_status.machine_datetime) AS first_machine_datetime,
+                MAX(temp_machine_status.machine_datetime) AS last_machine_datetime,
+                MIN(temp_machine_status.device_datetime) AS first_device_datetime,
+                MAX(temp_machine_status.device_datetime) AS last_device_datetime
+            ")
+            ->join('machine_master', 'temp_machine_status.machine_id', '=', 'machine_master.id')
+            ->join('node_master', 'machine_master.node_id', '=', 'node_master.id')
+            ->join('devices', 'node_master.device_id', '=', 'devices.id')
+            ->join('users', 'devices.user_id', '=', 'users.id')
+            ->where('users.id', $userId)
+            ->where('temp_machine_status.status', 0)
+            ->groupBy(
+                'users.id',
+                'devices.name',
+                'node_master.name',
+                'machine_master.name',
+                'temp_machine_status.machine_id',
+                'temp_machine_status.shift_name',
+                'temp_machine_status.shift_date',
+                'temp_machine_status.no_of_stoppage'
+            )
+            ->orderBy('temp_machine_status.machine_id')
+            ->orderBy('temp_machine_status.shift_name')
+            ->orderBy('temp_machine_status.no_of_stoppage');
+
+        switch ($filter) {
+            case 'daily':
+                $query->whereDate('temp_machine_status.created_at', Carbon::today());
+                // $query->whereDate('temp_machine_status.created_at', '2025-04-01');
+    
+                $currentLabel = "Today " . Carbon::today()->format('d M Y');
+                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
+                $currentDay = Carbon::today()->format('d M Y');
+                break;
+    
+            case 'weekly':
+                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $currentLabel = "Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+    
+            case 'monthly':
+                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+    
+                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
+                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $currentDay = Carbon::now()->format('M Y');
+                break;
+    
+            case 'yearly':
+                $query->whereYear('temp_machine_status.created_at', Carbon::now()->year);
+    
+                $currentLabel = "Current Year " . Carbon::now()->year;
+                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
+                $currentDay = Carbon::now()->year;
+                break;
+    
+            default:
+                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+    
+                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                break;
+        }
+
+        $current = $query->get();
+        $firstRec = $query->first();
+        $totalLoop = count($current);
+
+        if ($totalLoop <= 0) {
+            return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.']);
+        }
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            switch ($filter) {
+                case 'daily':
+                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
+                    break;
+        
+                case 'weekly':
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+        
+                case 'monthly':
+                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
+                    break;
+        
+                case 'yearly':
+                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
+                    break;
+        
+                default:
+                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
+                    break;
+            }
+        }
+
+        if ($format == env('REPORT_FORMAT', 'table')) {
+            $reportData = $this->generateMachineStopReportTable($current);
+            $htmlFile = view('report.machine_stop.table', compact('reportData', 'filter', 'firstRec', 'currentDay', 'userDetail'))->render();
+        }
+        else {
+            // $reportData = $this->generateMachineStopReportChart($current);
+            // $htmlFile = view('report.machine_stop.chart', compact('reportData', 'currentLabel'))->render();
+        }
+
+        try {
+            // Generate HTML content
+            $fileName = time() . "-{$filter}-{$format}-machine_stop-report-{$userId}.html";
+            $filePath = public_path("reports/html/$fileName");
+    
+            // Save HTML file locally
+            if (!file_put_contents($filePath, $htmlFile)) {
+                throw new Exception("Failed to save HTML file locally at $filePath.");
+            }
+
+            // Generate HTML file URL
+            $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
+
+            if ($format == env('REPORT_FORMAT', 'table')) {
+                $pdfFilePath = $this->generateTablePdf($filePath);
+            }
+            else {
+                $pdfFilePath = $this->generateChartPdf($filePath, $htmlFileUrl);
+            }
+    
+            Log::info("HTML File URL: {$htmlFileUrl}");
+            Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
+
+            $this->sendReportApi($userId, $filter, null, $currentDay, $emailSubjectLabel, $pdfFilePath);
+
+        } catch (Exception $e) {
+            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
+        }
+
+        return true;
+    }
+
+    protected function generateMachineStopReportTable($result)
+    {
+        $groupedData = [];
+
+        foreach ($result as $item) {
+            $machineName = $item->machine_name;
+            $shiftTime = "{$item->shift_name}: {$item->shift_start} - {$item->shift_end}";
+            $stopCount = $item->stoppage;
+
+            // Ensure the machine and shift group exist
+            if (!isset($groupedData[$machineName][$shiftTime])) {
+                $groupedData[$machineName][$shiftTime] = [
+                    'records' => [],
+                    'total_duration_min' => 0
+                ];
+            }
+
+            $lastMachine = Carbon::parse($item->last_machine_datetime);
+            $lastDevice = Carbon::parse($item->last_device_datetime);
+            $durationMin = $lastMachine->diffInMinutes($lastDevice);
+
+            $groupedData[$machineName][$shiftTime]['records'][] = [
+                'stop_count' => $stopCount,
+                'stop_time' => date('h:iA', strtotime($item->last_machine_datetime)) . ' – ' . date('h:iA', strtotime($item->last_device_datetime)),
+                'duration_min' => $durationMin,
+            ];
+
+            $groupedData[$machineName][$shiftTime]['total_duration_min'] += $durationMin;
+        }
+
+        return $groupedData;
+    }
+
+    public function generateTablePdf($filePath)
+    {
+        // Load the HTML file from the 'public' directory
+        $htmlContent = file_get_contents($filePath);
+
+        // Generate PDF
+        $pdf = Pdf::loadHTML($htmlContent)
+            ->setPaper('a4', 'landscape'); // Set to A4 landscape
+
+        // Define the storage path
+        $pdfFileName = "reports/pdf/" . uniqid() . ".pdf";
+        $pdfPath = public_path($pdfFileName);
+
+        // Store PDF in public directory
+        $pdf->save($pdfPath);
+
+        unlink($filePath);
+
+        return $pdfPath;
+    }
+
+    public function generateChartPdf($filePath, $fileUrl)
+    {
+        // Generate PDF using node.js project html-to-pdf
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => env('GENERATE_PDF_URL'),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode(["url" => $fileUrl]),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
+        ));
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        $generatePdfApi = json_decode($response, true);
+
+        // Validate the PDF URL
+        if (empty($generatePdfApi['pdfUrl'])) {
+            throw new Exception("PDF URL not found in the API response.");
+        }
+
+        $pdfFileName = basename($generatePdfApi['pdfUrl']); // Get the last part of the URL
+        $pdfFilePath = public_path("reports/pdf/$pdfFileName");
+
+        // Store the PDF file locally
+        if (!file_put_contents($pdfFilePath, file_get_contents($generatePdfApi['pdfUrl']))) {
+            throw new Exception("Failed to store the generated PDF locally at $pdfFilePath.");
+        }
+
+        // Delete the HTML file using the API
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => env('DELETE_PDF_URL'),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'DELETE',
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_POSTFIELDS => json_encode(["filename" => $pdfFileName]),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json'
+            ),
+        ));
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        $deletePdfApi = json_decode($response, true);
+
+        if ($deletePdfApi['status'] !== 'success' || !unlink($filePath)) {
+            throw new Exception("Failed to delete the HTML file or associated resources.");
+        }
+
+        return $pdfFilePath;
+    }
+
+    private function getValue($data, $index, $key, $default = 0) {
+        return isset($data[$index]) ? $data[$index]->$key : $default;
+    }
+
+
+    protected function sendReportApi($userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath)
+    {
+        $url = env('SEND_REPORT_BASE_URL', '');
+        $data = [
+            'userId' => $userId,
+            'filter' => $filter,
+            'previousDay' => $previousDay,
+            'currentDay' => $currentDay,
+            'emailSubjectLabel' => $emailSubjectLabel,
+            'pdfFilePath' => $pdfFilePath,
+        ];
 
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -103,7 +650,8 @@ class GenerateReport implements ShouldQueue
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($data),
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'Accept: application/json',
@@ -115,9 +663,7 @@ class GenerateReport implements ShouldQueue
         $error = curl_error($curl);
         curl_close($curl);
 
-        Log::info("generateReportApi URL: " . $url);
-        Log::info("generateReportApi Response: " . ($error ?: $response));
-
+        Log::info("sendReportApi URL: {$url}, payload: " . json_encode($data) . ", response: {$response}, error: {$error}");
         return $response;
     }
 }
