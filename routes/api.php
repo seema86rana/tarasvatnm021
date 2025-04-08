@@ -20,7 +20,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::any('packet', [ApiController::class, 'packet'])->name('packet');
-Route::any('send-report', [ApiController::class, 'sendReport'])->name('send.report');
-Route::any('generate-report/{filter}/{format}/{userId}', [ApiController::class, 'generateReport'])->name('generate.report');
 Route::any('run-command', [ApiController::class, 'runCommand'])->name('run.command');
 Route::any('delete-report/{did}', [ApiController::class, 'deleteReport'])->name('delete.report');
+
+
+Route::group(['prefix' => 'machine'], function () {
+    Route::any('report/{type}', [ApiController::class, 'report'])->name('machine.report');
+    Route::post('generate-report', [ApiController::class, 'generateReport'])->name('machine.generate_report');
+    Route::post('send-report', [ApiController::class, 'sendReport'])->name('machine.send_report');
+});
+
+// http://127.0.0.1:8000/api/machine/report/machine_status
+// http://127.0.0.1:8000/api/machine/report/machine_stop
