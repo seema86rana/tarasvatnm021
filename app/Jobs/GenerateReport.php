@@ -50,12 +50,12 @@ class GenerateReport implements ShouldQueue
     {
         try {
             if ($this->type == 'machine_status') {
-                $this->generateMachineStatusReport($this->reportType, $this->reportFormat, $this->userId);
+                $this->generateMachineStatusReport($this->type, $this->reportType, $this->reportFormat, $this->userId);
                 Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, report_type: {$this->reportType}, report_format: {$this->reportFormat}");
             }
 
             if ($this->type == 'machine_stop') {
-                $this->generateMachineStopReport($this->reportType, $this->reportFormat, $this->userId);
+                $this->generateMachineStopReport($this->type, $this->reportType, $this->reportFormat, $this->userId);
                 Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, report_type: {$this->reportType}, report_format: {$this->reportFormat}");
             }
             
@@ -66,7 +66,7 @@ class GenerateReport implements ShouldQueue
         }
     }
 
-    public function generateMachineStatusReport($filter, $format, $userId)
+    public function generateMachineStatusReport($type, $filter, $format, $userId)
     {
         $previousLabel = '';
         $currentLabel = '';
@@ -99,6 +99,9 @@ class GenerateReport implements ShouldQueue
 
         switch ($filter) {
             case 'daily':
+                // $queryPrevious->whereDate('machine_status.created_at', '2025-04-01');
+                // $queryCurrent->whereDate('machine_status.created_at', '2025-04-02');
+
                 $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
                 $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
     
@@ -164,6 +167,7 @@ class GenerateReport implements ShouldQueue
 
         $totalLoop = max(count($previous), count($current));
         if ($totalLoop <= 0) {
+            Log::info("No report found, or the report data has been deleted.");
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
 
@@ -250,7 +254,7 @@ class GenerateReport implements ShouldQueue
             Log::info("HTML File URL: {$htmlFileUrl}");
             Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
 
-            $this->sendReportApi($userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
+            $this->sendReportApi($type, $userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
 
         } catch (Exception $e) {
             Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
@@ -331,7 +335,7 @@ class GenerateReport implements ShouldQueue
         return $groupedData;
     }
 
-    public function generateMachineStopReport($filter, $format, $userId)
+    public function generateMachineStopReport($type, $filter, $format, $userId)
     {
         $currentLabel = '';
         $emailSubjectLabel = '';
@@ -493,7 +497,7 @@ class GenerateReport implements ShouldQueue
             Log::info("HTML File URL: {$htmlFileUrl}");
             Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
 
-            $this->sendReportApi($userId, $filter, null, $currentDay, $emailSubjectLabel, $pdfFilePath);
+            $this->sendReportApi($type, $userId, $filter, null, $currentDay, $emailSubjectLabel, $pdfFilePath);
 
         } catch (Exception $e) {
             Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
@@ -628,10 +632,11 @@ class GenerateReport implements ShouldQueue
     }
 
 
-    protected function sendReportApi($userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath)
+    protected function sendReportApi($type, $userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath)
     {
         $url = env('SEND_REPORT_BASE_URL', '');
         $data = [
+            'type' => $type,
             'userId' => $userId,
             'filter' => $filter,
             'previousDay' => $previousDay,

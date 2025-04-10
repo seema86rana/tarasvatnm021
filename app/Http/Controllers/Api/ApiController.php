@@ -98,7 +98,7 @@ class ApiController extends Controller
         $reportFormat = $request->report_format;
 
         if (empty($type) || empty($userId) || empty($reportType) || empty($reportFormat)) {
-            Log::alert("Required fields not passed, report generation failed [payload: {json_encode($request->all())}]");
+            Log::alert("Required fields not passed, report generation failed [payload: " . json_encode($request->all()) . "]");
             return response()->json(['status' => false, 'message' => "Required fields not passed!"], 400);
         }
 
@@ -108,19 +108,20 @@ class ApiController extends Controller
 
     public function sendReport(Request $request)
     {
+        $type = $request->type;
         $userId = $request->userId;
         $filter = $request->filter;
-        $previousDay = $request->previousDay;
+        $previousDay = $request->previousDay ?? null;
         $currentDay = $request->currentDay;
         $emailSubjectLabel = $request->emailSubjectLabel;
         $pdfFilePath = $request->pdfFilePath;
 
-        if (empty($userId) || empty($filter) || empty($previousDay) || empty($currentDay) || empty($emailSubjectLabel) || empty($pdfFilePath)) {
-            Log::alert("Required fields not passed, report sned failed [payload: {json_encode($request->all())}]");
+        if (empty($userId) || empty($filter) || empty($type) || empty($pdfFilePath)) {
+            Log::alert("Required fields not passed, report sned failed [payload: " . json_encode($request->all()) . "]");
             return response()->json(['status' => false, 'message' => "Required fields not passed!"], 400);
         }
 
-        SendReport::dispatch($userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
+        SendReport::dispatch($type, $userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
         return response()->json(['status' => true, 'message' => 'Send reports.'], 200);
     }
 
@@ -913,8 +914,8 @@ class ApiController extends Controller
 
         switch ($filter) {
             case 'daily':
-                // $query->whereDate('temp_machine_status.created_at', Carbon::today());
-                $query->whereDate('temp_machine_status.created_at', '2025-04-01');
+                $query->whereDate('temp_machine_status.created_at', Carbon::today());
+                // $query->whereDate('temp_machine_status.created_at', '2025-04-01');
     
                 $currentLabel = "Today " . Carbon::today()->format('d M Y');
                 $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
@@ -998,7 +999,8 @@ class ApiController extends Controller
             $reportData = $this->generateMachineStopReportTable($current);
             $htmlFile = view('report.machine_stop.table', compact('reportData', 'filter', 'firstRec', 'currentDay', 'userDetail'))->render();
 
-            echo $htmlFile;die;
+            echo $htmlFile;
+            die;
         }
         else {
             // $reportData = $this->generateMachineStopReportChart($current);

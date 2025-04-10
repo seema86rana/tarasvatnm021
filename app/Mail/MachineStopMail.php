@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class ReportMail extends Mailable
+class MachineStopMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -40,9 +40,9 @@ class ReportMail extends Mailable
         $currentDay = str_replace(" - ", "_to_", $currentDay);
         
         return $this->subject($this->subject)
-                    ->view('emails.report')
+                    ->view('emails.report.machine_stop')
                     ->attach($this->filePath, [
-                        'as' => "Machine_Performance_Report{$userId}_{$currentDay}.pdf",
+                        'as' => "Machine_Stop_Report{$userId}_{$currentDay}.pdf",
                         'mime' => 'application/pdf',
                     ]);
     }

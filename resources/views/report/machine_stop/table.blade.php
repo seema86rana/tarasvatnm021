@@ -31,7 +31,7 @@
 </head>
 <body>
     <div class="page">
-        <div class="header">Machine Stop Report: {{ ucwords($filter) }} ({{ date('Y-m-d') }})</div>
+        <div class="header">Machine Stop Report: {{ ucwords($filter) }} ({{ $currentDay }})</div>
         <br>
         <hr>
         <br>
