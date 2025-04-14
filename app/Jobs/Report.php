@@ -45,7 +45,7 @@ class Report implements ShouldQueue
     {
         try {
             $this->generateReports($this->type, $this->reportType, $this->reportFormat);
-            Log::info("Report sent successfully for type: {$this->reportType} and format: {$this->reportFormat}");
+            Log::info("Report sent successfully for type: {$this->type}, reportType: {$this->reportType} and format: {$this->reportFormat}");
         } catch (Exception $e) {
             Log::error("Report sending failed: {$e->getMessage()}");
             throw new Exception($e->getMessage());
@@ -58,20 +58,20 @@ class Report implements ShouldQueue
 
         switch ($filter) {
             case 'daily':
-                $query->whereDate('machine_status.created_at', Carbon::today());
-                // $query->whereDate('machine_status.created_at', '2025-04-01');
+                // $query->whereDate('temp_machine_status.shift_date', '2025-04-01');
+                $query->whereDate('machine_status.shift_date', Carbon::yesterday());
                 break;
             case 'weekly':
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereBetween('machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
                 break;
             case 'monthly':
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                $query->whereBetween('machine_status.shift_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
                 break;
             case 'yearly':
-                $query->whereYear('machine_status.created_at', Carbon::now()->year);
+                $query->whereYear('machine_status.shift_date', Carbon::now()->year);
                 break;
             default:
-                $query->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereBetween('machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
                 break;
         }
 
@@ -83,10 +83,9 @@ class Report implements ShouldQueue
             return;
         }
 
-        Log::info("users: {$users}");
-
         foreach ($users as $user) {
             $userId = $user->id;
+            Log::info("User details ID: {$userId}, Name: {$user->name}, Email: {$user->email}, Phone: {$user->phone_number}");
             $this->generateReportApi($type, $filter, $format, $userId);
         }
     }

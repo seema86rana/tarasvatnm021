@@ -70,7 +70,6 @@ class GenerateReport implements ShouldQueue
     {
         $previousLabel = '';
         $currentLabel = '';
-        $emailSubjectLabel = '';
         $previousDay = '';
         $currentDay = '';
 
@@ -99,61 +98,89 @@ class GenerateReport implements ShouldQueue
 
         switch ($filter) {
             case 'daily':
-                // $queryPrevious->whereDate('machine_status.created_at', '2025-04-01');
-                // $queryCurrent->whereDate('machine_status.created_at', '2025-04-02');
+                // $queryPrevious->whereDate('machine_status.shift_date', '2025-04-01');
+                // $queryCurrent->whereDate('machine_status.shift_date', '2025-04-02');
 
-                $queryPrevious->whereDate('machine_status.created_at', Carbon::yesterday());
-                $queryCurrent->whereDate('machine_status.created_at', Carbon::today());
-    
-                $previousLabel = "Yesterday " . Carbon::yesterday()->format('d M Y');
-                $currentLabel = "Today " . Carbon::today()->format('d M Y');
-                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
-                $previousDay = Carbon::yesterday()->format('d M Y');
-                $currentDay = Carbon::today()->format('d M Y');
+                $queryPrevious->whereDate('machine_status.shift_date', Carbon::yesterday()->subDay());
+                $queryCurrent->whereDate('machine_status.shift_date', Carbon::yesterday());
+                
+                $previousLabel = "Yesterday " . Carbon::yesterday()->subDay()->format('d M Y');
+                $currentLabel = "Today " . Carbon::yesterday()->format('d M Y');
+
+                $previousDay = Carbon::yesterday()->subDay()->format('d/m/Y');
+                $currentDay = Carbon::yesterday()->format('d/m/Y');
                 break;
-    
+
             case 'weekly':
-                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
-                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-    
+                $queryPrevious->whereBetween('machine_status.shift_date', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                
                 $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
                 $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
-                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                
                 $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+    
                 $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
                 break;
-    
+
             case 'monthly':
-                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
-                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
-    
+                $queryPrevious->whereBetween('machine_status.shift_date', [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()]);
+                $queryCurrent->whereBetween('machine_status.shift_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                
                 $previousLabel = "Last Month " . Carbon::now()->subMonth()->format('M Y');
                 $currentLabel = "Current Month " . Carbon::now()->format('M Y');
-                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+
                 $previousDay = Carbon::now()->subMonth()->format('M Y');
+                $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
+                $lastDayOfMonthPrevious = Carbon::parse($previousDay)->endOfMonth()->format('d/m/Y');
+                $previousDay = $firstDayOfMonthPrevious . " - " . $lastDayOfMonthPrevious;
+    
                 $currentDay = Carbon::now()->format('M Y');
+                $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
                 break;
-    
+
             case 'yearly':
-                $queryPrevious->whereYear('machine_status.created_at', Carbon::now()->subYear()->year);
-                $queryCurrent->whereYear('machine_status.created_at', Carbon::now()->year);
-    
+                $queryPrevious->whereYear('machine_status.shift_date', Carbon::now()->subYear()->year);
+                $queryCurrent->whereYear('machine_status.shift_date', Carbon::now()->year);
+                
                 $previousLabel = "Last Year " . Carbon::now()->subYear()->year;
                 $currentLabel = "Current Year " . Carbon::now()->year;
-                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
+
                 $previousDay = Carbon::now()->subYear()->year;
+                $firstDayOfYearPrevious = Carbon::parse($previousDay)->startOfYear()->format('d/m/Y');
+                $lastDayOfYearPrevious = Carbon::parse($previousDay)->endOfYear()->format('d/m/Y');
+                $previousDay = $firstDayOfYearPrevious . " - " . $lastDayOfYearPrevious;
+                
                 $currentDay = Carbon::now()->year;
+                $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
                 break;
-    
+
             default:
-                $queryPrevious->whereBetween('machine_status.created_at', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
-                $queryCurrent->whereBetween('machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-    
+                $queryPrevious->whereBetween('machine_status.shift_date', [Carbon::now()->subWeek()->startOfWeek(), Carbon::now()->subWeek()->endOfWeek()]);
+                $queryCurrent->whereBetween('machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                
                 $previousLabel = "Last Week " . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->subWeek()->endOfWeek()->format('d M Y');
                 $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
-                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                
                 $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
+                $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
+                $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
+                $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
+    
                 $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
                 break;
         }
 
@@ -170,57 +197,6 @@ class GenerateReport implements ShouldQueue
             Log::info("No report found, or the report data has been deleted.");
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
-
-        if ($format == env('REPORT_FORMAT', 'table')) {
-            switch ($filter) {
-                case 'daily':
-                    $previousDay = Carbon::parse($previousDay)->format('d/m/Y');
-                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
-                    break;
-        
-                case 'weekly':
-                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
-                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
-                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
-        
-                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
-                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
-                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
-                    break;
-        
-                case 'monthly':
-                    $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
-                    $lastDayOfMonthPrevious = Carbon::parse($previousDay)->endOfMonth()->format('d/m/Y');
-                    $previousDay = $firstDayOfMonthPrevious . " - " . $lastDayOfMonthPrevious;
-        
-                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
-                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
-                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
-                    break;
-        
-                case 'yearly':
-                    $firstDayOfYearPrevious = Carbon::parse($previousDay)->startOfYear()->format('d/m/Y');
-                    $lastDayOfYearPrevious = Carbon::parse($previousDay)->endOfYear()->format('d/m/Y');
-                    $previousDay = $firstDayOfYearPrevious . " - " . $lastDayOfYearPrevious;
-        
-                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
-                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
-                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
-                    break;
-        
-                default:
-                    $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
-                    $lastDayOfWeekPrevious = Carbon::parse($previousDay)->endOfWeek()->format('d/m/Y');
-                    $previousDay = $firstDayOfWeekPrevious . " - " . $lastDayOfWeekPrevious;
-        
-                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
-                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
-                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
-                    break;
-            }
-        }
-
-        $filter = ($filter == 'daily') ? 'day' : $filter;
 
         if ($format == env('REPORT_FORMAT', 'table')) {
             $reportData = $this->generateMachineStatusReportTable($previous, $current, $totalLoop);
@@ -241,20 +217,16 @@ class GenerateReport implements ShouldQueue
                 throw new Exception("Failed to save HTML file locally at $filePath.");
             }
 
-            // Generate HTML file URL
-            $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
-
             if ($format == env('REPORT_FORMAT', 'table')) {
                 $pdfFilePath = $this->generateTablePdf($filePath);
             }
             else {
-                $pdfFilePath = $this->generateChartPdf($filePath, $htmlFileUrl);
+                Log::alert("Report format is not supported for generating PDF file.");
+                throw new Exception("Report format is not supported for generating PDF file.");
             }
     
-            Log::info("HTML File URL: {$htmlFileUrl}");
-            Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
-
-            $this->sendReportApi($type, $userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath);
+            Log::info("PDF file path: " . ($pdfFilePath ?? 'Not Found'));
+            $this->sendReportApi($type, $userId, $filter, $pdfFilePath);
 
         } catch (Exception $e) {
             Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
@@ -337,10 +309,7 @@ class GenerateReport implements ShouldQueue
 
     public function generateMachineStopReport($type, $filter, $format, $userId)
     {
-        $currentLabel = '';
-        $emailSubjectLabel = '';
         $currentDay = '';
-
         $userDetail = User::findOrFail($userId);
         
         $query = TempMachineStatus::query()
@@ -384,44 +353,46 @@ class GenerateReport implements ShouldQueue
 
         switch ($filter) {
             case 'daily':
-                $query->whereDate('temp_machine_status.created_at', Carbon::today());
-                // $query->whereDate('temp_machine_status.created_at', '2025-04-01');
+                // $query->whereDate('temp_machine_status.shift_date', '2025-04-01');
+                $query->whereDate('temp_machine_status.shift_date', Carbon::yesterday()->subDay());
     
-                $currentLabel = "Today " . Carbon::today()->format('d M Y');
-                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->format('d M Y') . " to " . Carbon::today()->format('d M Y') . "]";
-                $currentDay = Carbon::today()->format('d M Y');
+                $currentDay = Carbon::yesterday()->subDay()->format('d/m/Y');
                 break;
     
             case 'weekly':
-                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereBetween('temp_machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
     
-                $currentLabel = "Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
-                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
                 $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
                 break;
     
             case 'monthly':
-                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                $query->whereBetween('temp_machine_status.shift_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
     
-                $currentLabel = "Current Month " . Carbon::now()->format('M Y');
-                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
                 $currentDay = Carbon::now()->format('M Y');
+                $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
+                $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
+                $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
                 break;
     
             case 'yearly':
-                $query->whereYear('temp_machine_status.created_at', Carbon::now()->year);
+                $query->whereYear('temp_machine_status.shift_date', Carbon::now()->year);
     
-                $currentLabel = "Current Year " . Carbon::now()->year;
-                $emailSubjectLabel = "Yearly Comparison Report - [" . Carbon::now()->subYear()->year . " to " .  Carbon::now()->year . "]";
                 $currentDay = Carbon::now()->year;
+                $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
+                $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
+                $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
                 break;
     
             default:
-                $query->whereBetween('temp_machine_status.created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereBetween('temp_machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
     
-                $currentLabel = "Current Week " . Carbon::now()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y');
-                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " .  Carbon::now()->endOfWeek()->format('d M Y') . "]";
                 $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
+                $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
+                $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
+                $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
                 break;
         }
 
@@ -434,44 +405,12 @@ class GenerateReport implements ShouldQueue
         }
 
         if ($format == env('REPORT_FORMAT', 'table')) {
-            switch ($filter) {
-                case 'daily':
-                    $currentDay = Carbon::parse($currentDay)->format('d/m/Y');
-                    break;
-        
-                case 'weekly':
-                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
-                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
-                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
-                    break;
-        
-                case 'monthly':
-                    $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
-                    $lastDayOfMonthCurrent = Carbon::parse($currentDay)->endOfMonth()->format('d/m/Y');
-                    $currentDay = $firstDayOfMonthCurrent . " - " . $lastDayOfMonthCurrent;
-                    break;
-        
-                case 'yearly':
-                    $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
-                    $lastDayOfYearCurrent = Carbon::parse($currentDay)->endOfYear()->format('d/m/Y');
-                    $currentDay = $firstDayOfYearCurrent . " - " . $lastDayOfYearCurrent;
-                    break;
-        
-                default:
-                    $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
-                    $lastDayOfWeekCurrent = Carbon::parse($currentDay)->endOfWeek()->format('d/m/Y');
-                    $currentDay = $firstDayOfWeekCurrent . " - " . $lastDayOfWeekCurrent;
-                    break;
-            }
-        }
-
-        if ($format == env('REPORT_FORMAT', 'table')) {
             $reportData = $this->generateMachineStopReportTable($current);
             $htmlFile = view('report.machine_stop.table', compact('reportData', 'filter', 'firstRec', 'currentDay', 'userDetail'))->render();
         }
         else {
-            // $reportData = $this->generateMachineStopReportChart($current);
-            // $htmlFile = view('report.machine_stop.chart', compact('reportData', 'currentLabel'))->render();
+            Log::alert("Report format is not supported");
+            throw new Exception("Report format is not supported");
         }
 
         try {
@@ -484,20 +423,16 @@ class GenerateReport implements ShouldQueue
                 throw new Exception("Failed to save HTML file locally at $filePath.");
             }
 
-            // Generate HTML file URL
-            $htmlFileUrl = env('LOCAL_BASE_URL') . "reports/html/$fileName";
-
             if ($format == env('REPORT_FORMAT', 'table')) {
                 $pdfFilePath = $this->generateTablePdf($filePath);
             }
             else {
-                $pdfFilePath = $this->generateChartPdf($filePath, $htmlFileUrl);
+                Log::alert("Report format is not supported for generating PDF file.");
+                throw new Exception("Report format is not supported for generating PDF file.");
             }
     
-            Log::info("HTML File URL: {$htmlFileUrl}");
-            Log::info("PDF URL from API: " . ($pdfFilePath ?? 'Not Found'));
-
-            $this->sendReportApi($type, $userId, $filter, null, $currentDay, $emailSubjectLabel, $pdfFilePath);
+            Log::info("PDF file path: " . ($pdfFilePath ?? 'Not Found'));
+            $this->sendReportApi($type, $userId, $filter, $pdfFilePath);
 
         } catch (Exception $e) {
             Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
@@ -520,7 +455,7 @@ class GenerateReport implements ShouldQueue
             if (!isset($groupedData[$machineName][$shiftTime])) {
                 $groupedData[$machineName][$shiftTime] = [
                     'records' => [],
-                    'total_duration_min' => 0
+                    'total_duration_sec' => 0
                 ];
             }
 
@@ -531,10 +466,10 @@ class GenerateReport implements ShouldQueue
             $groupedData[$machineName][$shiftTime]['records'][] = [
                 'stop_count' => $stopCount,
                 'stop_time' => date('h:iA', strtotime($item->last_machine_datetime)) . ' – ' . date('h:iA', strtotime($item->last_device_datetime)),
-                'duration_min' => $durationMin,
+                'duration_sec' => $durationMin,
             ];
 
-            $groupedData[$machineName][$shiftTime]['total_duration_min'] += $durationMin;
+            $groupedData[$machineName][$shiftTime]['total_duration_sec'] += $durationMin;
         }
 
         return $groupedData;
@@ -561,87 +496,17 @@ class GenerateReport implements ShouldQueue
         return $pdfPath;
     }
 
-    public function generateChartPdf($filePath, $fileUrl)
-    {
-        // Generate PDF using node.js project html-to-pdf
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => env('GENERATE_PDF_URL'),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode(["url" => $fileUrl]),
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json'
-            ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        $generatePdfApi = json_decode($response, true);
-
-        // Validate the PDF URL
-        if (empty($generatePdfApi['pdfUrl'])) {
-            throw new Exception("PDF URL not found in the API response.");
-        }
-
-        $pdfFileName = basename($generatePdfApi['pdfUrl']); // Get the last part of the URL
-        $pdfFilePath = public_path("reports/pdf/$pdfFileName");
-
-        // Store the PDF file locally
-        if (!file_put_contents($pdfFilePath, file_get_contents($generatePdfApi['pdfUrl']))) {
-            throw new Exception("Failed to store the generated PDF locally at $pdfFilePath.");
-        }
-
-        // Delete the HTML file using the API
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => env('DELETE_PDF_URL'),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'DELETE',
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_POSTFIELDS => json_encode(["filename" => $pdfFileName]),
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json'
-            ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        $deletePdfApi = json_decode($response, true);
-
-        if ($deletePdfApi['status'] !== 'success' || !unlink($filePath)) {
-            throw new Exception("Failed to delete the HTML file or associated resources.");
-        }
-
-        return $pdfFilePath;
-    }
-
     private function getValue($data, $index, $key, $default = 0) {
         return isset($data[$index]) ? $data[$index]->$key : $default;
     }
 
-
-    protected function sendReportApi($type, $userId, $filter, $previousDay, $currentDay, $emailSubjectLabel, $pdfFilePath)
+    protected function sendReportApi($type, $userId, $filter, $pdfFilePath)
     {
         $url = env('SEND_REPORT_BASE_URL', '');
         $data = [
             'type' => $type,
             'userId' => $userId,
             'filter' => $filter,
-            'previousDay' => $previousDay,
-            'currentDay' => $currentDay,
-            'emailSubjectLabel' => $emailSubjectLabel,
             'pdfFilePath' => $pdfFilePath,
         ];
 

@@ -29,6 +29,3 @@ Route::group(['prefix' => 'machine'], function () {
     Route::post('generate-report', [ApiController::class, 'generateReport'])->name('machine.generate_report');
     Route::post('send-report', [ApiController::class, 'sendReport'])->name('machine.send_report');
 });
-
-// http://127.0.0.1:8000/api/machine/report/machine_status
-// http://127.0.0.1:8000/api/machine/report/machine_stop

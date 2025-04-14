@@ -1,10 +1,12 @@
 @php
     $counts = 0;
-    if (!function_exists('formatMinutes')) {
-        function formatMinutes($minutes) {
+    if (!function_exists('formatSeconds')) {
+        function formatSeconds($seconds) {
+            $minutes = floor($seconds / 60);
             $hours = floor($minutes / 60);
+            $secs = $seconds % 60;
             $mins = $minutes % 60;
-            return ($hours > 0 ? "{$hours}hr " : "") . ($mins > 0 ? "{$mins}min" : "");
+            return ($hours > 0 ? "{$hours}hr " : "") . ($mins > 0 ? "{$mins}min " : "") . ($secs > 0 ? "{$secs}sec" : "");
         }
     }
 @endphp
@@ -78,13 +80,13 @@
                         <tr>
                             <td>{{ $record['stop_count'] }}</td>
                             <td>{{ $record['stop_time'] }}</td>
-                            <td>{{ formatMinutes($record['duration_min']) }}</td>
+                            <td>{{ formatSeconds($record['duration_sec']) }}</td>
                         </tr>
                     @endforeach
                     <tr style="background-color: #e9dff7; font-weight: bold;">
                         <td colspan="2" align="right"></td>
                         <td>
-                            Total Duration: {{ formatMinutes($shiftDetails['total_duration_min']) }}
+                            Total Duration: {{ formatSeconds($shiftDetails['total_duration_sec']) }}
                         </td>
                     </tr>
                 </tbody>
