@@ -52,13 +52,13 @@ class Report implements ShouldQueue
         }
     }
 
-    protected function generateReports(string $type, string $filter, string $format)
+    protected function generateReports(string $type, string $reportType, string $reportFormat)
     {
         $query = MachineStatus::with('machine.node.device.user');
 
-        switch ($filter) {
+        switch ($reportType) {
             case 'daily':
-                // $query->whereDate('temp_machine_status.shift_date', '2025-04-01');
+                // $query->whereDate('machine_status.shift_date', '2025-04-02');
                 $query->whereDate('machine_status.shift_date', Carbon::yesterday());
                 break;
             case 'weekly':
@@ -79,24 +79,24 @@ class Report implements ShouldQueue
         $users = User::whereIn('id', $userIds)->get();
 
         if ($users->isEmpty()) {
-            Log::info("No data found for report type: {$filter}");
+            Log::info("No data found for report type: {$reportType}");
             return;
         }
 
         foreach ($users as $user) {
             $userId = $user->id;
             Log::info("User details ID: {$userId}, Name: {$user->name}, Email: {$user->email}, Phone: {$user->phone_number}");
-            $this->generateReportApi($type, $filter, $format, $userId);
+            $this->generateReportApi($type, $reportType, $reportFormat, $userId);
         }
     }
 
-    protected function generateReportApi($type, $filter, $format, $userId)
+    protected function generateReportApi($type, $reportType, $reportFormat, $userId)
     {
         $url = env('GENERATE_REPORT_BASE_URL', '');
         $data = [
             'type' => $type,
-            'report_type' => $filter,
-            'report_format' => $format,
+            'reportType' => $reportType,
+            'reportFormat' => $reportFormat,
             'user_id' => $userId,
         ];
 

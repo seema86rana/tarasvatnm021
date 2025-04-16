@@ -14,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use App\Services\WhatsappAPIService;
 
 class SendReport implements ShouldQueue
 {
@@ -21,7 +22,7 @@ class SendReport implements ShouldQueue
 
     protected $type;
     protected $userId;
-    protected $filter;
+    protected $reportType;
     protected $pdfFilePath;
 
     public $timeout = 3600;
@@ -32,12 +33,12 @@ class SendReport implements ShouldQueue
      *
      * @return void
      */
-    public function __construct(string $type, int $userId, string $filter, string $pdfFilePath)
+    public function __construct(string $type, int $userId, string $reportType, string $pdfFilePath)
     {
         date_default_timezone_set(config('app.timezone', 'Asia/Kolkata'));
         $this->type = $type;
         $this->userId = $userId;
-        $this->filter = $filter;
+        $this->reportType = $reportType;
         $this->pdfFilePath = $pdfFilePath;
     }
 
@@ -50,10 +51,10 @@ class SendReport implements ShouldQueue
     {
         try {
             if ($this->type == 'machine_status') {
-                $this->sendMachineStatusReports($this->userId, $this->filter, $this->pdfFilePath);
+                $this->sendMachineStatusReports($this->userId, $this->reportType, $this->pdfFilePath);
             }
             if ($this->type == 'machine_stop') {
-                $this->sendMachineStopReports($this->userId, $this->filter, $this->pdfFilePath);
+                $this->sendMachineStopReports($this->userId, $this->reportType, $this->pdfFilePath);
             }
             Log::info("Report sent successfully.");
         } catch (Exception $e) {
@@ -62,22 +63,23 @@ class SendReport implements ShouldQueue
         }
     }
 
-    public function sendMachineStatusReports($userId, $filter, $pdfFilePath)
+    public function sendMachineStatusReports($userId, $reportType, $pdfFilePath)
     {
         $previousDay = '';
         $currentDay = '';
+        $emailSubjectLabel = '';
         $userDetail = User::findOrFail($userId);
 
-        switch ($filter) {
+        switch ($reportType) {
             case 'daily':
-                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->subDay()->format('d M Y') . " to " . Carbon::yesterday()->format('d M Y') . "]";
+                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->subDay()->format('d/m/Y') . " to " . Carbon::yesterday()->format('d/m/Y') . "]";
 
                 $previousDay = Carbon::yesterday()->subDay()->format('d/m/Y');
                 $currentDay = Carbon::yesterday()->format('d/m/Y');
                 break;
 
             case 'weekly':
-                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d/m/Y') . " to " . Carbon::now()->endOfWeek()->format('d/m/Y') . "]";
                 
                 $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
                 $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
@@ -91,7 +93,7 @@ class SendReport implements ShouldQueue
                 break;
 
             case 'monthly':
-                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $emailSubjectLabel = "Monthly Comparison Report - [" . Carbon::now()->subMonth()->format('m/Y') . " to " . Carbon::now()->format('m/Y') . "]";
 
                 $previousDay = Carbon::now()->subMonth()->format('M Y');
                 $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
@@ -119,7 +121,7 @@ class SendReport implements ShouldQueue
                 break;
 
             default:
-                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d M Y') . " to " . Carbon::now()->endOfWeek()->format('d M Y') . "]";
+                $emailSubjectLabel = "Weekly Comparison Report - [" . Carbon::now()->subWeek()->startOfWeek()->format('d/m/Y') . " to " . Carbon::now()->endOfWeek()->format('d/m/Y') . "]";
                 
                 $previousDay = Carbon::now()->subWeek()->startOfWeek()->format('d M Y');
                 $firstDayOfWeekPrevious = Carbon::parse($previousDay)->startOfWeek()->format('d/m/Y');
@@ -135,7 +137,7 @@ class SendReport implements ShouldQueue
         
         try {
             // Send the PDF via email
-            if ($this->sendMachineStatusOnEmail($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $previousDay, $currentDay)) {
+            if ($this->sendMachineStatusOnEmail($emailSubjectLabel, $userDetail, $reportType, $pdfFilePath, $previousDay, $currentDay)) {
                 //
             } else {
                 Log::alert("Failed to send machine status report via email");
@@ -143,7 +145,7 @@ class SendReport implements ShouldQueue
             }
     
             // Send the PDF via WhatsApp
-            if ($this->sendMachineStatusOnWhatsApp($filter, $userDetail, $pdfFilePath, $previousDay, $currentDay)) {
+            if ($this->sendMachineStatusOnWhatsApp($reportType, $userDetail, $pdfFilePath, $previousDay, $currentDay)) {
                 //
             } else {
                 Log::alert("Failed to send machine status report via WhatsApp");
@@ -151,7 +153,7 @@ class SendReport implements ShouldQueue
             }
     
         } catch (Exception $e) {
-            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            Log::error("Error processing report for user ID: $userId, Filter: $reportType. Message: " . $e->getMessage());
             throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
         }
 
@@ -182,19 +184,40 @@ class SendReport implements ShouldQueue
         }
     }
 
-    private function sendMachineStatusOnWhatsApp(string $reportType, object $user, string $fileName, $previousDay, $currentDay)
+    private function sendMachineStatusOnWhatsApp(string $reportType, object $user, string $filepath, $previousDay, $currentDay)
     {
+        $reportDay = $previousDay . " - " . $currentDay;
+        $whatsappAPIService = new WhatsAppAPIService();
+
+        switch($reportType) {
+            case 'daily':
+                $response = $whatsappAPIService->send_dailyReport($user, $filepath, $reportDay);
+                return $response;
+                break;
+                
+            case 'weekly':
+                $response = $whatsappAPIService->send_weeklyReport($user, $filepath, $reportDay);
+                return $response;
+                break;
+
+            default:
+                $response = $whatsappAPIService->send_weeklyReport($user, $filepath, $reportDay);
+                return $response;
+                break;
+
+        }
     }
 
-    public function sendMachineStopReports($userId, $filter, $pdfFilePath)
+    public function sendMachineStopReports($userId, $reportType, $pdfFilePath)
     {
         $previousDay = '';
         $currentDay = '';
+        $emailSubjectLabel = '';
         $userDetail = User::findOrFail($userId);
 
-        switch ($filter) {
+        switch ($reportType) {
             case 'daily':
-                $emailSubjectLabel = "Daily Machine Stop Report - [" . Carbon::yesterday()->subDay()->format('d/m/Y') . " to " . Carbon::today()->format('d/m/Y') . "]";
+                $emailSubjectLabel = "Daily Machine Stop Report - [" . Carbon::yesterday()->format('d/m/Y') . " to " . Carbon::today()->format('d/m/Y') . "]";
 
                 $previousDay = Carbon::yesterday()->subDay()->format('d/m/Y');
                 $currentDay = Carbon::yesterday()->format('d/m/Y');
@@ -215,7 +238,7 @@ class SendReport implements ShouldQueue
                 break;
 
             case 'monthly':
-                $emailSubjectLabel = "Monthly Machine Stop Report - [" . Carbon::now()->subMonth()->format('M Y') . " to " . Carbon::now()->format('M Y') . "]";
+                $emailSubjectLabel = "Monthly Machine Stop Report - [" . Carbon::now()->subMonth()->format('m/Y') . " to " . Carbon::now()->format('m/Y') . "]";
 
                 $previousDay = Carbon::now()->subMonth()->format('M Y');
                 $firstDayOfMonthPrevious = Carbon::parse($previousDay)->startOfMonth()->format('d/m/Y');
@@ -259,7 +282,7 @@ class SendReport implements ShouldQueue
 
         try {
             // Send the PDF via email
-            if ($this->sendMachineStopOnEmail($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $currentDay)) {
+            if ($this->sendMachineStopOnEmail($emailSubjectLabel, $userDetail, $reportType, $pdfFilePath, $previousDay, $currentDay)) {
                 //
             } else {
                 log::alert("Failed to send machine stop report via email");
@@ -267,7 +290,7 @@ class SendReport implements ShouldQueue
             }
     
             // Send the PDF via WhatsApp
-            if ($this->sendMachineStopReportOnWhatsApp($emailSubjectLabel, $userDetail, $filter, $pdfFilePath, $currentDay)) {
+            if ($this->sendMachineStopReportOnWhatsApp($reportType, $userDetail, $pdfFilePath, $previousDay, $currentDay)) {
                 //
             } else {
                 log::alert("Failed to send machine stop report via WhatsApp");
@@ -277,14 +300,14 @@ class SendReport implements ShouldQueue
             return true;
     
         } catch (Exception $e) {
-            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            Log::error("Error processing report for user ID: $userId, Filter: $reportType. Message: " . $e->getMessage());
             throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
         }
 
         return true;
     }
 
-    private function sendMachineStopOnEmail(string $subject, object $user, string $reportType, string $filePath, $currentDay)
+    private function sendMachineStopOnEmail(string $subject, object $user, string $reportType, string $filePath, $previousDay, $currentDay)
     {
         $mailData = [
             'companyName' => ucwords(str_replace("_", " ", config('app.name', 'TARASVAT Industrial Electronics'))),
@@ -293,6 +316,7 @@ class SendReport implements ShouldQueue
             'userName' => $user->name,
             'userId' => $user->id,
             'subject' => $subject,
+            'previousDay' => $previousDay,
             'currentDay' => $currentDay,
         ];
         
@@ -307,7 +331,21 @@ class SendReport implements ShouldQueue
         }
     }
 
-    private function sendMachineStopReportOnWhatsApp(string $subject, object $user, string $reportType, string $fileName, string $dateRange)
+    private function sendMachineStopReportOnWhatsApp(string $reportType, object $user, string $filepath, $previousDay, $currentDay)
     {
+        $reportDay = $previousDay . " - " . $currentDay;
+        $whatsappAPIService = new WhatsAppAPIService();
+
+        switch ($reportType) {
+            case 'daily':
+                $response = $whatsappAPIService->send_machineStopReport($user, $filepath, $reportDay);
+                return $response;
+                break;
+            
+            default:
+                $response = $whatsappAPIService->send_machineStopReport($user, $filepath, $reportDay);
+                return $response;
+                break;
+        }
     }
 }

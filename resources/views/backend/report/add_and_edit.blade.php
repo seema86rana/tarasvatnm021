@@ -139,8 +139,14 @@
                 endDate: endDate,
                 locale: {
                     format: 'MM/DD/YYYY h:mm A',
+                    cancelLabel: 'Clear', // Change default cancel button text to "Clear"
                 },
                 maxDate: endDate // Prevent future dates
+            });
+
+            // Event to clear input field when "Clear" button is clicked
+            $('#dateRange').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val(''); // Clear the input field
             });
         }, 500);
     });

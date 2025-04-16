@@ -17,7 +17,7 @@
                 <p>I hope you are doing well.</p>
                 <p>Your <strong>{{ $mailData['reportType'] }}</strong> report is ready!</p>
                 <br>
-                <p>Attached is the {{ $mailData['subject'] }}. This report provides a detailed analysis number of stoppage for performance {{ $mailData['currentDay'] }}. The data highlights any significant changes and provides insights into sales, performance, market trends, etc.</p>
+                <p>Attached is the {{ $mailData['subject'] }}. This report provides a detailed analysis number of stoppage for performance between {{ $mailData['previousDay'] }} and {{ $mailData['currentDay'] }}. The data highlights any significant changes and provides insights into sales, performance, market trends, etc.</p>
                 <br>
                 <p>Please feel free to reach out if you have any questions or need further clarification on any section of the report.</p>
                 <p>Looking forward to hearing your thoughts or feedback.</p>

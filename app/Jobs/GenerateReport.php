@@ -51,12 +51,12 @@ class GenerateReport implements ShouldQueue
         try {
             if ($this->type == 'machine_status') {
                 $this->generateMachineStatusReport($this->type, $this->reportType, $this->reportFormat, $this->userId);
-                Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, report_type: {$this->reportType}, report_format: {$this->reportFormat}");
+                Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, reportType: {$this->reportType}, reportFormat: {$this->reportFormat}");
             }
 
             if ($this->type == 'machine_stop') {
                 $this->generateMachineStopReport($this->type, $this->reportType, $this->reportFormat, $this->userId);
-                Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, report_type: {$this->reportType}, report_format: {$this->reportFormat}");
+                Log::info("Report generate successfully for type: {$this->type}, user_id: {$this->userId}, reportType: {$this->reportType}, reportFormat: {$this->reportFormat}");
             }
             
             return response()->json(['success' => true, 'message' => 'Report generated successfully.'], 200);
@@ -66,7 +66,7 @@ class GenerateReport implements ShouldQueue
         }
     }
 
-    public function generateMachineStatusReport($type, $filter, $format, $userId)
+    public function generateMachineStatusReport($type, $reportType, $reportFormat, $userId)
     {
         $previousLabel = '';
         $currentLabel = '';
@@ -96,11 +96,10 @@ class GenerateReport implements ShouldQueue
 
         $queryCurrent = clone $queryPrevious;
 
-        switch ($filter) {
+        switch ($reportType) {
             case 'daily':
                 // $queryPrevious->whereDate('machine_status.shift_date', '2025-04-01');
                 // $queryCurrent->whereDate('machine_status.shift_date', '2025-04-02');
-
                 $queryPrevious->whereDate('machine_status.shift_date', Carbon::yesterday()->subDay());
                 $queryCurrent->whereDate('machine_status.shift_date', Carbon::yesterday());
                 
@@ -198,18 +197,18 @@ class GenerateReport implements ShouldQueue
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.'], 404);
         }
 
-        if ($format == env('REPORT_FORMAT', 'table')) {
+        if ($reportFormat == env('REPORT_FORMAT', 'table')) {
             $reportData = $this->generateMachineStatusReportTable($previous, $current, $totalLoop);
-            $htmlFile = view('report.machine_status.table', compact('reportData', 'filter', 'firstRec', 'previousDay', 'currentDay', 'userDetail'))->render();
+            $htmlFile = view('report.machine_status.table', compact('reportData', 'reportType', 'firstRec', 'previousDay', 'currentDay', 'userDetail'))->render();
         }
         else {
-            $reportData = $this->generateMachineStatusReportChart($filter, $previous, $current, $totalLoop);
+            $reportData = $this->generateMachineStatusReportChart($reportType, $previous, $current, $totalLoop);
             $htmlFile = view('report.machine_status.chart', compact('reportData', 'previousLabel', 'currentLabel'))->render();
         }
 
         try {
             // Generate HTML content
-            $fileName = time() . "-{$filter}-{$format}-machine_status-report-$userId.html";
+            $fileName = time() . "-{$reportType}-{$reportFormat}-machine_status-report-$userId.html";
             $filePath = public_path("reports/html/$fileName");
     
             // Save HTML file locally
@@ -217,7 +216,7 @@ class GenerateReport implements ShouldQueue
                 throw new Exception("Failed to save HTML file locally at $filePath.");
             }
 
-            if ($format == env('REPORT_FORMAT', 'table')) {
+            if ($reportFormat == env('REPORT_FORMAT', 'table')) {
                 $pdfFilePath = $this->generateTablePdf($filePath);
             }
             else {
@@ -226,10 +225,10 @@ class GenerateReport implements ShouldQueue
             }
     
             Log::info("PDF file path: " . ($pdfFilePath ?? 'Not Found'));
-            $this->sendReportApi($type, $userId, $filter, $pdfFilePath);
+            $this->sendReportApi($type, $userId, $reportType, $pdfFilePath);
 
         } catch (Exception $e) {
-            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            Log::error("Error processing report for user ID: $userId, Filter: $reportType. Message: " . $e->getMessage());
             throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
         }
 
@@ -265,7 +264,7 @@ class GenerateReport implements ShouldQueue
         return $groupedData;        
     }
 
-    protected function generateMachineStatusReportChart($filter, $previous, $current, $totalLoop)
+    protected function generateMachineStatusReportChart($reportType, $previous, $current, $totalLoop)
     {
         $groupedData = [];
         for ($i = 0; $i < $totalLoop; $i++) {
@@ -297,7 +296,7 @@ class GenerateReport implements ShouldQueue
             ];
         
             // Organize the result array
-            $groupedData[$node][$shiftName]['label'] = $node . ' (' . ucwords($filter) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
+            $groupedData[$node][$shiftName]['label'] = $node . ' (' . ucwords($reportType) . ')' . ' (' . ($previous[$i]->shift_start ?? $current[$i]->shift_start) . ' - ' . ($previous[$i]->shift_end ?? $current[$i]->shift_end) . ')';
             $groupedData[$node][$shiftName]['speed'][] = $speed;
             $groupedData[$node][$shiftName]['efficiency'][] = $efficiency;
             $groupedData[$node][$shiftName]['no_of_stoppage'][] = $no_of_stoppage;
@@ -307,7 +306,7 @@ class GenerateReport implements ShouldQueue
         return $groupedData;
     }
 
-    public function generateMachineStopReport($type, $filter, $format, $userId)
+    public function generateMachineStopReport($type, $reportType, $reportFormat, $userId)
     {
         $currentDay = '';
         $userDetail = User::findOrFail($userId);
@@ -351,12 +350,15 @@ class GenerateReport implements ShouldQueue
             ->orderBy('temp_machine_status.shift_name')
             ->orderBy('temp_machine_status.no_of_stoppage');
 
-        switch ($filter) {
+        switch ($reportType) {
             case 'daily':
-                // $query->whereDate('temp_machine_status.shift_date', '2025-04-01');
-                $query->whereDate('temp_machine_status.shift_date', Carbon::yesterday()->subDay());
+                // $query->whereDate('temp_machine_status.shift_date', '2025-04-02');
+                $query->whereDate('temp_machine_status.shift_date', Carbon::yesterday());
     
-                $currentDay = Carbon::yesterday()->subDay()->format('d/m/Y');
+                $previousDay = Carbon::yesterday()->format('d/m/Y');
+                $currentDay = Carbon::today()->format('d/m/Y');
+
+                $currentDay = "{$previousDay} - {$currentDay}";
                 break;
     
             case 'weekly':
@@ -401,12 +403,13 @@ class GenerateReport implements ShouldQueue
         $totalLoop = count($current);
 
         if ($totalLoop <= 0) {
+            Log::info("No report found, or the report data has been deleted.");
             return response()->json(['status' => false, 'message' => 'No report found, or the report data has been deleted.']);
         }
 
-        if ($format == env('REPORT_FORMAT', 'table')) {
+        if ($reportFormat == env('REPORT_FORMAT', 'table')) {
             $reportData = $this->generateMachineStopReportTable($current);
-            $htmlFile = view('report.machine_stop.table', compact('reportData', 'filter', 'firstRec', 'currentDay', 'userDetail'))->render();
+            $htmlFile = view('report.machine_stop.table', compact('reportData', 'reportType', 'firstRec', 'currentDay', 'userDetail'))->render();
         }
         else {
             Log::alert("Report format is not supported");
@@ -415,7 +418,7 @@ class GenerateReport implements ShouldQueue
 
         try {
             // Generate HTML content
-            $fileName = time() . "-{$filter}-{$format}-machine_stop-report-{$userId}.html";
+            $fileName = time() . "-{$reportType}-{$reportFormat}-machine_stop-report-{$userId}.html";
             $filePath = public_path("reports/html/$fileName");
     
             // Save HTML file locally
@@ -423,7 +426,7 @@ class GenerateReport implements ShouldQueue
                 throw new Exception("Failed to save HTML file locally at $filePath.");
             }
 
-            if ($format == env('REPORT_FORMAT', 'table')) {
+            if ($reportFormat == env('REPORT_FORMAT', 'table')) {
                 $pdfFilePath = $this->generateTablePdf($filePath);
             }
             else {
@@ -432,10 +435,10 @@ class GenerateReport implements ShouldQueue
             }
     
             Log::info("PDF file path: " . ($pdfFilePath ?? 'Not Found'));
-            $this->sendReportApi($type, $userId, $filter, $pdfFilePath);
+            $this->sendReportApi($type, $userId, $reportType, $pdfFilePath);
 
         } catch (Exception $e) {
-            Log::error("Error processing report for user ID: $userId, Filter: $filter. Message: " . $e->getMessage());
+            Log::error("Error processing report for user ID: $userId, Filter: $reportType. Message: " . $e->getMessage());
             throw new Exception("Error processing report for User ID: $userId - " . $e->getMessage());
         }
 
@@ -461,15 +464,15 @@ class GenerateReport implements ShouldQueue
 
             $lastMachine = Carbon::parse($item->last_machine_datetime);
             $lastDevice = Carbon::parse($item->last_device_datetime);
-            $durationMin = $lastMachine->diffInMinutes($lastDevice);
+            $durationSec = $lastMachine->diffInSeconds($lastDevice);
 
             $groupedData[$machineName][$shiftTime]['records'][] = [
                 'stop_count' => $stopCount,
-                'stop_time' => date('h:iA', strtotime($item->last_machine_datetime)) . ' – ' . date('h:iA', strtotime($item->last_device_datetime)),
-                'duration_sec' => $durationMin,
+                'stop_time' => date('h:i:s A', strtotime($item->last_machine_datetime)) . ' – ' . date('h:i:s A', strtotime($item->last_device_datetime)),
+                'duration_sec' => $durationSec,
             ];
 
-            $groupedData[$machineName][$shiftTime]['total_duration_sec'] += $durationMin;
+            $groupedData[$machineName][$shiftTime]['total_duration_sec'] += $durationSec;
         }
 
         return $groupedData;
@@ -500,13 +503,13 @@ class GenerateReport implements ShouldQueue
         return isset($data[$index]) ? $data[$index]->$key : $default;
     }
 
-    protected function sendReportApi($type, $userId, $filter, $pdfFilePath)
+    protected function sendReportApi($type, $userId, $reportType, $pdfFilePath)
     {
         $url = env('SEND_REPORT_BASE_URL', '');
         $data = [
             'type' => $type,
             'userId' => $userId,
-            'filter' => $filter,
+            'reportType' => $reportType,
             'pdfFilePath' => $pdfFilePath,
         ];
 

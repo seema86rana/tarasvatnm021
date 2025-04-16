@@ -88,8 +88,8 @@ class ApiController extends Controller
     {
         $type = $request->type;
         $userId = $request->user_id;
-        $reportType = $request->report_type;
-        $reportFormat = $request->report_format;
+        $reportType = $request->reportType;
+        $reportFormat = $request->reportFormat;
 
         if (empty($type) || empty($userId) || empty($reportType) || empty($reportFormat)) {
             Log::alert("Required fields not passed, report generation failed [payload: " . json_encode($request->all()) . "]");
@@ -104,15 +104,15 @@ class ApiController extends Controller
     {
         $type = $request->type;
         $userId = $request->userId;
-        $filter = $request->filter;
+        $reportType = $request->reportType;
         $pdfFilePath = $request->pdfFilePath;
 
-        if (empty($userId) || empty($filter) || empty($type) || empty($pdfFilePath)) {
+        if (empty($userId) || empty($reportType) || empty($type) || empty($pdfFilePath)) {
             Log::alert("Required fields not passed, report sned failed [payload: " . json_encode($request->all()) . "]");
             return response()->json(['status' => false, 'message' => "Required fields not passed!"], 400);
         }
 
-        SendReport::dispatch($type, $userId, $filter, $pdfFilePath);
+        SendReport::dispatch($type, $userId, $reportType, $pdfFilePath);
         Log::info("send report to user with id: $userId");
         return response()->json(['status' => true, 'message' => 'Send reports.'], 200);
     }

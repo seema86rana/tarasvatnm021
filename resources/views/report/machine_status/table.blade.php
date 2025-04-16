@@ -35,7 +35,7 @@
 </head>
 <body>
     <div class="page">
-        <div class="header">Machine Performance Comparison: {{ ucwords($filter) }} Trends & Insight</div>
+        <div class="header">Machine Performance Comparison: {{ ucwords($reportType) }} Trends & Insight</div>
         <div class="report-info">
             <table>
                 <tbody>
@@ -48,14 +48,14 @@
             <br>
             <hr>
             <br>
-            <p><b>Reporting Period (Current {{ ucwords($filter) }}): </b> {{ $currentDay }}</p>
-            <p><b>Comparison Period (Previous {{ ucwords($filter) }}): </b> {{ $previousDay }}</p>
+            <p><b>Reporting Period (Current {{ ucwords($reportType) }}): </b> {{ $currentDay }}</p>
+            <p><b>Comparison Period (Previous {{ ucwords($reportType) }}): </b> {{ $previousDay }}</p>
             <p><b>Username: </b> {{ $userDetail->name }}</p>
             <br>
             <hr>
             <br>
             <h3>Report Overview</h3>
-            <p>This report provides an analysis of machine performance trends for the current {{ $filter }}, comparing data with the previous {{ $filter }}'s metrics. It includes insights into operational efficiency, potential areas of improvement, and overall performance indicators.</p>
+            <p>This report provides an analysis of machine performance trends for the current {{ $reportType }}, comparing data with the previous {{ $reportType }}'s metrics. It includes insights into operational efficiency, potential areas of improvement, and overall performance indicators.</p>
         </div>
     </div>
     

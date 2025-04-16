@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsappAPIService
 {
-    public function send_weeklyReport($user, $fileName, $currentDay)
+    public function send_weeklyReport($user, $filepath, $reportDay)
     {
         $WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN', '');
         $FROM_PHONE_NUMBER_ID = env('FROM_PHONE_NUMBER_ID');
@@ -17,16 +17,16 @@ class WhatsappAPIService
         $userName = $user->name;
         $userPhone = $user->phone_number;
 
-        $fileName = basename($fileName);
+        $fileName = basename($filepath);
 
-        $pdfFileName =  "Machine_Performance_Report{$userId}_{$currentDay}.pdf";
+        $pdfFileName =  "Machine-Performance-Report-{$userId}-{$reportDay}.pdf";
         $pdfFileUrl = env('LOCAL_BASE_URL') . "reports/pdf/{$fileName}";
 
         Log::info("PDF File URL: {$pdfFileUrl}");
 
-        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($TEMPLATE_NAME) || empty($LANGUAGE_AND_LOCALE_CODE)) {
+        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($LANGUAGE_AND_LOCALE_CODE)) {
             Log::error("WhatsApp configuration is incomplete", ['user' => $user->email]);
-            return false;
+            return true;
         }
 
         $data = [
@@ -47,6 +47,7 @@ class WhatsappAPIService
                                 "type" => "document",
                                 "document" => [
                                     "link" => $pdfFileUrl,
+                                    // "link" => "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
                                     "filename" => $pdfFileName,
                                 ],
                             ],
@@ -61,7 +62,7 @@ class WhatsappAPIService
                             ],
                             [
                                 "type" => "text",
-                                "text" => $currentDay, // {{2}} in template
+                                "text" => $reportDay, // {{2}} in template
                             ],
                         ]
                     ]
@@ -109,7 +110,7 @@ class WhatsappAPIService
         }
     }
 
-    public function send_dailyReport($user, $fileName, $currentDay)
+    public function send_dailyReport($user, $filepath, $reportDay)
     {
         $WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN', '');
         $FROM_PHONE_NUMBER_ID = env('FROM_PHONE_NUMBER_ID');
@@ -119,16 +120,16 @@ class WhatsappAPIService
         $userName = $user->name;
         $userPhone = $user->phone_number;
 
-        $fileName = basename($fileName);
+        $fileName = basename($filepath);
 
-        $pdfFileName =  "Machine_Performance_Report{$userId}_{$currentDay}.pdf";
+        $pdfFileName =  "Machine-Performance-Report-{$userId}-{$reportDay}.pdf";
         $pdfFileUrl = env('LOCAL_BASE_URL') . "reports/pdf/{$fileName}";
 
         Log::info("PDF File URL: {$pdfFileUrl}");
 
-        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($TEMPLATE_NAME) || empty($LANGUAGE_AND_LOCALE_CODE)) {
+        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($LANGUAGE_AND_LOCALE_CODE)) {
             Log::error("WhatsApp configuration is incomplete", ['user' => $user->email]);
-            return false;
+            return true;
         }
 
         $data = [
@@ -149,6 +150,7 @@ class WhatsappAPIService
                                 "type" => "document",
                                 "document" => [
                                     "link" => $pdfFileUrl,
+                                    // "link" => "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
                                     "filename" => $pdfFileName,
                                 ],
                             ],
@@ -163,7 +165,7 @@ class WhatsappAPIService
                             ],
                             [
                                 "type" => "text",
-                                "text" => $currentDay, // {{2}} in template
+                                "text" => $reportDay, // {{2}} in template
                             ],
                         ]
                     ]
@@ -211,7 +213,7 @@ class WhatsappAPIService
         }
     }
 
-    public function send_machineStopReport($user, $fileName, $currentDay)
+    public function send_machineStopReport($user, $filepath, $reportDay)
     {
         $WHATSAPP_ACCESS_TOKEN = env('WHATSAPP_ACCESS_TOKEN', '');
         $FROM_PHONE_NUMBER_ID = env('FROM_PHONE_NUMBER_ID');
@@ -221,16 +223,16 @@ class WhatsappAPIService
         $userName = $user->name;
         $userPhone = $user->phone_number;
 
-        $fileName = basename($fileName);
+        $fileName = basename($filepath);
 
-        $pdfFileName =  "Machine_Performance_Report{$userId}_{$currentDay}.pdf";
+        $pdfFileName =  "Machine-Stop-Report-{$userId}-{$reportDay}.pdf";
         $pdfFileUrl = env('LOCAL_BASE_URL') . "reports/pdf/{$fileName}";
 
         Log::info("PDF File URL: {$pdfFileUrl}");
 
-        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($TEMPLATE_NAME) || empty($LANGUAGE_AND_LOCALE_CODE)) {
+        if(empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($LANGUAGE_AND_LOCALE_CODE)) {
             Log::error("WhatsApp configuration is incomplete", ['user' => $user->email]);
-            return false;
+            return true;
         }
 
         $data = [
@@ -251,6 +253,7 @@ class WhatsappAPIService
                                 "type" => "document",
                                 "document" => [
                                     "link" => $pdfFileUrl,
+                                    // "link" => "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
                                     "filename" => $pdfFileName,
                                 ],
                             ],
@@ -265,7 +268,7 @@ class WhatsappAPIService
                             ],
                             [
                                 "type" => "text",
-                                "text" => $currentDay, // {{2}} in template
+                                "text" => $reportDay, // {{2}} in template
                             ],
                         ]
                     ]
