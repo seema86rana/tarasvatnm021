@@ -7,7 +7,7 @@ use Carbon\Carbon;
 use App\Jobs\Report;
 use App\Models\Device;
 use App\Jobs\SendReport;
-use App\Models\MachineLog;
+use App\Models\MachineMasterLog;
 use App\Models\NodeMaster;
 use App\Jobs\ProcessPacket;
 use App\Jobs\GenerateReport;
@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 use App\Models\MachineMaster;
 use App\Models\MachineStatus;
 use App\Models\PickCalculation;
-use App\Models\TempMachineStatus;
+use App\Models\MachineStatusLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -152,9 +152,9 @@ class ApiController extends Controller
 
             // Delete related records in the correct order
             PickCalculation::whereIn('machine_status_id', $machineStatusIds)->delete();
-            TempMachineStatus::whereIn('machine_id', $machineIds)->delete();
+            MachineStatusLog::whereIn('machine_id', $machineIds)->delete();
             MachineStatus::whereIn('machine_id', $machineIds)->delete();
-            MachineLog::whereIn('machine_id', $machineIds)->delete();
+            MachineMasterLog::whereIn('machine_id', $machineIds)->delete();
 
             DB::commit(); // Commit transaction
 
@@ -260,14 +260,13 @@ class ApiController extends Controller
         }
 
         $insertedMachineIds = [];
-        $machineStatusIds = MachineStatus::whereDate('shift_date', $shiftDate)
+        $machineIds = MachineStatus::whereDate('shift_date', $shiftDate)
                             ->where('shift_start_datetime', $shiftStartDatetime)
                             ->where('shift_end_datetime', $shiftEndDatetime)
-                            ->pluck('id')->toArray();
-        
-        // MachineStatus::whereIn('id', $machineStatusId)->update([
-        //     'active_machine' => 0,
-        // ]);
+                            ->whereHas('machine.node.device', function ($query) use ($device) {
+                                $query->where('device_id', $device->id);
+                            })
+                            ->pluck('machine_id')->toArray();
 
         if (isset($reqData['Nd']) && is_array($reqData['Nd']) && count($reqData['Nd']) > 0) {
 
@@ -276,15 +275,11 @@ class ApiController extends Controller
                     continue;
                 }
                 $nodeName = 'N' . $node['Nid'];
-                $nodeMasterTable = NodeMaster::where('device_id', $device->id)->where('name', $nodeName)->first();
-                if (!$nodeMasterTable) {
-                    $nodeMasterData = [
-                        'device_id' => $device->id,
-                        'name' => $nodeName,
-                    ];
-                    $nodeMasterTable = NodeMaster::create($nodeMasterData);
-                }
-        
+                $nodeMasterTable = NodeMaster::updateOrCreate(
+                    ['device_id' => $device->id, 'name' => $nodeName],
+                    []
+                );
+                
                 if (!isset($node['Md']) || !is_array($node['Md']) || count($node['Md']) < 1) {
                     continue;
                 }
@@ -295,17 +290,14 @@ class ApiController extends Controller
                     }
                     $utcMachineDatetime = Carbon::createFromFormat('Ymd H:i:s', $machine['Mdt'], env('DEVICE_TIMEZONE', 'UTC'));
                     $machineDatetime = $utcMachineDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'))->format('Y-m-d H:i:s');
-                    $machineDate = date('Y-m-d', strtotime($machineDatetime));
 
                     $machineName = "{$nodeName}:M{$machine['Mid']}";
-                    $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('name', $machineName)->first();
-                    if (!$machineMasterTable) {
-                        $machineMasterData = [
-                            'node_id' => $nodeMasterTable->id,
-                            'name' => $machineName,
-                        ];
-                        $machineMasterTable = MachineMaster::create($machineMasterData);
-                    }
+                    $machineMasterTable = MachineMaster::updateOrCreate(
+                        ['node_id' => $nodeMasterTable->id, 'name' => $machineName],
+                        [
+                            'current_status' => 1,
+                        ]
+                    );
 
                     $machineLogData = [
                         'machine_id' => $machineMasterTable->id,
@@ -314,7 +306,7 @@ class ApiController extends Controller
                         'pick' => $machine['Tp'] ?? '',
                         'machine_datetime' => $machineDatetime,
                     ];
-                    $machineLogTable = MachineLog::create($machineLogData);
+                    $machineLogTable = MachineMasterLog::create($machineLogData);
 
                     $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
                                         ->whereDate('shift_date', $shiftDate)
@@ -332,9 +324,8 @@ class ApiController extends Controller
                     
                     $machineStatusData = [
                         'machine_id' => $machineMasterTable->id,
-                        'active_machine' => 1,
-                        'speed' => (int)$machine['Spd'],
-                        'status' => (int)$machine['St'] ?? 0,
+                        'speed' => (int) $machine['Spd'],
+                        'status' => (int) $machine['St'] ?? 0,
                         'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
                         'device_datetime' => $deviceDatetime,
                         'machine_datetime' => $machineDatetime,
@@ -435,7 +426,7 @@ class ApiController extends Controller
                     }
 
                     if ($machineStatusTable) {
-                        $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
+                        MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
 
                         if($pickResponse['status']) {
                             if ($pickResponse['isUpdate'] && $pickResponse['id']) {
@@ -446,12 +437,12 @@ class ApiController extends Controller
                             }
                         }
 
-                        $insertedMachineIds[] = $machineStatusTable->id;
+                        $insertedMachineIds[] = $machineMasterTable->id;
                         
                         //-----------------------------------------------------------------
                         $machineStatusData['machine_status_id'] = $machineStatusTable->id;
                         $machineStatusData['machine_log_id'] = $machineLogTable->id;
-                        TempMachineStatus::create($machineStatusData);
+                        MachineStatusLog::create($machineStatusData);
                         //-----------------------------------------------------------------
                     } 
                     else {
@@ -469,7 +460,7 @@ class ApiController extends Controller
                         //-----------------------------------------------------------------
                         $machineStatusData['machine_status_id'] = $insertMachineStatus->id;
                         $machineStatusData['machine_log_id'] = $machineLogTable->id;
-                        TempMachineStatus::create($machineStatusData);
+                        MachineStatusLog::create($machineStatusData);
                         //-----------------------------------------------------------------
                     }
                 }
@@ -477,9 +468,9 @@ class ApiController extends Controller
         }
 
         if (count($insertedMachineIds) > 0) {
-            $inactivatedMachineIds = array_diff($insertedMachineIds, $machineStatusIds);
-            MachineStatus::whereIn('id', $inactivatedMachineIds)->update([
-                    'active_machine' => 0,
+            $inactivatedMachineIds = array_diff($insertedMachineIds, $machineIds);
+            MachineMaster::whereIn('id', $inactivatedMachineIds)->update([
+                    'current_status' => 0,
                 ]);
 
             Log::info("These machine status ids are inactivated: " . implode(',', $inactivatedMachineIds));
@@ -489,7 +480,7 @@ class ApiController extends Controller
         return true;
     }
     
-    protected function pickCalculation(int $pick, int $id = NULL, string $type = 'update')
+    protected function pickCalculation(int $pick, $id = NULL, string $type = 'update')
     {
         if ($id != NULL) {
             $pickTable = PickCalculation::where('machine_status_id', $id)->first();

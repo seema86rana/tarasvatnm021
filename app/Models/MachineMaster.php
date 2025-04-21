@@ -14,7 +14,10 @@ class MachineMaster extends Model
     protected $fillable = [
         'node_id',
         'name',
+        'display_name',
+        'priority',
         'status',
+        'current_status',
     ];
 
     public $timestamps = true;
@@ -24,40 +27,36 @@ class MachineMaster extends Model
         parent::boot();
 
         static::deleting(function (MachineMaster $machineMaster) {
+            $machineMasterLogs = MachineMasterLog::where('machine_id', $machineMaster->id)->get();
+            if ($machineMasterLogs->isNotEmpty()) {
+                $machineMasterLogs->each->delete();
+            }
+
             $machineStatuses = MachineStatus::where('machine_id', $machineMaster->id)->get();
             if ($machineStatuses->isNotEmpty()) {
                 $machineStatuses->each->delete();
             }
 
-            $tempMachineStatuses = TempMachineStatus::where('machine_id', $machineMaster->id)->get();
-            if ($tempMachineStatuses->isNotEmpty()) {
-                $tempMachineStatuses->each->delete();
-            }
-
-            $machineLogs = MachineLog::where('machine_id', $machineMaster->id)->get();
-            if ($machineLogs->isNotEmpty()) {
-                $machineLogs->each->delete();
+            $machineStatusLogs = MachineStatusLog::where('machine_id', $machineMaster->id)->get();
+            if ($machineStatusLogs->isNotEmpty()) {
+                $machineStatusLogs->each->delete();
             }
         });
     }
 
-    public function node()
-    {
+    public function node() {
         return $this->belongsTo(NodeMaster::class, 'node_id', 'id');
     }
 
-    public function machineLogs()
-    {
-        return $this->hasMany(MachineLog::class, 'machine_id', 'id');
+    public function machineMasterLogs() {
+        return $this->hasMany(MachineMasterLog::class, 'machine_id', 'id');
     }
 
-    public function machineStatuses()
-    {
+    public function machineStatuses() {
         return $this->hasMany(MachineStatus::class, 'machine_id', 'id');
     }
 
-    public function tempMachineStatuses()
-    {
-        return $this->hasMany(TempMachineStatus::class, 'machine_id', 'id');
+    public function machineStatusLogs() {
+        return $this->hasMany(MachineStatusLog::class, 'machine_id', 'id');
     }
 }

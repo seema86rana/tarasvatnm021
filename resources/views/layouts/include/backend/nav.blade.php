@@ -20,7 +20,6 @@
 		</ul>
 	</div>
 	<div class="navbar-collapse collapse" id="navbar-mobile">
-		@if(Auth::user()->role_id == 0)
 			<ul class="nav navbar-nav">
 				<li>
 					<a class="sidebar-control sidebar-main-toggle hidden-xs">
@@ -28,7 +27,6 @@
 					</a>
 				</li>
 			</ul>
-		@endif
 
 		<ul class="nav navbar-nav navbar-right ml-auto">
 			<li class="dropdown dropdown-user">

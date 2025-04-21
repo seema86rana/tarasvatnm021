@@ -4,7 +4,7 @@ namespace App\Exports;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Models\TempMachineStatus;
+use App\Models\MachineStatusLog;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -59,7 +59,7 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
             [$startDay, $endDay] = array_map('trim', explode(' - ', $select_shift_day));
         }
 
-        $query = TempMachineStatus::query()
+        $query = MachineStatusLog::query()
             ->when(!empty($user_id), function ($query) use ($user_id) {
                 return $query->whereHas('machine.node.device.user', function ($q) use ($user_id) {
                     $q->where('user_id', $user_id);
@@ -134,7 +134,7 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
         return [
             $row->id,
             $row->machine->node->device->name ?? '--------',
-            $row->machine->name ?? '--------',
+            $row->machine->display_name ?? $row->machine->name,
             $row->total_running ? (int) $row->total_running : '--------',
             $row->total_time ? (int) $row->total_time : '--------',
             $efficiency,
@@ -146,7 +146,7 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
             $row->no_of_stoppage ?? 0,
             $row->status ?? 0,
             $row->speed ?? 0,
-            $row->machine_log->pick ?? 0,
+            self::formatIndianNumber($row->machineMasterLog->pick ?? 0),
         ];
     }
 
@@ -231,5 +231,9 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
         }
 
         $sheet->getStyle($range)->setConditionalStyles($conditionalStyles);
+    }
+
+    private static function formatIndianNumber($num) {
+        return number_format($num, 0, '.', ',');
     }
 }

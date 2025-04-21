@@ -5,17 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TempMachineStatus extends Model
+class MachineStatusLog extends Model
 {
     use HasFactory;
 
-    protected $table = "temp_machine_status";
+    protected $table = "machine_status_logs";
 
     protected $fillable = [
         'machine_status_id',
         'machine_log_id',
         'machine_id',
-        'active_machine',
         'speed',
         'status',
         'no_of_stoppage',
@@ -34,18 +33,15 @@ class TempMachineStatus extends Model
     
     public $timestamps = true;
 
-    public function machine_status()
-    {
+    public function machineStatus() {
         return $this->belongsTo(MachineStatus::class, 'machine_status_id', 'id');
     }
 
-    public function machine_log()
-    {
-        return $this->belongsTo(MachineLog::class, 'machine_log_id', 'id');
+    public function machineMasterLog() {
+        return $this->belongsTo(MachineMasterLog::class, 'machine_log_id', 'id');
     }
 
-    public function machine()
-    {
+    public function machine() {
         return $this->belongsTo(MachineMaster::class, 'machine_id', 'id');
     }
 }

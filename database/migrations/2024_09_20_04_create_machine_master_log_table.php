@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateMachineLogsTable extends Migration
+class CreateMachineMasterLogTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateMachineLogsTable extends Migration
      */
     public function up()
     {
-        Schema::create('machine_logs', function (Blueprint $table) {
+        Schema::create('machine_master_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('machine_id');
             $table->unsignedBigInteger('speed')->nullable();
@@ -21,6 +21,9 @@ class CreateMachineLogsTable extends Migration
             $table->unsignedBigInteger('pick')->nullable();
             $table->dateTime('machine_datetime');
             $table->timestamps();
+
+            // Add foreign key constraint
+            $table->foreign('machine_id')->references('id')->on('machine_master')->onDelete('cascade'); // cascade, restrict, set null
         });
     }
 
@@ -31,6 +34,6 @@ class CreateMachineLogsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('machine_logs');
+        Schema::dropIfExists('machine_master_logs');
     }
 }

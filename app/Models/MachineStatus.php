@@ -13,7 +13,6 @@ class MachineStatus extends Model
 
     protected $fillable = [
         'machine_id',
-        'active_machine',
         'speed',
         'status',
         'no_of_stoppage',
@@ -29,7 +28,7 @@ class MachineStatus extends Model
         'shift_start_datetime',
         'shift_end_datetime',
     ];
-    
+
     public $timestamps = true;
 
     public static function boot()
@@ -37,6 +36,11 @@ class MachineStatus extends Model
         parent::boot();
 
         static::deleting(function (MachineStatus $machineStatus) {
+            $machineStatusLogs = MachineStatusLog::where('machine_status_id', $machineStatus->id)->get();
+            if ($machineStatusLogs->isNotEmpty()) {
+                $machineStatusLogs->each->delete();
+            }
+
             $pickCals = PickCalculation::where('machine_status_id', $machineStatus->id)->get();
             if ($pickCals->isNotEmpty()) {
                 $pickCals->each->delete();
@@ -50,5 +54,9 @@ class MachineStatus extends Model
 
     public function pickCal() {
         return $this->belongsTo(PickCalculation::class, 'id', 'machine_status_id');
+    }
+
+    public function machineStatusLogs() {
+        return $this->hasMany(MachineStatusLog::class, 'machine_status_id', 'id');
     }
 }

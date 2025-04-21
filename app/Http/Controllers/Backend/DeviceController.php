@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
-use DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class DeviceController extends Controller
 {
@@ -128,39 +128,39 @@ class DeviceController extends Controller
                 $shiftEnd = strtotime($request->shift_end_time[$i]);
 
                 /*
-                // Validate shift times
-                if ($shiftStart > $shiftEnd && $i == 0) {
-                    return response()->json([
-                        'statusCode' => 0,
-                        'message' => "Shift start time should not be greater than shift end time for Shift $i",
-                        'position_start' => $i,
-                        'position_end' => $i,
-                    ]);
-                } elseif ($i > 0 && strtotime($request->shift_end_time[$i - 1]) > $shiftStart) {
-                    return response()->json([
-                        'statusCode' => 0,
-                        'message' => "Shift start time for Shift $i overlaps with the previous shift",
-                        'position_start' => $i,
-                        'position_end' => $i - 1,
-                    ]);
-                } elseif ($shiftType != 0) {
-                    $shiftEndDateTime = date('Y-m-d H:i:s', strtotime("2025-01-26 {$request->shift_end_time[$i]}"));
-                
-                    // Get the first shift's start datetime
-                    $firstShiftStartDateTime = date('Y-m-d H:i:s', strtotime("2025-01-25 {$request->shift_start_time[0]}"));
-                
-                    // Calculate the time difference in minutes
-                    $timeDifferenceInMinutes = (strtotime($shiftEndDateTime) - strtotime($firstShiftStartDateTime)) / 60;
-                
-                    if ($timeDifferenceInMinutes > 1440) { // 24 hours = 1440 minutes
+                    // Validate shift times
+                    if ($shiftStart > $shiftEnd && $i == 0) {
                         return response()->json([
                             'statusCode' => 0,
-                            'message' => "Shift end time for Shift $i exceeds 24 hours from the first shift's start time",
-                            'position_start' => 0,
-                            'position_end' => $i, // Highlight the first shift and the current shift
+                            'message' => "Shift start time should not be greater than shift end time for Shift $i",
+                            'position_start' => $i,
+                            'position_end' => $i,
                         ]);
+                    } elseif ($i > 0 && strtotime($request->shift_end_time[$i - 1]) > $shiftStart) {
+                        return response()->json([
+                            'statusCode' => 0,
+                            'message' => "Shift start time for Shift $i overlaps with the previous shift",
+                            'position_start' => $i,
+                            'position_end' => $i - 1,
+                        ]);
+                    } elseif ($shiftType != 0) {
+                        $shiftEndDateTime = date('Y-m-d H:i:s', strtotime("2025-01-26 {$request->shift_end_time[$i]}"));
+                    
+                        // Get the first shift's start datetime
+                        $firstShiftStartDateTime = date('Y-m-d H:i:s', strtotime("2025-01-25 {$request->shift_start_time[0]}"));
+                    
+                        // Calculate the time difference in minutes
+                        $timeDifferenceInMinutes = (strtotime($shiftEndDateTime) - strtotime($firstShiftStartDateTime)) / 60;
+                    
+                        if ($timeDifferenceInMinutes > 1440) { // 24 hours = 1440 minutes
+                            return response()->json([
+                                'statusCode' => 0,
+                                'message' => "Shift end time for Shift $i exceeds 24 hours from the first shift's start time",
+                                'position_start' => 0,
+                                'position_end' => $i, // Highlight the first shift and the current shift
+                            ]);
+                        }
                     }
-                }
                 */
 
                 // Determine shift start and end days

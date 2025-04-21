@@ -120,7 +120,7 @@
                 $minTT = $min < 10 ? ('0'.$min) : $min;
 
                 $birdModalData = [
-                        'name' => $mValue->machine->name,
+                        'name' => $mValue->machine->display_name ?? $mValue->machine->name,
                         'backgroundClass' => birdBackgroundClass($mValue->efficiency, $birdHeaderData),
                         'dotBackgroundClass' => dotBackgroundClass($mValue->status),
                         'efficiency' => $mValue->efficiency,
@@ -134,8 +134,8 @@
                         'stoppage' => $mValue->no_of_stoppage,
                     ];
             @endphp
-            <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }} {{ dullClass($mValue->active_machine) }}" data-id="{{ $mValue->id }}">
-                <h6>{{ $mValue->machine->name }}</h6>
+            <div class="machine_box {{ $birdModalData['backgroundClass'] }} {{ birdBorderClass($mValue->status, $birdHeaderData) }} {{ dullClass($mValue->machine->current_status) }}" data-id="{{ $mValue->id }}">
+                <h6>{{ $mValue->machine->display_name ?? $mValue->machine->name }}</h6>
                 <h4>{{ $mValue->efficiency }} % <span>{{ $mValue->speed <= 9 ? ('0'.(int)$mValue->speed) : (int)$mValue->speed }}</span></h4>
                 <input type="hidden" id="birdModalData{{ $mValue->id }}" value="{{ json_encode($birdModalData) }}">
             </div>

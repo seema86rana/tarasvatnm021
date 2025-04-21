@@ -13,7 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\TempMachineStatus;
+use App\Models\MachineStatusLog;
 
 class GenerateReport implements ShouldQueue
 {
@@ -77,7 +77,8 @@ class GenerateReport implements ShouldQueue
         
         $queryPrevious = MachineStatus::query()
             ->selectRaw("
-                users.id AS user_id, devices.name AS device_name, node_master.name AS node_name, machine_master.name AS machine_name, machine_status.shift_name AS shift_name,
+                users.id AS user_id, devices.name AS device_name, node_master.name AS node_name, machine_status.shift_name AS shift_name,
+                COALESCE(machine_master.display_name, machine_master.name) AS machine_name,
                 DATE_FORMAT(MIN(machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
                 DATE_FORMAT(MAX(machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
                 SUM(machine_status.speed) AS speed,
@@ -311,49 +312,49 @@ class GenerateReport implements ShouldQueue
         $currentDay = '';
         $userDetail = User::findOrFail($userId);
         
-        $query = TempMachineStatus::query()
+        $query = MachineStatusLog::query()
             ->selectRaw("
                 users.id AS user_id,
                 devices.name AS device_name,
-                machine_master.name AS machine_name,
-                temp_machine_status.shift_name AS shift_name,
-                temp_machine_status.shift_date AS shift_date,
-                DATE_FORMAT(MIN(temp_machine_status.shift_start_datetime), '%h:%i %p') AS shift_start,
-                DATE_FORMAT(MAX(temp_machine_status.shift_end_datetime), '%h:%i %p') AS shift_end,
-                temp_machine_status.no_of_stoppage AS stoppage,
-                temp_machine_status.machine_id AS machine_id,
-                MIN(temp_machine_status.last_stop) AS first_stopage,
-                MAX(temp_machine_status.last_stop) AS last_stopage,
-                COUNT(temp_machine_status.id) AS total_record,
-                MIN(temp_machine_status.machine_datetime) AS first_machine_datetime,
-                MAX(temp_machine_status.machine_datetime) AS last_machine_datetime,
-                MIN(temp_machine_status.device_datetime) AS first_device_datetime,
-                MAX(temp_machine_status.device_datetime) AS last_device_datetime
+                COALESCE(machine_master.display_name, machine_master.name) AS machine_name,
+                machine_status_logs.shift_name AS shift_name,
+                machine_status_logs.shift_date AS shift_date,
+                DATE_FORMAT(MIN(machine_status_logs.shift_start_datetime), '%h:%i %p') AS shift_start,
+                DATE_FORMAT(MAX(machine_status_logs.shift_end_datetime), '%h:%i %p') AS shift_end,
+                machine_status_logs.no_of_stoppage AS stoppage,
+                machine_status_logs.machine_id AS machine_id,
+                MIN(machine_status_logs.last_stop) AS first_stopage,
+                MAX(machine_status_logs.last_stop) AS last_stopage,
+                COUNT(machine_status_logs.id) AS total_record,
+                MIN(machine_status_logs.machine_datetime) AS first_machine_datetime,
+                MAX(machine_status_logs.machine_datetime) AS last_machine_datetime,
+                MIN(machine_status_logs.device_datetime) AS first_device_datetime,
+                MAX(machine_status_logs.device_datetime) AS last_device_datetime
             ")
-            ->join('machine_master', 'temp_machine_status.machine_id', '=', 'machine_master.id')
+            ->join('machine_master', 'machine_status_logs.machine_id', '=', 'machine_master.id')
             ->join('node_master', 'machine_master.node_id', '=', 'node_master.id')
             ->join('devices', 'node_master.device_id', '=', 'devices.id')
             ->join('users', 'devices.user_id', '=', 'users.id')
             ->where('users.id', $userId)
-            ->where('temp_machine_status.status', 0)
+            ->where('machine_status_logs.status', 0)
             ->groupBy(
                 'users.id',
                 'devices.name',
                 'node_master.name',
                 'machine_master.name',
-                'temp_machine_status.machine_id',
-                'temp_machine_status.shift_name',
-                'temp_machine_status.shift_date',
-                'temp_machine_status.no_of_stoppage'
+                'machine_status_logs.machine_id',
+                'machine_status_logs.shift_name',
+                'machine_status_logs.shift_date',
+                'machine_status_logs.no_of_stoppage'
             )
-            ->orderBy('temp_machine_status.machine_id')
-            ->orderBy('temp_machine_status.shift_name')
-            ->orderBy('temp_machine_status.no_of_stoppage');
+            ->orderBy('machine_status_logs.machine_id')
+            ->orderBy('machine_status_logs.shift_name')
+            ->orderBy('machine_status_logs.no_of_stoppage');
 
         switch ($reportType) {
             case 'daily':
-                // $query->whereDate('temp_machine_status.shift_date', '2025-04-02');
-                $query->whereDate('temp_machine_status.shift_date', Carbon::yesterday());
+                // $query->whereDate('machine_status_logs.shift_date', '2025-04-21');
+                $query->whereDate('machine_status_logs.shift_date', Carbon::yesterday());
     
                 $previousDay = Carbon::yesterday()->format('d/m/Y');
                 $currentDay = Carbon::today()->format('d/m/Y');
@@ -362,7 +363,7 @@ class GenerateReport implements ShouldQueue
                 break;
     
             case 'weekly':
-                $query->whereBetween('temp_machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereBetween('machine_status_logs.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
     
                 $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
                 $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');
@@ -371,7 +372,7 @@ class GenerateReport implements ShouldQueue
                 break;
     
             case 'monthly':
-                $query->whereBetween('temp_machine_status.shift_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+                $query->whereBetween('machine_status_logs.shift_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
     
                 $currentDay = Carbon::now()->format('M Y');
                 $firstDayOfMonthCurrent = Carbon::parse($currentDay)->startOfMonth()->format('d/m/Y');
@@ -380,7 +381,7 @@ class GenerateReport implements ShouldQueue
                 break;
     
             case 'yearly':
-                $query->whereYear('temp_machine_status.shift_date', Carbon::now()->year);
+                $query->whereYear('machine_status_logs.shift_date', Carbon::now()->year);
     
                 $currentDay = Carbon::now()->year;
                 $firstDayOfYearCurrent = Carbon::parse($currentDay)->startOfYear()->format('d/m/Y');
@@ -389,7 +390,7 @@ class GenerateReport implements ShouldQueue
                 break;
     
             default:
-                $query->whereBetween('temp_machine_status.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                $query->whereBetween('machine_status_logs.shift_date', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
     
                 $currentDay = Carbon::now()->endOfWeek()->format('d M Y');
                 $firstDayOfWeekCurrent = Carbon::parse($currentDay)->startOfWeek()->format('d/m/Y');

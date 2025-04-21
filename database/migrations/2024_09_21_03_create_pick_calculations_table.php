@@ -22,6 +22,9 @@ class CreatePickCalculationsTable extends Migration
             $table->unsignedBigInteger('new_pick')->nullable();
             $table->unsignedBigInteger('difference_pick')->nullable();
             $table->timestamps();
+
+            // Add foreign key constraint
+            $table->foreign('machine_status_id')->references('id')->on('machine_status')->onDelete('cascade'); // cascade, restrict, set null
         });
     }
 

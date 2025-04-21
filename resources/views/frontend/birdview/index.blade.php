@@ -52,6 +52,7 @@
                                     <li><hr class="dropdown-divider"></li>
                                 <!-- <li><a class="dropdown-item" href="#">My Profile</a></li> -->
                                     <li><a class="dropdown-item" href="{{ route('home') }}">Home</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('dashboard.index') }}">Dashboard</a></li>
                                 <li>
                                     <a class="dropdown-item" href="javascript: void(0)" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
                                     <form method="POST" id="logout-form" action="{{ route('logout') }}">

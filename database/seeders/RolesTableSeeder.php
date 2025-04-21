@@ -29,7 +29,7 @@ class RolesTableSeeder extends Seeder
             ],
             [
                 'name' => 'User',
-                'permission' => json_encode([]),
+                'permission' => json_encode(['dashboard', 'profile', 'machines']),
                 'status' => 1, // Active status
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

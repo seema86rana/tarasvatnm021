@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateRoleTable extends Migration
+class CreateDeviceTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,14 +13,18 @@ class CreateRoleTable extends Migration
      */
     public function up()
     {
-        Schema::create('roles', function (Blueprint $table) {
+        Schema::create('devices', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->text('permission')->nullable();
-            $table->integer('status')->default(1)->comment('1->Active, 0->Inactive');
+            $table->unsignedBigInteger('user_id');
+            $table->text('shift');
+            $table->tinyInteger('status')->default(1)->comment('1->Active, 0->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->timestamps();
+
+            // Add foreign key constraint
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade'); // cascade, restrict, set null
         });
     }
 
@@ -31,6 +35,6 @@ class CreateRoleTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('devices');
     }
 }

@@ -17,8 +17,11 @@ class CreateNodeMasterTable extends Migration
             $table->id();
             $table->unsignedBigInteger('device_id');
             $table->string('name');
-            $table->integer('status')->default(1)->comment('1->Active, 0->Inactive');
+            $table->tinyInteger('status')->default(1)->comment('1->Active, 0->Inactive');
             $table->timestamps();
+
+            // Add foreign key constraint
+            $table->foreign('device_id')->references('id')->on('devices')->onDelete('cascade'); // cascade, restrict, set null
         });
     }
 

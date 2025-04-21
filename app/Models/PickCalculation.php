@@ -22,8 +22,7 @@ class PickCalculation extends Model
 
     public $timestamps = true;
 
-    public function machine_status()
-    {
+    public function machineStatus() {
         return $this->belongsTo(MachineStatus::class, 'machine_status_id', 'id');
     }
 }

@@ -50,16 +50,10 @@
 
     <div class="page-container">
         <div class="page-content">
-
-            @if(Auth::user()->role_id == 0)
-                @include('layouts.include.backend.sidebar')
-            @endif
-
+            @include('layouts.include.backend.sidebar')
             <div class="content-wrapper">
-
                 @section('page_header')
                 @show
-
                 <div class="content">
                     @section('content')
                     @show

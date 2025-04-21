@@ -31,13 +31,11 @@ class NodeMaster extends Model
         });
     }
 
-    public function device()
-    {
+    public function device() {
         return $this->belongsTo(Device::class, 'device_id', 'id');
     }
 
-    public function machines()
-    {
+    public function machines() {
         return $this->hasMany(MachineMaster::class, 'node_id', 'id');
     }
 }

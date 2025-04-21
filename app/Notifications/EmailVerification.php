@@ -13,6 +13,8 @@ class EmailVerification extends VerifyEmailNotification
 {
     use Queueable;
 
+    protected $customData;
+
     /**
      * Create a new notification instance.
      *

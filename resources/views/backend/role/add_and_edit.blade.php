@@ -47,11 +47,12 @@
                             @endif
                             @if($menu && count($menu) > 0)
                                 @foreach($menu as $key => $menu)
-                                    @if(count($menu['sub_menu']) > 0 && !empty($menu['route']))
+                                    @php $unique = $menu['route']; @endphp
+                                    @if(count($menu['sub_menu']) > 0 && !empty($unique))
                                         <li>
                                             <div class="form-check">
-                                                <input class="form-check-input parent_menu {{ $menu['route'] }}_parent" data-route="{{ $menu['route'] }}" name="permission[]" type="checkbox" value="{{ $menu['route'] }}" id="{{ $menu['route'] }}" {{ in_array($menu['route'], $permission) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="{{ $menu['route'] }}">
+                                                <input class="form-check-input parent_menu {{ $unique }}_parent" data-route="{{ $unique }}" name="permission[]" type="checkbox" value="{{ $unique }}" id="{{ $unique }}" {{ in_array($unique, $permission) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="{{ $unique }}">
                                                     {{ $menu['name'] }}
                                                 </label>
                                             </div>
@@ -61,7 +62,7 @@
                                                     @if(!empty($subMenu['route']))
                                                         <li>
                                                             <div class="form-check">
-                                                                <input class="form-check-input child_menu {{ $menu['route'] }}_child" data-parent="{{ $menu['route'] }}" name="permission[]" type="checkbox" value="{{ $subMenu['route'] }}" id="{{ $subMenu['route'] }}" {{ in_array($subMenu['route'], $permission) ? 'checked' : '' }}>
+                                                                <input class="form-check-input child_menu {{ $unique }}_child" data-parent="{{ $unique }}" name="permission[]" type="checkbox" value="{{ $subMenu['route'] }}" id="{{ $subMenu['route'] }}" {{ in_array($subMenu['route'], $permission) ? 'checked' : '' }}>
                                                                 <label class="form-check-label" for="{{ $subMenu['route'] }}">
                                                                     {{ $subMenu['name'] }}
                                                                 </label>
@@ -72,14 +73,14 @@
                                             </ul>
                                         </li>
                                     @else
-                                        @if(!empty($menu['route']))
+                                        @if(!empty($unique))
                                             @if($key == 0)
-                                                <input  name="permission[]" type="hidden" value="{{$menu['route']}}">
+                                                <input  name="permission[]" type="hidden" value="{{$unique}}">
                                             @endif
                                             <li>
                                                 <div class="form-check">
-                                                    <input class="form-check-input" {{ ($key == 0) ? 'checked disabled' : '' }} name="permission[]" type="checkbox" value="{{ $menu['route'] }}" id="{{ $menu['route'] }}" {{ in_array($menu['route'], $permission) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="{{ $menu['route'] }}">
+                                                    <input class="form-check-input" {{ ($key == 0) ? 'checked disabled' : '' }} name="permission[]" type="checkbox" value="{{ $unique }}" id="{{ $unique }}" {{ in_array($unique, $permission) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="{{ $unique }}">
                                                         {{ $menu['name'] }}
                                                     </label>
                                                 </div>

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateMenusTable extends Migration
+class CreateMenuTable extends Migration
 {
     /**
      * Run the migrations.
@@ -20,7 +20,7 @@ class CreateMenusTable extends Migration
             $table->string('route')->nullable()->unique();
             $table->text('icon')->nullable();
             $table->integer('position')->default(0);
-            $table->integer('status')->default(1)->comment('1->Active, 0->Inactive');
+            $table->tinyInteger('status')->default(1)->comment('1->Active, 0->Inactive');
             $table->timestamps();
         });
     }

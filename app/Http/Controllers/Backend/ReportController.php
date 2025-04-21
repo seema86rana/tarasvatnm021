@@ -9,13 +9,12 @@ use App\Models\Device;
 use App\Models\NodeMaster;
 use Illuminate\Http\Request;
 use App\Models\MachineMaster;
-use App\Models\TempMachineStatus;
+use App\Models\MachineStatusLog;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\View;
 use Yajra\DataTables\Facades\DataTables;
 use App\Exports\MachineLogExport;
 use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportController extends Controller
 {
@@ -76,7 +75,7 @@ class ReportController extends Controller
                 [$startDay, $endDay] = array_map('trim', explode(' - ', $select_shift_day));
             }
 
-            $query = TempMachineStatus::query()
+            $query = MachineStatusLog::query()
                 ->when(!empty($user_id), function ($query) use ($user_id) {
                     return $query->whereHas('machine.node.device.user', function ($q) use ($user_id) {
                         $q->where('user_id', $user_id);
@@ -84,7 +83,8 @@ class ReportController extends Controller
                 })
                 ->when(!empty($searchValue), function ($query) use ($searchValue) {
                     return $query->whereHas('machine', function ($q) use ($searchValue) {
-                        $q->where('name', 'like', '%' . $searchValue . '%'); // Fixed extra space
+                        $q->where('name', 'like', '%' . $searchValue . '%')
+                        ->orWhere('display_name', 'like', '%' . $searchValue . '%'); // Fixed extra space
                     })->orWhereHas('machine.node.device', function ($q) use ($searchValue) {
                         $q->where('name', 'like', '%' . $searchValue . '%'); // Fixed incorrect reference
                     });
@@ -151,7 +151,7 @@ class ReportController extends Controller
                     return !empty($row->machine->node->device->name) ? $row->machine->node->device->name : '--------';
                 })
                 ->addColumn('machine', function ($row) {
-                    return !empty($row->machine->name) ? $row->machine->name : '--------';
+                    return !empty($row->machine->display_name) ? $row->machine->display_name : $row->machine->name;
                 })
                 ->addColumn('total_running', function ($row) {
                     return !empty($row->total_running) ? (int) $row->total_running . ' <span class="small-text">(min)</span>' : '--------';
@@ -190,7 +190,7 @@ class ReportController extends Controller
                     return !empty($row->speed) ? $row->speed : 0;
                 })
                 ->addColumn('pick', function ($row) {
-                    return !empty($row->machine_log->pick) ? self::formatIndianNumber($row->machine_log->pick) : 0;
+                    return !empty($row->machineMasterLog->pick) ? self::formatIndianNumber($row->machineMasterLog->pick) : 0;
                 })
                 ->rawColumns(['log_id', 'device', 'machine', 'total_running', 'total_time', 'efficiency', 'shift', 'deviceDatetime', 'machineDatetime', 'last_stop', 'last_running', 'no_of_stoppage', 'mode', 'speed', 'pick'])
                 ->make(true);

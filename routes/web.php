@@ -6,10 +6,11 @@ use App\Http\Controllers\Backend\UserController as BackendUserController;
 use App\Http\Controllers\Backend\DashboardController as BackendDashboardController;
 use App\Http\Controllers\Backend\ProfileController as BackendProfileController;
 use App\Http\Controllers\Backend\DeviceController as BackendDeviceController;
+use App\Http\Controllers\Backend\MachineController as BackendMachineController;
 use App\Http\Controllers\Backend\ReportController as BackendReportController;
 use App\Http\Controllers\Backend\ClearLogController as BackendClearLogController;
-use App\Http\Controllers\FrontEnd\BirdViewController as FrontEndBirdViewController;
-use App\Http\Controllers\FrontEnd\HomeController as FrontEndHomeController;
+use App\Http\Controllers\Frontend\BirdViewController as FrontendBirdViewController;
+use App\Http\Controllers\Frontend\HomeController as FrontendHomeController;
 use Illuminate\Support\Facades\Auth;
 
 /*
@@ -23,9 +24,9 @@ use Illuminate\Support\Facades\Auth;
 |
 */
 
-Route::get('/', [FrontEndHomeController::class, 'index'])->name('home');
+Route::get('/', [FrontendHomeController::class, 'index'])->name('home');
 
-Route::get('/birdviews', [FrontEndBirdViewController::class, 'index'])->name('bird.view');
+Route::get('/birdviews', [FrontendBirdViewController::class, 'index'])->name('bird.view');
 // Route::get('/', function () {
 //     return redirect()->route('dashboard.index');
 // });
@@ -45,7 +46,7 @@ Route::group(['middleware' => ['auth']], function () {
 });
 
 // birdview
-Route::resource('birdview', FrontEndBirdViewController::class);
+Route::resource('birdview', FrontendBirdViewController::class);
 
 // backend
 Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth', 'verified', 'permission']], function () {
@@ -60,6 +61,9 @@ Route::group(['namespace' => '', 'prefix' => 'backend', 'middleware' => ['auth',
 
     Route::resource('devices', BackendDeviceController::class);
     Route::post('devices/{id}', [BackendDeviceController::class, 'update'])->name('devices.updates');
+
+    Route::resource('machines', BackendMachineController::class);
+    Route::post('machines/{id}', [BackendMachineController::class, 'update'])->name('machines.updates');
 
     Route::resource('view-reports', BackendReportController::class);
     Route::post('view-reports/{id}', [BackendReportController::class, 'update'])->name('view-reports.updates');

@@ -29,17 +29,26 @@
                 <li class="nav-item">
                     <a class="nav-link" href="#faq">FAQ</a>
                 </li>
-                <!-- <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-bs-toggle="dropdown" aria-expanded="false">Drop</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-bs-toggle="dropdown" aria-expanded="false">My Account</a>
                     <ul class="dropdown-menu" aria-labelledby="dropdown01">
-                        <li><a class="dropdown-item" href="article.html">Article Details</a></li>
-                        <li><div class="dropdown-divider"></div></li>
-                        <li><a class="dropdown-item" href="terms.html">Terms Conditions</a></li>
-                        <li><div class="dropdown-divider"></div></li>
-                        <li><a class="dropdown-item" href="privacy.html">Privacy Policy</a></li>
+                        @auth
+                            <li><a class="dropdown-item" href="{{ route('dashboard.index') }}">Dashboard</a></li>
+                            <li><div class="dropdown-divider"></div></li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Log out</a>
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                    @csrf
+                                </form>
+                            </li>
+                        @else
+                            <li><a class="dropdown-item" href="{{ route('login') }}">Log in</a></li>
+                        @endauth
                     </ul>
-                </li> -->
+                </li>
             </ul>
+            <!--
             <span class="nav-item">
                 @auth
                     <a class="btn-outline-sm" href="javascript:void(0);"
@@ -52,6 +61,7 @@
                     <a class="btn-outline-sm" href="{{ route('login') }}">Log in</a>
                 @endauth
             </span>
+            -->
 
         </div> <!-- end of navbar-collapse -->
     </div> <!-- end of container -->

@@ -58,7 +58,7 @@ class Report implements ShouldQueue
 
         switch ($reportType) {
             case 'daily':
-                // $query->whereDate('machine_status.shift_date', '2025-04-02');
+                // $query->whereDate('machine_status.shift_date', '2025-04-21');
                 $query->whereDate('machine_status.shift_date', Carbon::yesterday());
                 break;
             case 'weekly':

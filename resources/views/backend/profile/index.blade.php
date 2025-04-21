@@ -6,18 +6,16 @@
 
 @section('page_header')
 <div class="page-header page-header-default">
-	@if (Auth::user()->role_id == 0)
-		<div class="page-header-content">
-			<div class="page-title">
-				<h4>
-					<i class="icon-user position-left"></i>
-					<span class="text-semibold">Profile</span>
-				</h4>
-			</div>
+	<div class="page-header-content">
+		<div class="page-title">
+			<h4>
+				<i class="icon-user position-left"></i>
+				<span class="text-semibold">Profile</span>
+			</h4>
 		</div>
-	@endif
+	</div>
 
-    @if ( isset( $breadcrumbs )  && Auth::user()->role_id == 0)
+    @if ( isset( $breadcrumbs ))
     	@include('layouts.include.backend.breadcrumb', ['breadcrumbs' => $breadcrumbs])
     @endif
 </div>

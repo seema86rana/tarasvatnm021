@@ -76,6 +76,6 @@ class User extends Authenticatable implements MustVerifyEmailContract
     }
 
     public function device() {
-        return $this->hasMany(Device::class, 'user_id', 'id'); 
+        return $this->hasOne(Device::class, 'user_id', 'id'); 
     }
 }

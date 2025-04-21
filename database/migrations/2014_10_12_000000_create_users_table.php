@@ -17,7 +17,7 @@ class CreateUsersTable extends Migration
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('role_id');
-            $table->string('phone_number')->unique();
+            $table->bigInteger('phone_number')->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
@@ -26,7 +26,7 @@ class CreateUsersTable extends Migration
             $table->string('company_name')->nullable();
             $table->string('gst_number')->unique()->nullable();
             $table->text('address')->nullable();
-            $table->integer('status')->default(2)->comment('1->Active, 2->Pending, 0->Inactive');
+            $table->tinyInteger('status')->default(2)->comment('1->Active, 2->Pending, 0->Inactive');
             $table->integer('created_by')->nullable();
             $table->integer('updated_by')->nullable();
             $table->timestamps();

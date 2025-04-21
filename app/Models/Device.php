@@ -47,8 +47,7 @@ class Device extends Model
         return $this->belongsTo(User::class, 'created_by', 'id'); 
     }
 
-    public function nodes()
-    {
+    public function nodes() {
         return $this->hasMany(NodeMaster::class, 'device_id', 'id');
     }
 }

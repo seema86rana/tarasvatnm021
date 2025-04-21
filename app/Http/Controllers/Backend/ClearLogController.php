@@ -8,11 +8,11 @@ use App\Models\User;
 use App\Models\Device;
 use App\Models\NodeMaster;
 use Illuminate\Http\Request;
-use App\Models\MachineLog;
+use App\Models\MachineMasterLog;
 use App\Models\MachineMaster;
 use App\Models\MachineStatus;
 use App\Models\PickCalculation;
-use App\Models\TempMachineStatus;
+use App\Models\MachineStatusLog;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Exception;
@@ -152,9 +152,9 @@ class ClearLogController extends Controller
 
                 // Delete related records in proper order
                 PickCalculation::whereIn('machine_status_id', $machineStatusIds)->delete();
-                TempMachineStatus::whereIn('machine_id', $machineIds)->delete();
+                MachineStatusLog::whereIn('machine_id', $machineIds)->delete();
                 MachineStatus::whereIn('machine_id', $machineIds)->delete();
-                MachineLog::whereIn('machine_id', $machineIds)->delete();
+                MachineMasterLog::whereIn('machine_id', $machineIds)->delete();
             
                 return response()->json(['statusCode' => 1, 'message' => "Report data clear successfully."]);
             } else {

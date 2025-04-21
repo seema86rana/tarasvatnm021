@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
-use DataTables;
+use Yajra\DataTables\Facades\DataTables;
 
 class RoleController extends Controller
 {

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
-use DataTables;
+use Yajra\DataTables\Facades\DataTables;
 use App\Notifications\EmailVerification;
 // use Illuminate\Support\Facades\Notification;
 // use Illuminate\Auth\Notifications\VerifyEmail;

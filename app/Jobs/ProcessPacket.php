@@ -5,12 +5,12 @@ namespace App\Jobs;
 use Carbon\Carbon;
 use App\Models\Device;
 use App\Models\NodeMaster;
-use App\Models\MachineLog;
+use App\Models\MachineMasterLog;
 use App\Models\MachineMaster;
 use App\Models\MachineStatus;
 use Illuminate\Bus\Queueable;
 use App\Models\PickCalculation;
-use App\Models\TempMachineStatus;
+use App\Models\MachineStatusLog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -104,14 +104,13 @@ class ProcessPacket implements ShouldQueue
         }
 
         $insertedMachineIds = [];
-        $machineStatusIds = MachineStatus::whereDate('shift_date', $shiftDate)
+        $machineIds = MachineStatus::whereDate('shift_date', $shiftDate)
                             ->where('shift_start_datetime', $shiftStartDatetime)
                             ->where('shift_end_datetime', $shiftEndDatetime)
-                            ->pluck('id')->toArray();
-        
-        // MachineStatus::whereIn('id', $machineStatusId)->update([
-        //     'active_machine' => 0,
-        // ]);
+                            ->whereHas('machine.node.device', function ($query) use ($device) {
+                                $query->where('device_id', $device->id);
+                            })
+                            ->pluck('machine_id')->toArray();
 
         if (isset($reqData['Nd']) && is_array($reqData['Nd']) && count($reqData['Nd']) > 0) {
 
@@ -120,15 +119,11 @@ class ProcessPacket implements ShouldQueue
                     continue;
                 }
                 $nodeName = 'N' . $node['Nid'];
-                $nodeMasterTable = NodeMaster::where('device_id', $device->id)->where('name', $nodeName)->first();
-                if (!$nodeMasterTable) {
-                    $nodeMasterData = [
-                        'device_id' => $device->id,
-                        'name' => $nodeName,
-                    ];
-                    $nodeMasterTable = NodeMaster::create($nodeMasterData);
-                }
-        
+                $nodeMasterTable = NodeMaster::updateOrCreate(
+                    ['device_id' => $device->id, 'name' => $nodeName],
+                    []
+                );
+                
                 if (!isset($node['Md']) || !is_array($node['Md']) || count($node['Md']) < 1) {
                     continue;
                 }
@@ -139,17 +134,14 @@ class ProcessPacket implements ShouldQueue
                     }
                     $utcMachineDatetime = Carbon::createFromFormat('Ymd H:i:s', $machine['Mdt'], env('DEVICE_TIMEZONE', 'UTC'));
                     $machineDatetime = $utcMachineDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'))->format('Y-m-d H:i:s');
-                    $machineDate = date('Y-m-d', strtotime($machineDatetime));
 
                     $machineName = "{$nodeName}:M{$machine['Mid']}";
-                    $machineMasterTable = MachineMaster::where('node_id', $nodeMasterTable->id)->where('name', $machineName)->first();
-                    if (!$machineMasterTable) {
-                        $machineMasterData = [
-                            'node_id' => $nodeMasterTable->id,
-                            'name' => $machineName,
-                        ];
-                        $machineMasterTable = MachineMaster::create($machineMasterData);
-                    }
+                    $machineMasterTable = MachineMaster::updateOrCreate(
+                        ['node_id' => $nodeMasterTable->id, 'name' => $machineName],
+                        [
+                            'current_status' => 1,
+                        ]
+                    );
 
                     $machineLogData = [
                         'machine_id' => $machineMasterTable->id,
@@ -158,7 +150,7 @@ class ProcessPacket implements ShouldQueue
                         'pick' => $machine['Tp'] ?? '',
                         'machine_datetime' => $machineDatetime,
                     ];
-                    $machineLogTable = MachineLog::create($machineLogData);
+                    $machineLogTable = MachineMasterLog::create($machineLogData);
 
                     $machineStatusTable = MachineStatus::where('machine_id', $machineMasterTable->id)
                                         ->whereDate('shift_date', $shiftDate)
@@ -176,9 +168,8 @@ class ProcessPacket implements ShouldQueue
                     
                     $machineStatusData = [
                         'machine_id' => $machineMasterTable->id,
-                        'active_machine' => 1,
-                        'speed' => (int)$machine['Spd'],
-                        'status' => (int)$machine['St'] ?? 0,
+                        'speed' => (int) $machine['Spd'],
+                        'status' => (int) $machine['St'] ?? 0,
                         'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
                         'device_datetime' => $deviceDatetime,
                         'machine_datetime' => $machineDatetime,
@@ -279,7 +270,7 @@ class ProcessPacket implements ShouldQueue
                     }
 
                     if ($machineStatusTable) {
-                        $updateMachineStatus = MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
+                        MachineStatus::where('id', $machineStatusTable->id)->update($machineStatusData);
 
                         if($pickResponse['status']) {
                             if ($pickResponse['isUpdate'] && $pickResponse['id']) {
@@ -289,13 +280,13 @@ class ProcessPacket implements ShouldQueue
                                 PickCalculation::where('id', $pickResponse['id'])->update($pickData);
                             }
                         }
-
-                        $insertedMachineIds[] = $machineStatusTable->id;
                         
+                        $insertedMachineIds[] = $machineMasterTable->id;
+
                         //-----------------------------------------------------------------
                         $machineStatusData['machine_status_id'] = $machineStatusTable->id;
                         $machineStatusData['machine_log_id'] = $machineLogTable->id;
-                        TempMachineStatus::create($machineStatusData);
+                        MachineStatusLog::create($machineStatusData);
                         //-----------------------------------------------------------------
                     } 
                     else {
@@ -313,7 +304,7 @@ class ProcessPacket implements ShouldQueue
                         //-----------------------------------------------------------------
                         $machineStatusData['machine_status_id'] = $insertMachineStatus->id;
                         $machineStatusData['machine_log_id'] = $machineLogTable->id;
-                        TempMachineStatus::create($machineStatusData);
+                        MachineStatusLog::create($machineStatusData);
                         //-----------------------------------------------------------------
                     }
                 }
@@ -321,9 +312,9 @@ class ProcessPacket implements ShouldQueue
         }
 
         if (count($insertedMachineIds) > 0) {
-            $inactivatedMachineIds = array_diff($insertedMachineIds, $machineStatusIds);
-            MachineStatus::whereIn('id', $inactivatedMachineIds)->update([
-                    'active_machine' => 0,
+            $inactivatedMachineIds = array_diff($machineIds, $insertedMachineIds);
+            MachineMaster::whereIn('id', $inactivatedMachineIds)->update([
+                    'current_status' => 0,
                 ]);
 
             Log::info("These machine status ids are inactivated: " . implode(',', $inactivatedMachineIds));
@@ -333,7 +324,7 @@ class ProcessPacket implements ShouldQueue
         return true;
     }
 
-    protected function pickCalculation(int $pick, int $id = NULL, string $type = 'update')
+    protected function pickCalculation(int $pick, $id = NULL, string $type = 'update')
     {
         if ($id != NULL) {
             $pickTable = PickCalculation::where('machine_status_id', $id)->first();

@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\FrontEnd;
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Device;
 use App\Models\MachineStatus;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
@@ -58,52 +57,47 @@ class BirdViewController extends Controller
         $date = date('Y-m-d');
         $time = date('H:i:s');
         try {
-            $authId = Auth::user()->id;
-            if (!$authId) {
-                return response()->json(['status' => false, 'message' => 'Something went wrong!'], 200);
-            }
-            
-            $deviceData = Device::with([])->where('user_id', $authId)->where('status', 1)->get();
-            if (!$deviceData) {
-                return response()->json(['status' => false, 'message' => 'Device not found!'], 200);
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Something went wrong!'
+                ], 200);
             }
 
-            $machineId = [];
-
-            foreach ($deviceData as $device) {
-                if($device->nodes) {
-                    foreach($device->nodes as $node) {
-                        if($node->status == 1 && $node->machines) {
-                            foreach($node->machines as $machine) {
-                                if($machine->status == 1) {
-                                    $machineId[] = $machine->id;
-                                }
-                            }
-                        }
-                    }
-                    if(count($machineId) > 0) {
-                        break;
-                    }
-                }
+            $device = $user->device;
+            if (!$device) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Device not found!'
+                ], 200);
             }
 
-            if(count($machineId) <= 0) {
-                return response()->json(['status' => false, 'message' => 'Machine not found!'], 200);
+            // Get all machine IDs under the user's device
+            $machineIds = $device->load('nodes.machines')->nodes
+                            ->flatMap(fn($node) => $node->machines->pluck('id'))->filter()->unique()->values()->toArray();
+            if (empty($machineIds)) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No machines found!'
+                ], 200);
             }
 
-            $machineStatus = MachineStatus::whereIn('machine_id', $machineId)->whereDate('shift_date', $date)->orderBy('id', 'desc')->first();
+            // Get the latest MachineStatus for the given date or fallback to any latest
+            $machineStatus = MachineStatus::whereIn('machine_id', $machineIds)
+                            ->whereDate('shift_date', $date)->orderByDesc('id')
+                            ->first() ?? MachineStatus::whereIn('machine_id', $machineIds)->orderByDesc('id')->first();
             if (!$machineStatus) {
-                $machineStatus = MachineStatus::whereIn('machine_id', $machineId)->orderBy('id', 'desc')->first();
-            }
-            if(!$machineStatus) {
-                return response()->json(['status' => false, 'message' => 'Machine status not found'], 200);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Machine status not found!'
+                ], 200);
             }
 
-            $machineData = MachineStatus::with('machine', 'pickCal')
-                            ->whereIn('machine_id', $machineId) 
-                            ->whereDate('shift_date', $machineStatus->shift_date)
-                            ->where('shift_start_datetime', $machineStatus->shift_start_datetime)
-                            ->where('shift_end_datetime', $machineStatus->shift_end_datetime)
+            // Fetch all machine statuses for the same shift
+            $machineData = MachineStatus::with(['machine', 'pickCal'])
+                            ->whereIn('machine_id', $machineIds)->whereDate('shift_date', $machineStatus->shift_date)
+                            ->where('shift_start_datetime', $machineStatus->shift_start_datetime)->where('shift_end_datetime', $machineStatus->shift_end_datetime)
                             ->get();
 
             $shiftName = $machineStatus->shift_name;
