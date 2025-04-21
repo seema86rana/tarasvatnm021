@@ -15,6 +15,8 @@ class TempInsertMultipleTable extends Seeder
      */
     public function run()
     {
+        DB::table('devices')->truncate();
+        
         DB::table('devices')->insert([
             [
                 'name' => '58.bf.25.23.3b.d4',
