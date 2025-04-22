@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -34,6 +35,8 @@ class Kernel extends ConsoleKernel
 
         // Run every 30 minutes
         $schedule->command('machine:stop-alert')->everyThirtyMinutes();
+
+        Log::info("\n\n Call Kernal \n\n");
     }
 
     /**
