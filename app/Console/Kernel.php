@@ -36,7 +36,7 @@ class Kernel extends ConsoleKernel
         // Run every 30 minutes
         $schedule->command('machine:stop-alert')->everyThirtyMinutes();
 
-        Log::info("Call Kernal \n");
+        Log::info("Call Kernal");
     }
 
     /**
