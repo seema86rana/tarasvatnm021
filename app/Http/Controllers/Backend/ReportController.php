@@ -154,10 +154,10 @@ class ReportController extends Controller
                     return !empty($row->machine->display_name) ? $row->machine->display_name : $row->machine->name;
                 })
                 ->addColumn('total_running', function ($row) {
-                    return !empty($row->total_running) ? (int) $row->total_running . ' <span class="small-text">(min)</span>' : '--------';
+                    return !empty($row->total_running) ? self::formatTime((int) $row->total_running) : '--------';
                 })
                 ->addColumn('total_time', function ($row) {
-                    return !empty($row->total_time) ? (int) $row->total_time . ' <span class="small-text">(min)</span>' : '--------';
+                    return !empty($row->total_time) ? self::formatTime((int) $row->total_time) : '--------';
                 })
                 ->addColumn('efficiency', function ($row) {
                     return !empty($row->efficiency) ? (float) $row->efficiency . '%' : '--------';
@@ -175,10 +175,10 @@ class ReportController extends Controller
                     return date('d/m/Y H:i:s', strtotime($row->machine_datetime));
                 })
                 ->addColumn('last_stop', function ($row) {
-                    return !empty($row->last_stop) ? (int) $row->last_stop . ' <span class="small-text">(min)</span>' : '--------';
+                    return !empty($row->last_stop) ? self::formatTime((int) $row->last_stop) : '--------';
                 })
                 ->addColumn('last_running', function ($row) {
-                    return !empty($row->last_running) ? (int) $row->last_running . ' <span class="small-text">(min)</span>' : '--------';
+                    return !empty($row->last_running) ? self::formatTime((int) $row->last_running) : '--------';
                 })
                 ->addColumn('no_of_stoppage', function ($row) {
                     return !empty($row->no_of_stoppage) ? $row->no_of_stoppage : 0;
@@ -348,5 +348,13 @@ class ReportController extends Controller
 
     private static function formatIndianNumber($num) {
         return number_format($num, 0, '.', ',');
+    }
+
+    private static function formatTime($seconds) {
+        $minutes = floor($seconds / 60);
+        $hours = floor($minutes / 60);
+        $secs = $seconds % 60;
+        $mins = $minutes % 60;
+        return ($hours > 0 ? "<b>{$hours}<span class='small-text'>hr</span></b> " : "") . ($mins > 0 ? "<b>{$mins}<span class='small-text'>min</span></b> " : "") . ($secs > 0 ? "<b>{$secs}<span class='small-text'>sec</span></b>" : "");
     }
 }

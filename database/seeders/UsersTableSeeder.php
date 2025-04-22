@@ -18,7 +18,7 @@ class UsersTableSeeder extends Seeder
             [
                 'name' => 'SuperAdmin User',
                 'role_id' => 0, // SuperAdmin role
-                'phone_number' => '9898787852',
+                'phone_number' => '9106225940',
                 'email' => 'superadmin@yopmail.com',
                 'email_verified_at' => Carbon::now(),
                 'password' => Hash::make('Gopal@123'), // Default Gopal@123
@@ -29,7 +29,7 @@ class UsersTableSeeder extends Seeder
             [
                 'name' => 'User User',
                 'role_id' => 2, // Regular user role
-                'phone_number' => '0987654321',
+                'phone_number' => '9016201780',
                 'email' => 'user@yopmail.com',
                 'email_verified_at' => Carbon::now(),
                 'password' => Hash::make('Gopal@123'), // Default Gopal@123

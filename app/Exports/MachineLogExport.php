@@ -112,9 +112,9 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
     public function headings(): array
     {
         return [
-            'ID', 'Device Name', 'Machine Name', 'Total Running (min)', 'Total Time (min)', 
+            'ID', 'Device Name', 'Machine Name', 'Total Running', 'Total Time', 
             'Efficiency (%)', 'Shift Detail', 'Device Datetime', 'Machine Datetime', 
-            'Last Stop (min)', 'Last Running (min)', 'No. of Stoppage', 'Mode', 'Speed', 'Pick'
+            'Last Stop', 'Last Running', 'No. of Stoppage', 'Mode', 'Speed', 'Pick'
         ];
     }
 
@@ -135,14 +135,14 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
             $row->id,
             $row->machine->node->device->name ?? '--------',
             $row->machine->display_name ?? $row->machine->name,
-            $row->total_running ? (int) $row->total_running : '--------',
-            $row->total_time ? (int) $row->total_time : '--------',
+            $row->total_running ? self::formatTime((int) $row->total_running) : '--------',
+            $row->total_time ? self::formatTime((int) $row->total_time) : '--------',
             $efficiency,
             "Shift ({$row->shift_start_datetime} - {$row->shift_end_datetime})",
             $row->device_datetime ? date('d/m/Y H:i:s', strtotime($row->device_datetime)) : '--------',
             $row->machine_datetime ? date('d/m/Y H:i:s', strtotime($row->machine_datetime)) : '--------',
-            $row->last_stop ? (int) $row->last_stop : '--------',
-            $row->last_running ? (int) $row->last_running : '--------',
+            $row->last_stop ? self::formatTime((int) $row->last_stop) : '--------',
+            $row->last_running ? self::formatTime((int) $row->last_running) : '--------',
             $row->no_of_stoppage ?? 0,
             $row->status ?? 0,
             $row->speed ?? 0,
@@ -235,5 +235,13 @@ class MachineLogExport implements FromCollection, WithHeadings, WithMapping, Wit
 
     private static function formatIndianNumber($num) {
         return number_format($num, 0, '.', ',');
+    }
+
+    private static function formatTime($seconds) {
+        $minutes = floor($seconds / 60);
+        $hours = floor($minutes / 60);
+        $secs = $seconds % 60;
+        $mins = $minutes % 60;
+        return ($hours > 0 ? "{$hours}hr " : "") . ($mins > 0 ? "{$mins}min " : "") . ($secs > 0 ? "{$secs}sec" : "");
     }
 }

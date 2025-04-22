@@ -45,11 +45,12 @@ class ProcessPacket implements ShouldQueue
     public function handle()
     {
         try {
-            // Example of business logic processing directly in the job
             if ($this->reqData['Did'] && $this->reqData['Tnd']) {
+                
                 $this->processData($this->reqData);
                 Log::info("Packet processed successfully: " . json_encode($this->reqData));
-            } else {
+            } 
+            else {
                 Log::warning('Invalid data in request: ' . json_encode($this->reqData));
             }
         } catch (Exception $e) {
@@ -170,7 +171,7 @@ class ProcessPacket implements ShouldQueue
                         'machine_id' => $machineMasterTable->id,
                         'speed' => (int) $machine['Spd'],
                         'status' => (int) $machine['St'] ?? 0,
-                        'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
+                        'total_time' => $shiftStartTime->diffInSeconds($deviceTime),
                         'device_datetime' => $deviceDatetime,
                         'machine_datetime' => $machineDatetime,
                         'shift_date' => $shiftDate,
@@ -191,24 +192,24 @@ class ProcessPacket implements ShouldQueue
                         if ($machine['St'] == 1 && $machineStatusTable->status == 1) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
                             $diffMinLastStop = $diffMinLastStop;
-                            $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinTotalRunning += $lastRecTime->diffInMinutes($deviceTime);
+                            $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinTotalRunning += $lastRecTime->diffInSeconds($deviceTime);
                         }
                         else if ($machine['St'] == 1 && $machineStatusTable->status == 0) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                            $diffMinLastStop += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInMinutes($machineTime));
-                            $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? $shiftStartTime->diffInMinutes($deviceTime) : $machineTime->diffInMinutes($deviceTime));
+                            $diffMinLastStop += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
+                            $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? $shiftStartTime->diffInSeconds($deviceTime) : $machineTime->diffInSeconds($deviceTime));
                         }
                         else if ($machine['St'] == 0 && $machineStatusTable->status == 1) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
-                            $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinLastRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInMinutes($machineTime));
-                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInMinutes($machineTime));
+                            $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinLastRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
+                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
                         }
                         else if ($machine['St'] == 0 && $machineStatusTable->status == 0) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                            $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
+                            $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
                             $diffMinLastRunning = $diffMinLastRunning;
                             $diffMinTotalRunning = $diffMinTotalRunning;
                         }
@@ -230,13 +231,13 @@ class ProcessPacket implements ShouldQueue
 
                         if ($machine['St'] == 1) {
                             $machineStatusData['no_of_stoppage'] = 0;
-                            $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
-                            $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
+                            $diffMinLastStop = $shiftStartTime->diffInSeconds($machineTime);
+                            $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
                         }
                         else if ($machine['St'] == 0) {
                             $machineStatusData['no_of_stoppage'] = 1;
-                            $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinLastRunning = $shiftStartTime->diffInMinutes($machineTime);
+                            $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinLastRunning = $shiftStartTime->diffInSeconds($machineTime);
                         }
                         else {
                             $machineStatusData['no_of_stoppage'] = 0;
@@ -245,11 +246,11 @@ class ProcessPacket implements ShouldQueue
                         }
 
                         if ($machine['St'] == 1) {
-                            $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
+                            $diffMinTotalRunning = $shiftStartTime->diffInSeconds($deviceTime);
                         }
                         else if ($machine['St'] == 0) {
                             $diff = $shiftStartTime->diff($machineTime);
-                            $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
+                            $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : (($diff->h * 60) + $diff->i) * 60;
                         }
                         else {
                             $diffMinTotalRunning = 0;
@@ -320,7 +321,7 @@ class ProcessPacket implements ShouldQueue
             Log::info("These machine status ids are inactivated: " . implode(',', $inactivatedMachineIds));
         }
         
-        Log::info("Processing data Total Node -> {$totalNode} ::: " . json_encode($reqData));
+        Log::info("Processing data Total Node -> {$totalNode}");
         return true;
     }
 

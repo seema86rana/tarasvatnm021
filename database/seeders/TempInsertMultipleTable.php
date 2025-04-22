@@ -20,10 +20,17 @@ class TempInsertMultipleTable extends Seeder
         DB::table('devices')->insert([
             [
                 'name' => '58.bf.25.23.3b.d4',
+                'user_id' => 1,
+                'shift' => '[{"shift_name":"Shift 1","shift_start_day":1,"shift_start_time":"8:00 AM","shift_end_day":1,"shift_end_time":"8:00 PM"},{"shift_name":"Shift 2","shift_start_day":1,"shift_start_time":"8:00 PM","shift_end_day":2,"shift_end_time":"7:55 AM"}]',
+                'status' => 1,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ],
+            [
+                'name' => '58.bf.25.23.3c.3c',
                 'user_id' => 2,
                 'shift' => '[{"shift_name":"Shift 1","shift_start_day":1,"shift_start_time":"8:00 AM","shift_end_day":1,"shift_end_time":"8:00 PM"},{"shift_name":"Shift 2","shift_start_day":1,"shift_start_time":"8:00 PM","shift_end_day":2,"shift_end_time":"7:55 AM"}]',
-                'status' => 1, // Active status
-                'created_by' => 1, // SuperAdmin User
+                'status' => 1,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],

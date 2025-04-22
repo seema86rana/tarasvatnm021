@@ -89,7 +89,14 @@ class DeviceController extends Controller
     public function create()
     {
         $modal_title = "Add Device";
-        $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
+        $user = User::select('id', 'name')
+                ->where('status', 1)
+                ->whereNotIn('id', function ($query) {
+                    $query->select('user_id')
+                        ->from('devices')
+                        ->whereNotNull('user_id');
+                })
+                ->orderBy('created_at', 'DESC')->get();
         return response()->json([
             'statusCode' => 1,
             'html' => View::make("backend.device.add_and_edit", compact('modal_title', 'user'))->render(),
@@ -274,14 +281,19 @@ class DeviceController extends Controller
     public function edit($id)
     {
         $modal_title = "Update Device";
-        $user = User::select('id', 'name')->whereNotIn('role_id', [0])->where('status', 1)->orderBy('created_at','DESC')->get();
-        $device = Device::where('id', $id)->first();
-        if (!$device) {
-            return response()->json([
-                'statusCode' => 0,
-                'message' => 'Device not found!',
-            ]);
-        }
+        $device = Device::findOrFail($id);
+        $assignedUserId = $device->user_id;
+
+        $user = User::select('id', 'name')
+            ->where('status', 1)
+            ->where(function ($query) use ($assignedUserId) {
+                $query->whereNotIn('id', function ($subQuery) {
+                    $subQuery->select('user_id')
+                            ->from('devices')
+                            ->whereNotNull('user_id');
+                })
+                ->orWhere('id', $assignedUserId);
+            })->orderBy('created_at', 'DESC')->get();
 
         return response()->json([
             'statusCode' => 1,

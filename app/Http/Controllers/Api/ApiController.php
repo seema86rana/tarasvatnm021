@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Jobs\MachineStopAlert;
 use Illuminate\Support\Facades\Artisan;
 
 class ApiController extends Controller
@@ -65,23 +66,40 @@ class ApiController extends Controller
     public function report($type)
     {
         if (empty($type)) {
-            Log::alert("Report type not specified.");
-            return response()->json(['status' => false, 'message' => "Report type not specified", 400]);
+            Log::alert('Report type not specified.');
+            return response()->json([
+                'status' => false,
+                'message' => 'Report type not specified.'
+            ], 400);
         }
 
-        $reportArray = [
-            'machine_status', 'machine_stop',
-        ];
-        if (!in_array($type, $reportArray)) {
-            Log::alert("Invalid report type");
-            return response()->json(['status' => false, 'message' => "Invalid report type", 400]);
+        $validTypes = ['machine_status', 'machine_stop', 'machine_stop_alert'];
+
+        if (!in_array($type, $validTypes)) {
+            Log::alert("Invalid report type: {$type}");
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid report type.'
+            ], 400);
+        }
+
+        if ($type == 'machine_stop_alert') {
+            MachineStopAlert::dispatch();
+            return response()->json([
+                'status' => true,
+                'message' => 'Machine stop alert sent to the client.'
+            ], 200);
         }
 
         $reportType = env('REPORT_TYPE', 'weekly');
         $reportFormat = env('REPORT_FORMAT', 'table');
 
         Report::dispatch($type, $reportType, $reportFormat);
-        return response()->json(['status' => true, 'message' => ucfirst($reportType) . ' report generate and sent to the user with details.'], 200);
+
+        return response()->json([
+            'status' => true,
+            'message' => ucfirst($reportType) . ' report generated and sent to the user.'
+        ], 200);
     }
 
     public function generateReport(Request $request)
@@ -326,7 +344,7 @@ class ApiController extends Controller
                         'machine_id' => $machineMasterTable->id,
                         'speed' => (int) $machine['Spd'],
                         'status' => (int) $machine['St'] ?? 0,
-                        'total_time' => $shiftStartTime->diffInMinutes($deviceTime),
+                        'total_time' => $shiftStartTime->diffInSeconds($deviceTime),
                         'device_datetime' => $deviceDatetime,
                         'machine_datetime' => $machineDatetime,
                         'shift_date' => $shiftDate,
@@ -347,24 +365,24 @@ class ApiController extends Controller
                         if ($machine['St'] == 1 && $machineStatusTable->status == 1) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
                             $diffMinLastStop = $diffMinLastStop;
-                            $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinTotalRunning += $lastRecTime->diffInMinutes($deviceTime);
+                            $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinTotalRunning += $lastRecTime->diffInSeconds($deviceTime);
                         }
                         else if ($machine['St'] == 1 && $machineStatusTable->status == 0) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                            $diffMinLastStop += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInMinutes($machineTime));
-                            $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? $shiftStartTime->diffInMinutes($deviceTime) : $machineTime->diffInMinutes($deviceTime));
+                            $diffMinLastStop += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
+                            $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? $shiftStartTime->diffInSeconds($deviceTime) : $machineTime->diffInSeconds($deviceTime));
                         }
                         else if ($machine['St'] == 0 && $machineStatusTable->status == 1) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
-                            $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinLastRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInMinutes($machineTime));
-                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInMinutes($machineTime));
+                            $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinLastRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
+                            $diffMinTotalRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
                         }
                         else if ($machine['St'] == 0 && $machineStatusTable->status == 0) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;
-                            $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
+                            $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
                             $diffMinLastRunning = $diffMinLastRunning;
                             $diffMinTotalRunning = $diffMinTotalRunning;
                         }
@@ -386,13 +404,13 @@ class ApiController extends Controller
 
                         if ($machine['St'] == 1) {
                             $machineStatusData['no_of_stoppage'] = 0;
-                            $diffMinLastStop = $shiftStartTime->diffInMinutes($machineTime);
-                            $diffMinLastRunning = $machineTime->diffInMinutes($deviceTime);
+                            $diffMinLastStop = $shiftStartTime->diffInSeconds($machineTime);
+                            $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
                         }
                         else if ($machine['St'] == 0) {
                             $machineStatusData['no_of_stoppage'] = 1;
-                            $diffMinLastStop = $machineTime->diffInMinutes($deviceTime);
-                            $diffMinLastRunning = $shiftStartTime->diffInMinutes($machineTime);
+                            $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
+                            $diffMinLastRunning = $shiftStartTime->diffInSeconds($machineTime);
                         }
                         else {
                             $machineStatusData['no_of_stoppage'] = 0;
@@ -401,11 +419,11 @@ class ApiController extends Controller
                         }
 
                         if ($machine['St'] == 1) {
-                            $diffMinTotalRunning = $shiftStartTime->diffInMinutes($deviceTime);
+                            $diffMinTotalRunning = $shiftStartTime->diffInSeconds($deviceTime);
                         }
                         else if ($machine['St'] == 0) {
                             $diff = $shiftStartTime->diff($machineTime);
-                            $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : $diff->h * 60 + $diff->i;
+                            $diffMinTotalRunning = $shiftStartTime > $machineTime ? 0 : (($diff->h * 60) + $diff->i) * 60;
                         }
                         else {
                             $diffMinTotalRunning = 0;
@@ -476,7 +494,7 @@ class ApiController extends Controller
             Log::info("These machine status ids are inactivated: " . implode(',', $inactivatedMachineIds));
         }
         
-        Log::info("Processing data Total Node -> {$totalNode} ::: " . json_encode($reqData));
+        Log::info("Processing data Total Node -> {$totalNode}");
         return true;
     }
     
