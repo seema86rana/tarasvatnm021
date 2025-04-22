@@ -128,7 +128,7 @@ class ReportController extends Controller
 
             $totalRecord = $query->count();
 
-            if (!empty($orderColumn) && !empty($orderDirection) && array_key_exists($orderColumn, $orderColumnSort) && !empty($orderColumnSort[$orderColumn])) {
+            if (!empty($orderDirection) && array_key_exists($orderColumn, $orderColumnSort) && !empty($orderColumnSort[$orderColumn])) {
                 $data = $query->orderBy($orderColumnSort[$orderColumn], $orderDirection);
             } else {
                 $data = $query->orderBy('id', 'ASC');

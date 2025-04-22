@@ -46,7 +46,7 @@ class MachineController extends Controller
                         ->orWhere('display_name', 'like', '%' . $searchValue . '%');
             });
 
-            if (!empty($orderColumn) && !empty($orderDirection) && array_key_exists($orderColumn, $orderColumnSort) && !empty($orderColumnSort[$orderColumn])) {
+            if (!empty($orderDirection) && array_key_exists($orderColumn, $orderColumnSort) && !empty($orderColumnSort[$orderColumn])) {
                 $data->orderBy($orderColumnSort[$orderColumn], $orderDirection);
             } else {
                 $data->orderBy('id', 'ASC');
