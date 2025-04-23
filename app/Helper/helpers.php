@@ -12,7 +12,7 @@ if (!function_exists('menuAccesspermission')) {
             $defaultPermission = ['profile', 'birdview'];
             $restrictedPermission = [];
             if (Auth::user()->role_id == 0) {
-                $restrictedPermission[] = "birdview";
+                // $restrictedPermission[] = "birdview";
             }
             if (Auth::user()->role_id == 0 && !in_array($param, $restrictedPermission)) {
                 return true;

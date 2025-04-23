@@ -28,9 +28,6 @@ class BirdViewController extends Controller
      */
     public function index()
     {
-        if (Auth::user()->role_id == 0) {
-            return redirect()->route('dashboard.index');
-        }
         $title = "Bird View";
         return view('frontend.birdview.index', compact('title'));
     }
