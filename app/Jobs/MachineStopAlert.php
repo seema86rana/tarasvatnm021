@@ -40,8 +40,9 @@ class MachineStopAlert implements ShouldQueue
     {
         try {
             $datas = MachineStatus::whereDate('shift_date', Carbon::today())
-                ->groupBy('machine_status.machine_id')
-                ->get();
+                ->whereHas('machine', function($query) {
+                    $query->where('priority', 1);
+                })->groupBy('machine_status.machine_id')->get();
 
             if ($datas->isEmpty()) {
                 Log::info("No machine stop data found for today.");

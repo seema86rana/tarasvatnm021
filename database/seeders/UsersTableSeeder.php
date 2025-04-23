@@ -18,7 +18,7 @@ class UsersTableSeeder extends Seeder
             [
                 'name' => 'SuperAdmin User',
                 'role_id' => 0, // SuperAdmin role
-                'phone_number' => '9106225940',
+                'phone_number' => '9724572753',
                 'email' => 'superadmin@yopmail.com',
                 'email_verified_at' => Carbon::now(),
                 'password' => Hash::make('Gopal@123'), // Default Gopal@123

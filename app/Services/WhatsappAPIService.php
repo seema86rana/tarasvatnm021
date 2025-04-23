@@ -326,7 +326,7 @@ class WhatsappAPIService
         $userPhone = $user->phone_number;
 
         if (empty($userName) || empty($userPhone) || empty($WHATSAPP_ACCESS_TOKEN) || empty($FROM_PHONE_NUMBER_ID) || empty($LANGUAGE_AND_LOCALE_CODE)) {
-            Log::error("WhatsApp configuration is incomplete", ['user' => $user->email]);
+            Log::error("WhatsApp configuration is incomplete", ['user' => $user->email, 'machine' => $machineName]);
             return false;
         }
 
