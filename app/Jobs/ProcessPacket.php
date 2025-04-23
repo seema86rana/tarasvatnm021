@@ -200,12 +200,18 @@ class ProcessPacket implements ShouldQueue
                             $diffMinLastStop += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
                             $diffMinLastRunning = $machineTime->diffInSeconds($deviceTime);
                             $diffMinTotalRunning += ($shiftStartTime > $machineTime ? $shiftStartTime->diffInSeconds($deviceTime) : $machineTime->diffInSeconds($deviceTime));
+
+                            $machineMasterTable->stop_alert_sent = 0;
+                            $machineMasterTable->save();
                         }
                         else if ($machine['St'] == 0 && $machineStatusTable->status == 1) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage + 1;
                             $diffMinLastStop = $machineTime->diffInSeconds($deviceTime);
                             $diffMinLastRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
                             $diffMinTotalRunning += ($shiftStartTime > $machineTime ? 0 : $lastRecTime->diffInSeconds($machineTime));
+
+                            $machineMasterTable->stop_alert_sent = 0;
+                            $machineMasterTable->save();
                         }
                         else if ($machine['St'] == 0 && $machineStatusTable->status == 0) {
                             $machineStatusData['no_of_stoppage'] = $machineStatusTable->no_of_stoppage;

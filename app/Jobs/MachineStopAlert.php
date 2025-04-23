@@ -41,7 +41,7 @@ class MachineStopAlert implements ShouldQueue
         try {
             $datas = MachineStatus::where('status', 0)->whereDate('shift_date', Carbon::today())
                 ->whereHas('machine', function($query) {
-                    $query->where('priority', 1);
+                    $query->where('priority', 1)->where('stop_alert_sent', 0);
                 })->groupBy('machine_status.machine_id')->orderBy('id', 'desc')->get();
 
             if ($datas->isEmpty()) {
@@ -67,14 +67,17 @@ class MachineStopAlert implements ShouldQueue
                     continue;
                 }
 
-                if (empty($machine) || empty($user)) {
-                    Log::warning("Missing machine or user info. Skipping alert. Machine: {$machine?->name}, User phone: {$user?->phone_number}");
+                if (empty($machine->name) || empty($user->phone_number)) {
+                    Log::warning("Missing machine or user info. Skipping alert. Machine: {$machineName}, User email: {$user->email}");
                     continue;
                 }
 
                 $whatsappAPIService = new WhatsAppAPIService();
                 $sent = $whatsappAPIService->send_machineStopAlert($user, $machineName, $lastStopTime, $downtime);
 
+                $machine->stop_alert_sent = 1;
+                $machine->save();
+                
                 $storeResponse[] = [
                     'user' => $user->email ?? $user->phone_number,
                     'machine' => $machineName,

@@ -18,6 +18,7 @@ class MachineMaster extends Model
         'priority',
         'status',
         'current_status',
+        'stop_alert_sent',
     ];
 
     public $timestamps = true;

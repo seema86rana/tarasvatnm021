@@ -21,6 +21,7 @@ class CreateMachineMasterTable extends Migration
             $table->tinyInteger('priority')->default(0);
             $table->integer('status')->default(1)->comment('1->Active, 0->Inactive');
             $table->tinyInteger('current_status')->default(0)->comment('1->active, 0->Inactive');
+            $table->tinyInteger('stop_alert_sent')->default(0)->comment('1->sended, 0->sending');
             $table->timestamps();
 
             // Add foreign key constraint
