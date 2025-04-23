@@ -42,7 +42,7 @@ class MachineStopAlert implements ShouldQueue
             $datas = MachineStatus::whereDate('shift_date', Carbon::today())
                 ->whereHas('machine', function($query) {
                     $query->where('priority', 1);
-                })->groupBy('machine_status.machine_id')->get();
+                })->groupBy('machine_status.machine_id')->orderBy('id', 'desc')->get();
 
             if ($datas->isEmpty()) {
                 Log::info("No machine stop data found for today.");
@@ -54,23 +54,26 @@ class MachineStopAlert implements ShouldQueue
             foreach ($datas as $data) {
                 $deviceDatetime = Carbon::parse($data->device_datetime);
                 $machineDatetime = Carbon::parse($data->machine_datetime);
-
+                $machine = $data->machine;
+                $user = $machine?->node?->device?->user;
+                $machineName = $machine->display_name ?? $machine->name;
+                $lastStopTime = $deviceDatetime->format('d/m/Y h:i:s A');
+                $downtime = self::formatTime($machineDatetime->diffInSeconds($deviceDatetime));
                 $diffInMins = $machineDatetime->diffInMinutes($deviceDatetime);
+
                 if ($diffInMins < 30) {
+                    Log::info("Machine has stopped for less than 30 minutes. Machine -> $machineName, diffInMins -> $diffInMins");
                     continue;
                 }
 
-                $machine = $data->machine;
-                $user = $machine?->node?->device?->user;
+                
 
                 if (empty($machine) || empty($user)) {
                     Log::warning("Missing machine or user info. Skipping alert. Machine: {$machine?->name}, User phone: {$user?->phone_number}");
                     continue;
                 }
 
-                $machineName = $machine->display_name ?? $machine->name;
-                $lastStopTime = $deviceDatetime->format('d/m/Y h:i:s A');
-                $downtime = self::formatTime($machineDatetime->diffInSeconds($deviceDatetime));
+               
 
                 $whatsappAPIService = new WhatsAppAPIService();
                 $sent = $whatsappAPIService->send_machineStopAlert($user, $machineName, $lastStopTime, $downtime);
