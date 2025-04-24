@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Exception;
 use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class DeviceController extends Controller
 {
@@ -126,79 +127,78 @@ class DeviceController extends Controller
                 return response()->json($response);
             }
 
+            /** Shift Calculation Start */
             $shiftLength = count($request->shift_name);
             $shiftArray = [];
-            $shiftType = 0; // Tracks shifts spanning multiple days
+            $diffinSecs = 0;
+            $date = '2024-06-29';
+            $date1 = '2024-06-29';
+            $date2 = '2024-06-30';
 
             for ($i = 0; $i < $shiftLength; $i++) {
-                $shiftStart = strtotime($request->shift_start_time[$i]);
-                $shiftEnd = strtotime($request->shift_end_time[$i]);
-
-                /*
-                    // Validate shift times
-                    if ($shiftStart > $shiftEnd && $i == 0) {
-                        return response()->json([
-                            'statusCode' => 0,
-                            'message' => "Shift start time should not be greater than shift end time for Shift $i",
-                            'position_start' => $i,
-                            'position_end' => $i,
-                        ]);
-                    } elseif ($i > 0 && strtotime($request->shift_end_time[$i - 1]) > $shiftStart) {
-                        return response()->json([
-                            'statusCode' => 0,
-                            'message' => "Shift start time for Shift $i overlaps with the previous shift",
-                            'position_start' => $i,
-                            'position_end' => $i - 1,
-                        ]);
-                    } elseif ($shiftType != 0) {
-                        $shiftEndDateTime = date('Y-m-d H:i:s', strtotime("2025-01-26 {$request->shift_end_time[$i]}"));
-                    
-                        // Get the first shift's start datetime
-                        $firstShiftStartDateTime = date('Y-m-d H:i:s', strtotime("2025-01-25 {$request->shift_start_time[0]}"));
-                    
-                        // Calculate the time difference in minutes
-                        $timeDifferenceInMinutes = (strtotime($shiftEndDateTime) - strtotime($firstShiftStartDateTime)) / 60;
-                    
-                        if ($timeDifferenceInMinutes > 1440) { // 24 hours = 1440 minutes
-                            return response()->json([
-                                'statusCode' => 0,
-                                'message' => "Shift end time for Shift $i exceeds 24 hours from the first shift's start time",
-                                'position_start' => 0,
-                                'position_end' => $i, // Highlight the first shift and the current shift
-                            ]);
-                        }
+                $start = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                $end = Carbon::parse("{$date1} {$request->shift_end_time[$i]}");
+    
+                if ($start > $end) {
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_date' => 1,
+                        'shift_start_time' => $request->shift_start_time[$i], 
+                        'shift_end_date' => 2,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+    
+                    $start = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                    $end = Carbon::parse("{$date2} {$request->shift_end_time[$i]}");
+                    $diffinSecs += $end->diffInSeconds($start);
+                    $date1 = $date2;
+                }
+                else {
+                    $startFirst = Carbon::parse("{$date1} {$request->shift_start_time[0]}");
+                    $startCur = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                    if ($startCur < $startFirst) { 
+                        $date1 = $date2;
                     }
-                */
 
-                // Determine shift start and end days
-                if ($shiftStart < strtotime($request->shift_start_time[0])) {
-                    $shiftType++;
                     $shiftArray[] = [
                         'shift_name' => $request->shift_name[$i],
-                        'shift_start_day' => 2,
-                        'shift_start_time' => $request->shift_start_time[$i],
-                        'shift_end_day' => 2,
+                        'shift_start_date' => ($date == $date1) ? 1 : 2,
+                        'shift_start_time' => $request->shift_start_time[$i], 
+                        'shift_end_date' => ($date == $date1) ? 1 : 2,
                         'shift_end_time' => $request->shift_end_time[$i],
                     ];
-                } elseif ($shiftStart > $shiftEnd) {
-                    $shiftType++;
-                    $shiftArray[] = [
-                        'shift_name' => $request->shift_name[$i],
-                        'shift_start_day' => 1,
-                        'shift_start_time' => $request->shift_start_time[$i],
-                        'shift_end_day' => 2,
-                        'shift_end_time' => $request->shift_end_time[$i],
-                    ];
-                } else {
-                    $shiftArray[] = [
-                        'shift_name' => $request->shift_name[$i],
-                        'shift_start_day' => 1,
-                        'shift_start_time' => $request->shift_start_time[$i],
-                        'shift_end_day' => 1,
-                        'shift_end_time' => $request->shift_end_time[$i],
-                    ];
+    
+                    $start = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                    $end = Carbon::parse("{$date1} {$request->shift_end_time[$i]}");
+                    $diffinSecs += $end->diffInSeconds($start);
                 }
             }
+
+            if ($diffinSecs > 86400) {
+                $times = self::formatTime($diffinSecs);
+                $response = array(
+                    'statusCode' => 0,
+                    'message' => "Shift duration exceeds the limit! Total Shift Time: {$times}",
+                );
+                return response()->json($response);
+            }
+
+            $first = reset($shiftArray);
+            $last = end($shiftArray);
+            $firstShiftStartDatetime = Carbon::parse("{$date} {$first['shift_start_time']}");
+            $lastShiftEndDate = ($last['shift_end_date'] == 2) ? $date2 : $date;
+            $lastShiftEndDatetime = Carbon::parse("{$lastShiftEndDate} {$last['shift_end_time']}");
+            $diffinSecs = $firstShiftStartDatetime->diffInSeconds($lastShiftEndDatetime);
+
+            if ($diffinSecs > 86400) {
+                $times = self::formatTime($diffinSecs);
+                $response = array(
+                    'statusCode' => 0,
+                    'message' => "Shift duration exceeds the limit! Total Shift Time: {$times}",
+                );
+                return response()->json($response);
+            }
+            /** Shift Calculation End */
     
             $data = $validator->validated();
             $data['shift'] = json_encode($shiftArray);
@@ -329,79 +329,78 @@ class DeviceController extends Controller
                 return response()->json($response);
             }
 
+            /** Shift Calculation Start */
             $shiftLength = count($request->shift_name);
             $shiftArray = [];
-            $shiftType = 0; // Tracks shifts spanning multiple days
+            $diffinSecs = 0;
+            $date = '2024-06-29';
+            $date1 = '2024-06-29';
+            $date2 = '2024-06-30';
 
             for ($i = 0; $i < $shiftLength; $i++) {
-                $shiftStart = strtotime($request->shift_start_time[$i]);
-                $shiftEnd = strtotime($request->shift_end_time[$i]);
-
-                /*
-                // Validate shift times
-                if ($shiftStart > $shiftEnd && $i == 0) {
-                    return response()->json([
-                        'statusCode' => 0,
-                        'message' => "Shift start time should not be greater than shift end time for Shift $i",
-                        'position_start' => $i,
-                        'position_end' => $i,
-                    ]);
-                } elseif ($i > 0 && strtotime($request->shift_end_time[$i - 1]) > $shiftStart) {
-                    return response()->json([
-                        'statusCode' => 0,
-                        'message' => "Shift start time for Shift $i overlaps with the previous shift",
-                        'position_start' => $i,
-                        'position_end' => $i - 1,
-                    ]);
-                } elseif ($shiftType != 0) {
-                    $shiftEndDateTime = date('Y-m-d H:i:s', strtotime("2025-01-26 {$request->shift_end_time[$i]}"));
-                
-                    // Get the first shift's start datetime
-                    $firstShiftStartDateTime = date('Y-m-d H:i:s', strtotime("2025-01-25 {$request->shift_start_time[0]}"));
-                
-                    // Calculate the time difference in minutes
-                    $timeDifferenceInMinutes = (strtotime($shiftEndDateTime) - strtotime($firstShiftStartDateTime)) / 60;
-                
-                    if ($timeDifferenceInMinutes > 1440) { // 24 hours = 1440 minutes
-                        return response()->json([
-                            'statusCode' => 0,
-                            'message' => "Shift end time for Shift $i exceeds 24 hours from the first shift's start time",
-                            'position_start' => 0,
-                            'position_end' => $i, // Highlight the first shift and the current shift
-                        ]);
-                    }
+                $start = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                $end = Carbon::parse("{$date1} {$request->shift_end_time[$i]}");
+    
+                if ($start > $end) {
+                    $shiftArray[] = [
+                        'shift_name' => $request->shift_name[$i],
+                        'shift_start_date' => 1,
+                        'shift_start_time' => $request->shift_start_time[$i], 
+                        'shift_end_date' => 2,
+                        'shift_end_time' => $request->shift_end_time[$i],
+                    ];
+    
+                    $start = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                    $end = Carbon::parse("{$date2} {$request->shift_end_time[$i]}");
+                    $diffinSecs += $end->diffInSeconds($start);
+                    $date1 = $date2;
                 }
-                */
+                else {
+                    $startFirst = Carbon::parse("{$date1} {$request->shift_start_time[0]}");
+                    $startCur = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                    if ($startCur < $startFirst) { 
+                        $date1 = $date2;
+                    }
 
-                // Determine shift start and end days
-                if ($shiftStart < strtotime($request->shift_start_time[0])) {
-                    $shiftType++;
                     $shiftArray[] = [
                         'shift_name' => $request->shift_name[$i],
-                        'shift_start_day' => 2,
-                        'shift_start_time' => $request->shift_start_time[$i],
-                        'shift_end_day' => 2,
+                        'shift_start_date' => ($date == $date1) ? 1 : 2,
+                        'shift_start_time' => $request->shift_start_time[$i], 
+                        'shift_end_date' => ($date == $date1) ? 1 : 2,
                         'shift_end_time' => $request->shift_end_time[$i],
                     ];
-                } elseif ($shiftStart > $shiftEnd) {
-                    $shiftType++;
-                    $shiftArray[] = [
-                        'shift_name' => $request->shift_name[$i],
-                        'shift_start_day' => 1,
-                        'shift_start_time' => $request->shift_start_time[$i],
-                        'shift_end_day' => 2,
-                        'shift_end_time' => $request->shift_end_time[$i],
-                    ];
-                } else {
-                    $shiftArray[] = [
-                        'shift_name' => $request->shift_name[$i],
-                        'shift_start_day' => 1,
-                        'shift_start_time' => $request->shift_start_time[$i],
-                        'shift_end_day' => 1,
-                        'shift_end_time' => $request->shift_end_time[$i],
-                    ];
+    
+                    $start = Carbon::parse("{$date1} {$request->shift_start_time[$i]}");
+                    $end = Carbon::parse("{$date1} {$request->shift_end_time[$i]}");
+                    $diffinSecs += $end->diffInSeconds($start);
                 }
             }
+
+            if ($diffinSecs > 86400) {
+                $times = self::formatTime($diffinSecs);
+                $response = array(
+                    'statusCode' => 0,
+                    'message' => "Shift duration exceeds the limit! Total Shift Time: {$times}",
+                );
+                return response()->json($response);
+            }
+
+            $first = reset($shiftArray);
+            $last = end($shiftArray);
+            $firstShiftStartDatetime = Carbon::parse("{$date} {$first['shift_start_time']}");
+            $lastShiftEndDate = ($last['shift_end_date'] == 2) ? $date2 : $date;
+            $lastShiftEndDatetime = Carbon::parse("{$lastShiftEndDate} {$last['shift_end_time']}");
+            $diffinSecs = $firstShiftStartDatetime->diffInSeconds($lastShiftEndDatetime);
+
+            if ($diffinSecs > 86400) {
+                $times = self::formatTime($diffinSecs);
+                $response = array(
+                    'statusCode' => 0,
+                    'message' => "Shift duration exceeds the limit! Total Shift Time: {$times}",
+                );
+                return response()->json($response);
+            }
+            /** Shift Calculation End */
 
             $data = $validator->validated();
             $data['shift'] = json_encode($shiftArray);
@@ -450,5 +449,13 @@ class DeviceController extends Controller
                 'message' => 'Error occurred while deleting the device.',
             ]);
         }
+    }
+
+    private static function formatTime($seconds) {
+        $minutes = floor($seconds / 60);
+        $hours = floor($minutes / 60);
+        $secs = $seconds % 60;
+        $mins = $minutes % 60;
+        return ($hours > 0 ? "{$hours}hr " : "") . ($mins > 0 ? "{$mins}min " : "") . ($secs > 0 ? "{$secs}sec" : "");
     }
 }

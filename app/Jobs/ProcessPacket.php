@@ -61,8 +61,12 @@ class ProcessPacket implements ShouldQueue
 
     protected function processData(array $reqData)
     {
+        $device = Device::where('name', $reqData['Did'])->where('status', 1)->first();
+        $shifts = json_decode($device->shift, true);
+        $lastShift = end($shifts);
+
         $totalNode  = $reqData['Tnd'];
-        $staticTime = "07:59:59";
+        $staticTime = $lastShift['shift_end_time'];
 
         $shiftDate          = '';
         $shiftName          = '';
@@ -70,7 +74,7 @@ class ProcessPacket implements ShouldQueue
         $shiftEndDatetime   = "";
         $shiftDateType1     = "";
         $shiftDateType2     = "";
-        
+
         $utcDeviceDatetime = Carbon::createFromFormat('Ymd H:i:s', $reqData['Ddt'], env('DEVICE_TIMEZONE', 'UTC'));
         $deviceDatetime = $utcDeviceDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'))->format('Y-m-d H:i:s');
         $deviceDate = date('Y-m-d', strtotime($deviceDatetime));
@@ -79,12 +83,9 @@ class ProcessPacket implements ShouldQueue
             $shiftDateType1 = $deviceDate;
             $shiftDateType2 = date('Y-m-d', strtotime('+1 day', strtotime($deviceDate)));
         } else {
-            $shiftDateType2 = $deviceDate;
             $shiftDateType1 = date('Y-m-d', strtotime('-1 day', strtotime($deviceDate)));
+            $shiftDateType2 = $deviceDate;
         }
-
-        $device = Device::where('name', $reqData['Did'])->where('status', 1)->first();
-        $shifts = json_decode($device->shift, true);
 
         foreach ($shifts as $shift) {
             $shiftStart = date('Y-m-d H:i:s', strtotime(($shift['shift_start_day'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_start_time']}"));
@@ -287,9 +288,9 @@ class ProcessPacket implements ShouldQueue
                                 PickCalculation::where('id', $pickResponse['id'])->update($pickData);
                             }
                         }
-                        
-                        $insertedMachineIds[] = $machineMasterTable->id;
 
+                        $insertedMachineIds[] = $machineMasterTable->id;
+                        
                         //-----------------------------------------------------------------
                         $machineStatusData['machine_status_id'] = $machineStatusTable->id;
                         $machineStatusData['machine_log_id'] = $machineLogTable->id;
@@ -319,7 +320,7 @@ class ProcessPacket implements ShouldQueue
         }
 
         if (count($insertedMachineIds) > 0) {
-            $inactivatedMachineIds = array_diff($machineIds, $insertedMachineIds);
+            $inactivatedMachineIds = array_diff($insertedMachineIds, $machineIds);
             MachineMaster::whereIn('id', $inactivatedMachineIds)->update([
                     'current_status' => 0,
                 ]);

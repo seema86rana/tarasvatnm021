@@ -234,8 +234,12 @@ class ApiController extends Controller
 
     protected function processData(array $reqData)
     {
+        $device = Device::where('name', $reqData['Did'])->where('status', 1)->first();
+        $shifts = json_decode($device->shift, true);
+        $lastShift = end($shifts);
+
         $totalNode  = $reqData['Tnd'];
-        $staticTime = "07:59:59";
+        $staticTime = $lastShift['shift_end_time'];
 
         $shiftDate          = '';
         $shiftName          = '';
@@ -243,7 +247,7 @@ class ApiController extends Controller
         $shiftEndDatetime   = "";
         $shiftDateType1     = "";
         $shiftDateType2     = "";
-        
+
         $utcDeviceDatetime = Carbon::createFromFormat('Ymd H:i:s', $reqData['Ddt'], env('DEVICE_TIMEZONE', 'UTC'));
         $deviceDatetime = $utcDeviceDatetime->setTimezone(config('app.timezone', 'Asia/Kolkata'))->format('Y-m-d H:i:s');
         $deviceDate = date('Y-m-d', strtotime($deviceDatetime));
@@ -252,12 +256,9 @@ class ApiController extends Controller
             $shiftDateType1 = $deviceDate;
             $shiftDateType2 = date('Y-m-d', strtotime('+1 day', strtotime($deviceDate)));
         } else {
-            $shiftDateType2 = $deviceDate;
             $shiftDateType1 = date('Y-m-d', strtotime('-1 day', strtotime($deviceDate)));
+            $shiftDateType2 = $deviceDate;
         }
-
-        $device = Device::where('name', $reqData['Did'])->where('status', 1)->first();
-        $shifts = json_decode($device->shift, true);
 
         foreach ($shifts as $shift) {
             $shiftStart = date('Y-m-d H:i:s', strtotime(($shift['shift_start_day'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_start_time']}"));
