@@ -262,9 +262,9 @@ class ProcessPacket implements ShouldQueue
                             $diffMinTotalRunning = 0;
                         }
 
-                        if($diffMinLastStop > 0) {
-                            $machineStatusData['no_of_stoppage'] = 1;
-                        }
+                        // if($diffMinLastStop > 0) {
+                        //     $machineStatusData['no_of_stoppage'] = 1;
+                        // }
                     }
 
                     $machineStatusData['efficiency']    = 0;

@@ -72,10 +72,12 @@ class SendReport implements ShouldQueue
 
         switch ($reportType) {
             case 'daily':
-                $emailSubjectLabel = "Daily Comparison Report - [" . Carbon::yesterday()->subDay()->format('d/m/Y') . " to " . Carbon::yesterday()->format('d/m/Y') . "]";
+                $curDay = Carbon::yesterday()->subDay();
+                $preDay = $curDay->copy()->subDay();
+                $emailSubjectLabel = "Daily Comparison Report - [" . $preDay->format('d/m/Y') . " to " . $curDay->format('d/m/Y') . "]";
 
-                $previousDay = Carbon::yesterday()->subDay()->format('d/m/Y');
-                $currentDay = Carbon::yesterday()->format('d/m/Y');
+                $previousDay = $preDay->format('d/m/Y');
+                $currentDay = $curDay->format('d/m/Y');
                 break;
 
             case 'weekly':
@@ -217,10 +219,12 @@ class SendReport implements ShouldQueue
 
         switch ($reportType) {
             case 'daily':
-                $emailSubjectLabel = "Daily Machine Stop Report - [" . Carbon::yesterday()->format('d/m/Y') . " to " . Carbon::today()->format('d/m/Y') . "]";
+                $preDay = Carbon::yesterday()->subDay();
+                $curDay = $preDay->copy()->addDay();
+                $emailSubjectLabel = "Daily Machine Stop Report - [" . $preDay->format('d/m/Y') . " to " . $curDay->format('d/m/Y') . "]";
 
-                $previousDay = Carbon::yesterday()->subDay()->format('d/m/Y');
-                $currentDay = Carbon::yesterday()->format('d/m/Y');
+                $previousDay = $preDay->format('d/m/Y');
+                $currentDay = $curDay->format('d/m/Y');
                 break;
 
             case 'weekly':

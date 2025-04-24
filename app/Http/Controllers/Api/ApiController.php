@@ -435,9 +435,9 @@ class ApiController extends Controller
                             $diffMinTotalRunning = 0;
                         }
 
-                        if($diffMinLastStop > 0) {
-                            $machineStatusData['no_of_stoppage'] = 1;
-                        }
+                        // if($diffMinLastStop > 0) {
+                        //     $machineStatusData['no_of_stoppage'] = 1;
+                        // }
                     }
 
                     $machineStatusData['efficiency']    = 0;

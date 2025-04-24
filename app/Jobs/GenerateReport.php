@@ -101,14 +101,16 @@ class GenerateReport implements ShouldQueue
             case 'daily':
                 // $queryPrevious->whereDate('machine_status.shift_date', '2025-04-01');
                 // $queryCurrent->whereDate('machine_status.shift_date', '2025-04-02');
-                $queryPrevious->whereDate('machine_status.shift_date', Carbon::yesterday()->subDay());
-                $queryCurrent->whereDate('machine_status.shift_date', Carbon::yesterday());
+                $curDay = Carbon::yesterday()->subDay();
+                $preDay = $curDay->copy()->subDay();
+                $queryPrevious->whereDate('machine_status.shift_date', $preDay);
+                $queryCurrent->whereDate('machine_status.shift_date', $curDay);
                 
-                $previousLabel = "Yesterday " . Carbon::yesterday()->subDay()->format('d M Y');
-                $currentLabel = "Today " . Carbon::yesterday()->format('d M Y');
+                $previousLabel = "Yesterday " . $preDay->format('d M Y');
+                $currentLabel = "Today " . $curDay->format('d M Y');
 
-                $previousDay = Carbon::yesterday()->subDay()->format('d/m/Y');
-                $currentDay = Carbon::yesterday()->format('d/m/Y');
+                $previousDay = $preDay->format('d/m/Y');
+                $currentDay = $curDay->format('d/m/Y');
                 break;
 
             case 'weekly':
@@ -354,10 +356,12 @@ class GenerateReport implements ShouldQueue
         switch ($reportType) {
             case 'daily':
                 // $query->whereDate('machine_status_logs.shift_date', '2025-04-21');
-                $query->whereDate('machine_status_logs.shift_date', Carbon::yesterday());
+                $preDay = Carbon::yesterday()->subDay();
+                $curDay = $preDay->copy()->addDay();
+                $query->whereDate('machine_status_logs.shift_date', $preDay);
     
-                $previousDay = Carbon::yesterday()->format('d/m/Y');
-                $currentDay = Carbon::today()->format('d/m/Y');
+                $previousDay = $preDay->format('d/m/Y');
+                $currentDay = $curDay->format('d/m/Y');
 
                 $currentDay = "{$previousDay} - {$currentDay}";
                 break;
