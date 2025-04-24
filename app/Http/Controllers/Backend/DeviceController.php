@@ -142,9 +142,9 @@ class DeviceController extends Controller
                 if ($start > $end) {
                     $shiftArray[] = [
                         'shift_name' => $request->shift_name[$i],
-                        'shift_start_date' => 1,
+                        'shift_start_day' => 1,
                         'shift_start_time' => $request->shift_start_time[$i], 
-                        'shift_end_date' => 2,
+                        'shift_end_day' => 2,
                         'shift_end_time' => $request->shift_end_time[$i],
                     ];
     
@@ -162,9 +162,9 @@ class DeviceController extends Controller
 
                     $shiftArray[] = [
                         'shift_name' => $request->shift_name[$i],
-                        'shift_start_date' => ($date == $date1) ? 1 : 2,
+                        'shift_start_day' => ($date == $date1) ? 1 : 2,
                         'shift_start_time' => $request->shift_start_time[$i], 
-                        'shift_end_date' => ($date == $date1) ? 1 : 2,
+                        'shift_end_day' => ($date == $date1) ? 1 : 2,
                         'shift_end_time' => $request->shift_end_time[$i],
                     ];
     
@@ -186,7 +186,7 @@ class DeviceController extends Controller
             $first = reset($shiftArray);
             $last = end($shiftArray);
             $firstShiftStartDatetime = Carbon::parse("{$date} {$first['shift_start_time']}");
-            $lastShiftEndDate = ($last['shift_end_date'] == 2) ? $date2 : $date;
+            $lastShiftEndDate = ($last['shift_end_day'] == 2) ? $date2 : $date;
             $lastShiftEndDatetime = Carbon::parse("{$lastShiftEndDate} {$last['shift_end_time']}");
             $diffinSecs = $firstShiftStartDatetime->diffInSeconds($lastShiftEndDatetime);
 
@@ -344,9 +344,9 @@ class DeviceController extends Controller
                 if ($start > $end) {
                     $shiftArray[] = [
                         'shift_name' => $request->shift_name[$i],
-                        'shift_start_date' => 1,
+                        'shift_start_day' => 1,
                         'shift_start_time' => $request->shift_start_time[$i], 
-                        'shift_end_date' => 2,
+                        'shift_end_day' => 2,
                         'shift_end_time' => $request->shift_end_time[$i],
                     ];
     
@@ -364,9 +364,9 @@ class DeviceController extends Controller
 
                     $shiftArray[] = [
                         'shift_name' => $request->shift_name[$i],
-                        'shift_start_date' => ($date == $date1) ? 1 : 2,
+                        'shift_start_day' => ($date == $date1) ? 1 : 2,
                         'shift_start_time' => $request->shift_start_time[$i], 
-                        'shift_end_date' => ($date == $date1) ? 1 : 2,
+                        'shift_end_day' => ($date == $date1) ? 1 : 2,
                         'shift_end_time' => $request->shift_end_time[$i],
                     ];
     
@@ -388,7 +388,7 @@ class DeviceController extends Controller
             $first = reset($shiftArray);
             $last = end($shiftArray);
             $firstShiftStartDatetime = Carbon::parse("{$date} {$first['shift_start_time']}");
-            $lastShiftEndDate = ($last['shift_end_date'] == 2) ? $date2 : $date;
+            $lastShiftEndDate = ($last['shift_end_day'] == 2) ? $date2 : $date;
             $lastShiftEndDatetime = Carbon::parse("{$lastShiftEndDate} {$last['shift_end_time']}");
             $diffinSecs = $firstShiftStartDatetime->diffInSeconds($lastShiftEndDatetime);
 

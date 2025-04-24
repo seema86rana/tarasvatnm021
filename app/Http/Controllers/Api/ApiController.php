@@ -261,8 +261,8 @@ class ApiController extends Controller
         }
 
         foreach ($shifts as $shift) {
-            $shiftStart = date('Y-m-d H:i:s', strtotime(($shift['shift_start_date'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_start_time']}"));
-            $shiftEnd = date('Y-m-d H:i:s', strtotime(($shift['shift_end_date'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_end_time']}"));
+            $shiftStart = date('Y-m-d H:i:s', strtotime(($shift['shift_start_day'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_start_time']}"));
+            $shiftEnd = date('Y-m-d H:i:s', strtotime(($shift['shift_end_day'] == 1 ? $shiftDateType1 : $shiftDateType2) . " {$shift['shift_end_time']}"));
         
             if (strtotime($deviceDatetime) >= strtotime($shiftStart) && strtotime($deviceDatetime) < strtotime($shiftEnd)) {
                 $shiftDate = $shiftDateType1;
